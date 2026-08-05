@@ -1,7 +1,0 @@
-[console_scripts]
-hermes-health = hermes_v01.health_cli:main
-hermes-record = hermes_v01.evidence_cli:main
-hermes-review = hermes_v01.reviewer_cli:main
-hermes-status = hermes_v01.status_cli:main
-hermes-supervise = hermes_v01.supervisor_cli:main
-hermes-validate = hermes_v01.__main__:main
