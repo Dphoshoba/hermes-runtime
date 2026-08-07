@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 import threading
 import time
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
+
+from .utils import atomic_write_json
 
 TASK_STATES = (
     "READY",
@@ -152,23 +152,7 @@ class WorkQueueStateStore:
             raise ValueError(f"invalid work queue state: {self.path}") from exc
 
     def save(self, state: WorkQueueState) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        payload = json.dumps(state.as_dict(), indent=2, sort_keys=True) + "\n"
-        fd, tmp_name = tempfile.mkstemp(
-            prefix=f".{self.path.name}.",
-            suffix=".tmp",
-            dir=str(self.path.parent),
-            text=True,
-        )
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                handle.write(payload)
-                handle.flush()
-                os.fsync(handle.fileno())
-            os.replace(tmp_name, self.path)
-        finally:
-            if os.path.exists(tmp_name):
-                os.unlink(tmp_name)
+        atomic_write_json(self.path, state.as_dict())
 
 
 class WorkQueueManager:
@@ -411,22 +395,7 @@ class WorkQueueManager:
             revision=0,
             items=tuple(archived_items),
         )
-        payload = json.dumps(archive_state.as_dict(), indent=2, sort_keys=True) + "\n"
-        fd, tmp_name = tempfile.mkstemp(
-            prefix=f".{archive_path.name}.",
-            suffix=".tmp",
-            dir=str(archive_path.parent),
-            text=True,
-        )
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                handle.write(payload)
-                handle.flush()
-                os.fsync(handle.fileno())
-            os.replace(tmp_name, archive_path)
-        finally:
-            if os.path.exists(tmp_name):
-                os.unlink(tmp_name)
+        atomic_write_json(archive_path, archive_state.as_dict())
         
         # Update active queue
         new_state = WorkQueueState(

@@ -321,7 +321,7 @@ class TestPartialWrites:
         # Simulate a failed write: corrupt the temp file path
         # The save method creates a temp file then os.replace.
         # If os.replace fails, the original should remain.
-        with patch("hermes_v01.work_queue.os.replace", side_effect=OSError("disk full")):
+        with patch("hermes_v01.utils.os.replace", side_effect=OSError("disk full")):
             with pytest.raises(OSError, match="disk full"):
                 mgr.transition("t1", "RUNNING", increment_attempts=True)
 
@@ -1034,7 +1034,7 @@ class TestChaos:
         original = (tmp_path / "queue.json").read_text()
 
         # Force a write failure
-        with patch("hermes_v01.work_queue.os.replace", side_effect=OSError("crash")):
+        with patch("hermes_v01.utils.os.replace", side_effect=OSError("crash")):
             with pytest.raises(OSError):
                 mgr.transition("t1", "RUNNING", increment_attempts=True)
 

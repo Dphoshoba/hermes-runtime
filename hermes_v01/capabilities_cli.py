@@ -7,13 +7,13 @@ from pathlib import Path
 from .capabilities import CapabilityManager, CapabilityRegistry, PluginDiscovery
 
 
-def _load_manager(args) -> CapabilityManager:
+def _load_manager(args: argparse.Namespace) -> CapabilityManager:
     registry = CapabilityRegistry(Path(args.state_file).expanduser().resolve())
     plugin_dirs = [Path(d).expanduser().resolve() for d in getattr(args, "plugin_dirs", [])]
     return CapabilityManager(registry, plugin_dirs)
 
 
-def cmd_list(args) -> int:
+def cmd_list(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     capabilities = manager._registry.list(
         capability_type=args.type,
@@ -23,42 +23,42 @@ def cmd_list(args) -> int:
     return 0
 
 
-def cmd_show(args) -> int:
+def cmd_show(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     state = manager._registry.get(args.name)
     print(json.dumps(state.as_dict(), indent=2, sort_keys=True))
     return 0
 
 
-def cmd_discover(args) -> int:
+def cmd_discover(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     registered = manager.discover_and_register()
     print(json.dumps({"registered": registered}, indent=2, sort_keys=True))
     return 0
 
 
-def cmd_enable(args) -> int:
+def cmd_enable(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     state = manager._registry.enable(args.name)
     print(json.dumps(state.metadata.as_dict(), indent=2, sort_keys=True))
     return 0
 
 
-def cmd_disable(args) -> int:
+def cmd_disable(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     state = manager._registry.disable(args.name)
     print(json.dumps(state.metadata.as_dict(), indent=2, sort_keys=True))
     return 0
 
 
-def cmd_check(args) -> int:
+def cmd_check(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     state = manager.check_health(args.name)
     print(json.dumps(state.as_dict(), indent=2, sort_keys=True))
     return 0
 
 
-def cmd_check_all(args) -> int:
+def cmd_check_all(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     results = manager.check_all_health()
     print(json.dumps([r.as_dict() for r in results], indent=2, sort_keys=True))

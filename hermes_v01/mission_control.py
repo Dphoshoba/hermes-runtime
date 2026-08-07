@@ -8,11 +8,11 @@ only authority for state transitions.
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
+
+from .utils import atomic_write_json
 
 from .utils import utc_now_str
 
@@ -57,23 +57,7 @@ class MissionControlStore:
             return None
 
     def save(self, command: MissionControlCommand) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        payload = json.dumps(command.as_dict(), indent=2, sort_keys=True) + "\n"
-        fd, tmp_name = tempfile.mkstemp(
-            prefix=f".{self.path.name}.",
-            suffix=".tmp",
-            dir=str(self.path.parent),
-            text=True,
-        )
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                handle.write(payload)
-                handle.flush()
-                os.fsync(handle.fileno())
-            os.replace(tmp_name, self.path)
-        finally:
-            if os.path.exists(tmp_name):
-                os.unlink(tmp_name)
+        atomic_write_json(self.path, command.as_dict())
 
     def next_command_id(self, current_state_last_id: int) -> int:
         existing = self.load()

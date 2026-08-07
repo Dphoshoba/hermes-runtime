@@ -16,7 +16,7 @@ from .mission import (
 )
 
 
-def cmd_validate(args) -> int:
+def cmd_validate(args: argparse.Namespace) -> int:
     """Validate a mission definition file."""
     mission_path = Path(args.mission_file).expanduser().resolve()
     try:
@@ -38,7 +38,7 @@ def cmd_validate(args) -> int:
     return 0 if valid else 1
 
 
-def cmd_build(args) -> int:
+def cmd_build(args: argparse.Namespace) -> int:
     """Build a plan artifact from a mission definition."""
     mission_path = Path(args.mission_file).expanduser().resolve()
     output_path = Path(args.output).expanduser().resolve() if args.output else None
@@ -61,7 +61,7 @@ def cmd_build(args) -> int:
     return 0 if plan.valid else 1
 
 
-def cmd_show(args) -> int:
+def cmd_show(args: argparse.Namespace) -> int:
     """Show a plan artifact."""
     plan_path = Path(args.plan_file).expanduser().resolve()
     try:
@@ -74,7 +74,7 @@ def cmd_show(args) -> int:
     return 0
 
 
-def cmd_enqueue(args) -> int:
+def cmd_enqueue(args: argparse.Namespace) -> int:
     """Enqueue a validated plan into the work queue."""
     plan_path = Path(args.plan_file).expanduser().resolve()
     queue_path = Path(args.queue_file).expanduser().resolve()

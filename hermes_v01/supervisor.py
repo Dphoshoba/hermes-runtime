@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import os
 import signal
-import tempfile
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -11,6 +10,7 @@ from pathlib import Path
 from typing import Callable, Iterable, Optional
 
 from .__main__ import DEFAULT_ARTIFACTS, Finding, Report, inspect_repository
+from .utils import atomic_write_json
 from .work_queue import WorkItem, WorkQueueManager
 
 
@@ -52,23 +52,7 @@ class AtomicJsonStateStore:
         return SupervisorState(**data)
 
     def save(self, state: SupervisorState) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        payload = json.dumps(asdict(state), indent=2, sort_keys=True) + "\n"
-        fd, tmp_name = tempfile.mkstemp(
-            prefix=f".{self.path.name}.",
-            suffix=".tmp",
-            dir=str(self.path.parent),
-            text=True,
-        )
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                handle.write(payload)
-                handle.flush()
-                os.fsync(handle.fileno())
-            os.replace(tmp_name, self.path)
-        finally:
-            if os.path.exists(tmp_name):
-                os.unlink(tmp_name)
+        atomic_write_json(self.path, asdict(state))
 
 
 class ExecutionSupervisor:

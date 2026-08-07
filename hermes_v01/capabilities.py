@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 import importlib.util
 import subprocess
 from abc import ABC, abstractmethod
@@ -12,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
+from .utils import atomic_write_json
 
 
 CAPABILITY_TYPES = ("executor", "validator", "provider", "notifier")
@@ -90,27 +89,11 @@ class CapabilityRegistry:
             pass
 
     def _save(self) -> None:
-        self._state_path.parent.mkdir(parents=True, exist_ok=True)
         data = {
             "schema_version": "1",
             "capabilities": {name: state.as_dict() for name, state in self._capabilities.items()},
         }
-        payload = json.dumps(data, indent=2, sort_keys=True) + "\n"
-        fd, tmp_name = tempfile.mkstemp(
-            prefix=f".{self._state_path.name}.",
-            suffix=".tmp",
-            dir=str(self._state_path.parent),
-            text=True,
-        )
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                handle.write(payload)
-                handle.flush()
-                os.fsync(handle.fileno())
-            os.replace(tmp_name, self._state_path)
-        finally:
-            if os.path.exists(tmp_name):
-                os.unlink(tmp_name)
+        atomic_write_json(self._state_path, data)
 
     def register(self, metadata: CapabilityMetadata) -> CapabilityState:
         if metadata.name in self._capabilities:

@@ -8,11 +8,11 @@ Markdown from a single canonical model.
 from __future__ import annotations
 
 import json
-import os
 import subprocess
-import tempfile
 from pathlib import Path
 from typing import Any
+
+from .utils import atomic_write_json
 
 from .mission_runner import MissionReport, save_mission_report
 from .mission_state import MissionState, MissionStateStore, TERMINAL_MISSION_STATES
@@ -323,22 +323,7 @@ def save_report_json(report: MissionReport, path: Path) -> None:
 
 def save_report_atomically(report: MissionReport, path: Path) -> None:
     """Atomic write: temp → fsync → os.replace."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        dir=str(path.parent),
-        text=True,
-    )
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(report_to_json(report))
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(tmp_name, path)
-    finally:
-        if os.path.exists(tmp_name):
-            os.unlink(tmp_name)
+    atomic_write_json(path, report.as_dict())
 
 
 def load_report_json(path: Path) -> dict | None:

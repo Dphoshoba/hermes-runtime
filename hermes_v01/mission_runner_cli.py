@@ -24,7 +24,7 @@ from .mission_report import (
 )
 
 
-def cmd_run(args) -> int:
+def cmd_run(args: argparse.Namespace) -> int:
     mission_path = Path(args.mission_file).expanduser().resolve()
     runtime_root = Path(args.runtime_root).expanduser().resolve()
     repository = Path(args.repository).expanduser().resolve()
@@ -71,7 +71,7 @@ def cmd_run(args) -> int:
         return 2
 
 
-def cmd_report(args) -> int:
+def cmd_report(args: argparse.Namespace) -> int:
     report_path = Path(args.report_file).expanduser().resolve()
     if not report_path.exists():
         print(json.dumps({"error": f"report not found: {report_path}"}), file=sys.stderr)
@@ -82,7 +82,7 @@ def cmd_report(args) -> int:
     return 0
 
 
-def cmd_generate_report(args) -> int:
+def cmd_generate_report(args: argparse.Namespace) -> int:
     """Generate comprehensive mission report from existing report + mission state."""
     runtime_root = Path(args.runtime_root).expanduser().resolve()
     mission_id = args.mission_id
@@ -152,7 +152,7 @@ def cmd_generate_report(args) -> int:
     return 0
 
 
-def cmd_types(args) -> int:
+def cmd_types(args: argparse.Namespace) -> int:
     registry = MissionTypeRegistry.instance()
     register_built_in_types(registry)
 
@@ -173,7 +173,7 @@ def cmd_types(args) -> int:
     return 0
 
 
-def cmd_type_show(args) -> int:
+def cmd_type_show(args: argparse.Namespace) -> int:
     registry = MissionTypeRegistry.instance()
     register_built_in_types(registry)
 
@@ -187,7 +187,7 @@ def cmd_type_show(args) -> int:
     return 0
 
 
-def cmd_constraints(args) -> int:
+def cmd_constraints(args: argparse.Namespace) -> int:
     mission_path = Path(args.mission_file).expanduser().resolve()
     repository = Path(args.repository) if args.repository else None
     working_directory = Path(args.cwd) if args.cwd else None
@@ -226,11 +226,11 @@ def cmd_constraints(args) -> int:
 # ---------------------------------------------------------------------------
 
 
-def _resolve_runtime_root(args) -> Path:
+def _resolve_runtime_root(args: argparse.Namespace) -> Path:
     return Path(args.runtime_root).expanduser().resolve()
 
 
-def cmd_status(args) -> int:
+def cmd_status(args: argparse.Namespace) -> int:
     runtime_root = _resolve_runtime_root(args)
     state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
     state = state_store.load()
@@ -241,7 +241,7 @@ def cmd_status(args) -> int:
     return 0
 
 
-def cmd_pause(args) -> int:
+def cmd_pause(args: argparse.Namespace) -> int:
     runtime_root = _resolve_runtime_root(args)
     state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
     control_store = MissionControlStore(runtime_root / "state" / "mission_control.json")
@@ -269,7 +269,7 @@ def cmd_pause(args) -> int:
     return 0
 
 
-def cmd_resume(args) -> int:
+def cmd_resume(args: argparse.Namespace) -> int:
     runtime_root = _resolve_runtime_root(args)
     state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
     control_store = MissionControlStore(runtime_root / "state" / "mission_control.json")
@@ -294,7 +294,7 @@ def cmd_resume(args) -> int:
     return 0
 
 
-def cmd_cancel(args) -> int:
+def cmd_cancel(args: argparse.Namespace) -> int:
     runtime_root = _resolve_runtime_root(args)
     state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
     control_store = MissionControlStore(runtime_root / "state" / "mission_control.json")
@@ -322,7 +322,7 @@ def cmd_cancel(args) -> int:
     return 0
 
 
-def cmd_abort(args) -> int:
+def cmd_abort(args: argparse.Namespace) -> int:
     runtime_root = _resolve_runtime_root(args)
     state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
     control_store = MissionControlStore(runtime_root / "state" / "mission_control.json")

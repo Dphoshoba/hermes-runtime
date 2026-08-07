@@ -7,26 +7,26 @@ from pathlib import Path
 from .work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
 
 
-def _load_manager(args) -> WorkQueueManager:
+def _load_manager(args: argparse.Namespace) -> WorkQueueManager:
     state_file = Path(args.state_file).expanduser().resolve()
     return WorkQueueManager(state_store=WorkQueueStateStore(state_file))
 
 
-def cmd_list(args) -> int:
+def cmd_list(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     summary = manager.summary()
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 
 
-def cmd_show(args) -> int:
+def cmd_show(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     item = manager.get(args.task_id)
     print(json.dumps(item.as_dict(), indent=2, sort_keys=True))
     return 0
 
 
-def cmd_next(args) -> int:
+def cmd_next(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     item = manager.next_ready()
     if item is None:
@@ -36,7 +36,7 @@ def cmd_next(args) -> int:
     return 0
 
 
-def cmd_dispatch(args) -> int:
+def cmd_dispatch(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     item = manager.dispatch_next()
     if item is None:
@@ -46,35 +46,35 @@ def cmd_dispatch(args) -> int:
     return 0
 
 
-def cmd_observe(args) -> int:
+def cmd_observe(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     item = manager.mark_observed(args.task_id)
     print(json.dumps(item.as_dict(), indent=2, sort_keys=True))
     return 0
 
 
-def cmd_verification_pending(args) -> int:
+def cmd_verification_pending(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     item = manager.mark_verification_pending(args.task_id)
     print(json.dumps(item.as_dict(), indent=2, sort_keys=True))
     return 0
 
 
-def cmd_verify(args) -> int:
+def cmd_verify(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     item = manager.record_independent_verification(args.task_id)
     print(json.dumps(item.as_dict(), indent=2, sort_keys=True))
     return 0
 
 
-def cmd_complete(args) -> int:
+def cmd_complete(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     item = manager.mark_complete(args.task_id)
     print(json.dumps(item.as_dict(), indent=2, sort_keys=True))
     return 0
 
 
-def cmd_summary(args) -> int:
+def cmd_summary(args: argparse.Namespace) -> int:
     manager = _load_manager(args)
     summary = manager.summary()
     print(json.dumps(summary, indent=2, sort_keys=True))
