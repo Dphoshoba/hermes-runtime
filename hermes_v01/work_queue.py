@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import time
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -29,6 +30,11 @@ class WorkItem:
     state: str = "BLOCKED"
     attempts: int = 0
     last_error: str | None = None
+    max_retries: int = 3
+    retry_delay_seconds: float = 1.0
+    max_retry_delay_seconds: float = 60.0
+    retry_backoff_multiplier: float = 2.0
+    retryable: bool = True
 
     def __post_init__(self) -> None:
         if not self.task_id.strip():
@@ -41,11 +47,28 @@ class WorkItem:
             raise ValueError("attempts must be >= 0")
         if self.task_id in self.dependencies:
             raise ValueError("a task cannot depend on itself")
+        if self.max_retries < 0:
+            raise ValueError("max_retries must be >= 0")
+        if self.retry_delay_seconds <= 0:
+            raise ValueError("retry_delay_seconds must be > 0")
+        if self.max_retry_delay_seconds < self.retry_delay_seconds:
+            raise ValueError("max_retry_delay_seconds must be >= retry_delay_seconds")
+        if self.retry_backoff_multiplier <= 1.0:
+            raise ValueError("retry_backoff_multiplier must be > 1.0")
 
     def as_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["dependencies"] = list(self.dependencies)
         return data
+
+    def next_retry_delay(self) -> float:
+        """Calculate next retry delay with exponential backoff, capped at max."""
+        delay = self.retry_delay_seconds * (self.retry_backoff_multiplier ** self.attempts)
+        return min(delay, self.max_retry_delay_seconds)
+
+    def can_retry(self) -> bool:
+        """Check if task can be retried (has attempts remaining and is retryable)."""
+        return self.retryable and self.attempts < self.max_retries
 
 
 @dataclass(frozen=True)
@@ -193,6 +216,48 @@ class WorkQueueManager:
         if current.state not in {"VERIFIED", "COMPLETE"}:
             raise ValueError("completion requires independently VERIFIED state")
         return self.transition(task_id, "COMPLETE")
+
+    def mark_failed(self, task_id: str, error: str) -> WorkItem:
+        """Mark task as failed. If retryable and has attempts remaining, schedule retry."""
+        current = self.get(task_id)
+        if current.state in TERMINAL_TASK_STATES:
+            raise ValueError(f"cannot fail terminal task {task_id}")
+        
+        if current.can_retry():
+            # Schedule retry: transition back to READY with error recorded
+            # The delay will be handled by the scheduler/executor
+            return self.transition(task_id, "READY", last_error=error, increment_attempts=False)
+        else:
+            # No retries left or not retryable - record error in current state
+            updated = replace(current, last_error=error)
+            self._replace_item(updated)
+            return self.get(task_id)
+
+    def retry_task(self, task_id: str) -> WorkItem:
+        """Manually retry a task (transition to READY, increment attempts)."""
+        current = self.get(task_id)
+        if not current.can_retry():
+            raise ValueError(f"task {task_id} cannot be retried (max retries reached or not retryable)")
+        if current.state not in {"READY", "BLOCKED", "OBSERVED", "VERIFICATION_PENDING"}:
+            raise ValueError(f"task {task_id} cannot be retried from state {current.state}")
+        return self.transition(task_id, "READY", increment_attempts=True)
+
+    def recover_incomplete_tasks(self) -> list[WorkItem]:
+        """Recover tasks that were in progress when process crashed.
+        
+        Transitions RUNNING -> READY (with attempt increment)
+        Transitions OBSERVED -> READY (with attempt increment) 
+        Transitions VERIFICATION_PENDING -> READY (with attempt increment)
+        
+        Only recovers tasks that can_retry().
+        Returns list of recovered tasks.
+        """
+        recovered = []
+        for item in self._state.items:
+            if item.state in {"RUNNING", "OBSERVED", "VERIFICATION_PENDING"}:
+                if item.can_retry():
+                    recovered.append(self.transition(item.task_id, "READY", increment_attempts=True))
+        return recovered
 
     def refresh(self) -> WorkQueueState:
         normalized = self._normalize(self._state)
