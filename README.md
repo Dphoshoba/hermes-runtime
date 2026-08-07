@@ -2,6 +2,8 @@
 
 Autonomous engineering runtime for deterministic mission execution with full audit trails.
 
+**Version: 1.0.0-alpha**
+
 ## Installation
 
 ```bash
@@ -30,7 +32,7 @@ Requires Python >= 3.10.
 ## One-shot validation
 
 ```bash
-python3 -m hermes_v01 --repo /Users/david/EVOS --output-dir ./hermes-report
+python3 -m hermes_v01 --repo /path/to/repository --output-dir ./hermes-report
 ```
 
 It writes `verification-report.json` and `verification-report.md`.
@@ -39,7 +41,7 @@ It writes `verification-report.json` and `verification-report.md`.
 
 ```bash
 python3 -m hermes_v01.supervisor_cli \
-  --repo /Users/david/EVOS \
+  --repo /path/to/repository \
   --output-dir ./hermes-report \
   --interval 60
 ```
@@ -49,7 +51,7 @@ Useful controls:
 ```bash
 # Run exactly three cycles
 python3 -m hermes_v01.supervisor_cli \
-  --repo /Users/david/EVOS \
+  --repo /path/to/repository \
   --output-dir ./hermes-report \
   --interval 1 \
   --max-cycles 3

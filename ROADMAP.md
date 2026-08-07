@@ -194,3 +194,15 @@
 
 ## Quality Standard
 Every milestone must improve: Correctness, Reliability, Maintainability, Observability, Documentation, Test Coverage.
+
+## Program III v1.0 — Alpha Hardening 🔄 IN PROGRESS
+
+### v1.0.0-alpha — Release Readiness
+- Version alignment: pyproject.toml, __init__.py both at `1.0.0a0`
+- LICENSE file added (MIT)
+- pyproject.toml metadata: authors, classifiers, license
+- Code quality: removed unused imports, extracted shared `atomic_write_json`
+- Decoupled fragile import: `reviewer.py` → `utils.py` for `sha256_file`
+- README.md genericized (no hardcoded user paths)
+- Stale egg-info cleaned up
+- 593 tests passing

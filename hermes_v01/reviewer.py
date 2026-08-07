@@ -12,8 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
-from .evidence import EXECUTION_ID_PATTERN, canonical_json_bytes, parse_utc, sha256_file, utc_now
-from .utils import format_utc, make_read_only, fsync_directory
+from .evidence import EXECUTION_ID_PATTERN, canonical_json_bytes, parse_utc, utc_now
+from .utils import format_utc, make_read_only, fsync_directory, sha256_file
 
 REVIEW_ID_PATTERN = re.compile(r"^review-[0-9]{8}T[0-9]{6}(?:\.[0-9]{1,6})?Z-[0-9a-f]{12}$")
 REVIEW_OUTCOMES = {"REVIEW_PASSED", "REVIEW_FAILED", "REVIEW_INCOMPLETE"}

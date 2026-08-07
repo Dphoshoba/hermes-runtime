@@ -4,6 +4,25 @@ All notable changes to the Hermes Runtime are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.0.0-alpha] - 2026-08-08
+
+### Added
+- `LICENSE` file (MIT)
+- `ENGINEERING_SCORE.md` — objective quality measurements
+- `ARCHITECTURE_SNAPSHOT.md` — module structure and data flow
+
+### Changed
+- Version bumped to `1.0.0a0` (PEP 440 alpha) across `pyproject.toml` and `__init__.py`
+- `pyproject.toml` now includes authors, classifiers, and license metadata
+- `reviewer.py` imports `sha256_file` from `utils` instead of `evidence` (decoupled module dependency)
+- Removed stale `hermes_runtime_v01.egg-info` directory
+- Removed unused imports: `hashlib`, `os`, `stat`, `tempfile` from `reviewer.py`; `Any` from `health.py`; `tempfile` from `plan_cli.py`
+- `atomic_write_json()` extracted to `utils.py` as shared utility
+
+### Fixed
+- Version mismatch between `pyproject.toml` (0.9.5) and `__init__.py` (0.9.6) — both now `1.0.0a0`
+- README.md genericized: removed hardcoded `/Users/david/EVOS` paths
+
 ## [0.9.6] - 2026-08-08
 
 ### Added

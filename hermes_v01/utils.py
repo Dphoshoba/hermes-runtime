@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import stat
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 
 def utc_now_str() -> str:
@@ -47,3 +49,19 @@ def fsync_directory(directory: Path) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+
+
+def atomic_write_json(path: Path, data: Any, *, indent: int = 2) -> None:
+    """Atomically write JSON to *path* using a temp file + fsync + rename."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(data, handle, indent=indent, ensure_ascii=False, sort_keys=True)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp, path)
+        fsync_directory(path.parent)
+    except BaseException:
+        os.unlink(tmp)
+        raise
