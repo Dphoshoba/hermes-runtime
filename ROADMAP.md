@@ -35,14 +35,14 @@
 - Recoverable vs non-recoverable failure detection
 - Metrics report output (JSON + Markdown)
 
-### v0.7.4 — Queue Maintenance 🎯 CURRENT
-- Queue compaction
-- Archiving completed work
-- Pruning old evidence
-- State integrity verification
-- Automatic repair of corrupted queue state
+### v0.7.4 — Queue Maintenance ✅ COMPLETE
+- Queue compaction (compact() archives COMPLETE tasks)
+- Archiving completed work to separate file
+- Pruning old COMPLETE tasks by age (prune_terminal_tasks)
+- State integrity verification (verify_integrity)
+- Automatic repair of common issues (repair_common_issues)
 
-### v0.7.5 — Capability Plugins
+### v0.7.5 — Capability Plugins 🎯 CURRENT
 - Pluggable task executors
 - External task providers
 - Capability discovery

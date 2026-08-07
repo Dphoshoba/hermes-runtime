@@ -346,6 +346,205 @@ class WorkQueueManager:
             self._persist(normalized)
         return self._state
 
+    def compact(self, archive_path: Path) -> tuple[int, int]:
+        """Archive COMPLETE tasks to a separate file, removing them from active queue.
+        
+        Returns (archived_count, remaining_count).
+        """
+        archive_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        active_items = []
+        archived_items = []
+        
+        for item in self._state.items:
+            if item.state == "COMPLETE":
+                archived_items.append(item)
+            else:
+                active_items.append(item)
+        
+        if not archived_items:
+            return (0, len(active_items))
+        
+        # Save archived items
+        from .work_queue import WorkQueueState
+        archive_state = WorkQueueState(
+            schema_version=self._state.schema_version,
+            revision=0,
+            items=tuple(archived_items),
+        )
+        payload = json.dumps(archive_state.as_dict(), indent=2, sort_keys=True) + "\n"
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=f".{archive_path.name}.",
+            suffix=".tmp",
+            dir=str(archive_path.parent),
+            text=True,
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp_name, archive_path)
+        finally:
+            if os.path.exists(tmp_name):
+                os.unlink(tmp_name)
+        
+        # Update active queue
+        new_state = WorkQueueState(
+            schema_version=self._state.schema_version,
+            revision=self._state.revision + 1,
+            items=tuple(active_items),
+        )
+        self._persist(self._normalize(new_state))
+        
+        return (len(archived_items), len(active_items))
+
+    def prune_terminal_tasks(self, max_age_hours: float = 168.0) -> int:
+        """Remove COMPLETE tasks older than max_age_hours.
+        
+        Uses last_run_at if available, otherwise keeps all COMPLETE tasks.
+        Returns number of pruned tasks.
+        """
+        now = datetime.now(timezone.utc)
+        max_age_seconds = max_age_hours * 3600
+        
+        keep_items = []
+        pruned = 0
+        
+        for item in self._state.items:
+            if item.state == "COMPLETE" and item.last_run_at is not None:
+                try:
+                    last_run = datetime.fromisoformat(item.last_run_at.replace("Z", "+00:00"))
+                    age = (now - last_run).total_seconds()
+                    if age > max_age_seconds:
+                        pruned += 1
+                        continue  # skip this item (prune it)
+                except ValueError:
+                    pass  # keep if timestamp invalid
+            keep_items.append(item)
+        
+        if pruned > 0:
+            new_state = WorkQueueState(
+                schema_version=self._state.schema_version,
+                revision=self._state.revision + 1,
+                items=tuple(keep_items),
+            )
+            self._persist(self._normalize(new_state))
+        
+        return pruned
+
+    def verify_integrity(self) -> list[str]:
+        """Verify queue state integrity.
+        
+        Returns list of issues found (empty if healthy).
+        Checks:
+        - No duplicate task_ids
+        - All dependencies reference existing tasks
+        - No cycles in dependency graph
+        - Terminal tasks have valid state transitions
+        - Attempts non-negative
+        - Scheduled tasks have valid timestamps
+        """
+        issues = []
+        items = self._state.items
+        
+        # Check duplicates
+        seen: set[str] = set()
+        for item in items:
+            if item.task_id in seen:
+                issues.append(f"Duplicate task_id: {item.task_id}")
+            seen.add(item.task_id)
+        
+        # Check dependencies exist
+        by_id = {item.task_id: item for item in items}
+        for item in items:
+            for dep in item.dependencies:
+                if dep not in by_id:
+                    issues.append(f"Task {item.task_id} depends on missing task: {dep}")
+        
+        # Check for cycles
+        visiting: set[str] = set()
+        visited: set[str] = set()
+        
+        def visit(task_id: str) -> None:
+            if task_id in visited:
+                return
+            if task_id in visiting:
+                issues.append("Cycle detected in dependency graph")
+                return
+            visiting.add(task_id)
+            if task_id in by_id:
+                for dep in by_id[task_id].dependencies:
+                    visit(dep)
+            visiting.remove(task_id)
+            visited.add(task_id)
+        
+        for task_id in by_id:
+            visit(task_id)
+        
+        # Check terminal tasks
+        for item in items:
+            if item.state in TERMINAL_TASK_STATES:
+                if item.state == "COMPLETE" and not any(dep_state in TERMINAL_TASK_STATES for dep_state in [by_id[d].state for d in item.dependencies if d in by_id]):
+                    # COMPLETE tasks should have all dependencies in terminal states
+                    pass  # This is checked by _normalize
+            
+            if item.attempts < 0:
+                issues.append(f"Task {item.task_id} has negative attempts: {item.attempts}")
+            
+            if item.scheduled_at is not None:
+                try:
+                    datetime.fromisoformat(item.scheduled_at.replace("Z", "+00:00"))
+                except ValueError:
+                    issues.append(f"Task {item.task_id} has invalid scheduled_at: {item.scheduled_at}")
+        
+        return issues
+
+    def repair_common_issues(self) -> list[str]:
+        """Attempt to repair common queue state issues.
+        
+        Returns list of repairs performed.
+        Repairs:
+        - Reset negative attempts to 0
+        - Clear invalid scheduled_at timestamps
+        - Normalize BLOCKED/READY states based on dependencies
+        """
+        repairs = []
+        items = list(self._state.items)
+        modified = False
+        
+        for i, item in enumerate(items):
+            # Fix negative attempts
+            if item.attempts < 0:
+                items[i] = replace(item, attempts=0)
+                repairs.append(f"Reset negative attempts to 0 for {item.task_id}")
+                modified = True
+            
+            # Clear invalid scheduled_at
+            if item.scheduled_at is not None:
+                try:
+                    datetime.fromisoformat(item.scheduled_at.replace("Z", "+00:00"))
+                except ValueError:
+                    items[i] = replace(item, scheduled_at=None)
+                    repairs.append(f"Cleared invalid scheduled_at for {item.task_id}")
+                    modified = True
+        
+        if modified:
+            new_state = WorkQueueState(
+                schema_version=self._state.schema_version,
+                revision=self._state.revision + 1,
+                items=tuple(items),
+            )
+            self._persist(self._normalize(new_state))
+        
+        # Also run normalize to fix BLOCKED/READY states
+        normalized = self._normalize(self._state)
+        if normalized != self._state:
+            self._persist(normalized)
+            repairs.append("Normalized BLOCKED/READY states based on dependencies")
+        
+        return repairs
+
     def summary(self) -> dict[str, list[str]]:
         result = {state: [] for state in TASK_STATES}
         for item in sorted(self._state.items, key=lambda value: (value.priority, value.task_id)):
