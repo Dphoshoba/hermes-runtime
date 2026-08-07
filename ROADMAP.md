@@ -9,7 +9,7 @@
 - Runtime Orchestrator (`hermes-runtime --task-id/--next --work-queue`)
 - End-to-end validation: full queue lifecycle verified
 
-## Program III v0.7 — Autonomous Runtime 🔄 IN PROGRESS
+## Program III v0.7 — Autonomous Runtime ✅ COMPLETE
 
 ### v0.7.1 — Retry & Recovery ✅ COMPLETE
 - Configurable retry policy (max_retries, retry_delay_seconds, max_retry_delay_seconds, retry_backoff_multiplier, retryable)
@@ -65,6 +65,45 @@
 - Compaction/maintenance safety: active tasks never removed, integrity valid after maintenance
 - Chaos tests: interrupted running task, restart recovery, corrupted queue, malformed evidence, failed review, partial atomic write, scheduler restart, exhausted retry budget, disabled executor, maintenance during active work, stale persisted state, health degradation
 - Defect fixed: CapabilityManager.get_executor now checks registry enabled status before returning cached executors
+
+## Program III v0.8 — Mission Planning ✅ COMPLETE
+
+### v0.8.1 — Mission Schema & Planner
+- Mission JSON schema (mission_id, title, description, tasks, goals, constraints, metadata)
+- MissionTask dataclass (title, command, dependencies, priority, retry_policy, required_capabilities)
+- RetryPolicy integration (inherits defaults from mission-level default_retry_policy)
+- MissionPlanner: validate() detects duplicate IDs, unknown deps, cycles, invalid retry policies
+- MissionPlanner: build() produces Plan artifact with deterministic task IDs
+- Plan dataclass with plan_hash (SHA-256), dependency_graph, valid flag, schema_version
+- Capability validation against CapabilityRegistry (checks enabled + available)
+- Working directory inheritance (mission → task override)
+
+### v0.8.2 — CLI & Enqueue
+- `hermes-plan validate` — validates mission JSON, outputs structured result
+- `hermes-plan build` — builds plan artifact, writes to file or stdout
+- `hermes-plan show` — displays plan artifact as formatted JSON
+- `hermes-plan enqueue` — enqueues validated plan into work queue, outputs summary
+- Plan serialization (save_plan / load_plan)
+- enqueue_plan: converts PlanTask → WorkItem, respecting dependencies, retry, priority
+- Backward-compatible with existing queue state (no breaking changes)
+- 85 tests (test_mission.py, test_plan_cli.py)
+
+## Program III v0.9 — Autonomous Mission Execution 🔄 IN PROGRESS
+
+### v0.9.1 — Mission Runner ✅ COMPLETE
+- MissionRunner: orchestrates full mission execution (plan → enqueue → execute → report)
+- MissionReport: deterministic, machine-readable report after every mission
+  - Fields: mission_id, mission_title, status, duration, tasks_planned/completed/failed/skipped
+  - Evidence records, independent reviews, queue summary, runtime health, metrics summary
+  - Warnings, errors, artifacts_produced
+- `hermes-mission run <mission.json>` — execute a complete mission end-to-end
+- `hermes-mission report <report.json>` — display a saved mission report
+- Accepts both mission JSON and plan JSON as input
+- Dependency-aware execution: tasks run in topological order
+- Deadlock detection: identifies tasks blocked by failed dependencies
+- Health and metrics collected automatically after mission completion
+- 21 tests (test_mission_runner.py)
+- 314 total tests passing
 
 ## Quality Standard
 Every milestone must improve: Correctness, Reliability, Maintainability, Observability, Documentation, Test Coverage.
