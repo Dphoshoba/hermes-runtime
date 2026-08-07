@@ -7,11 +7,21 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .mission import load_mission, MissionPlanner, load_plan
-from .mission_runner import MissionRunner, save_mission_report
+from .mission_runner import MissionRunner, save_mission_report, MissionReport
 from .mission_types import MissionTypeRegistry, register_built_in_types
 from .mission_constraints import ConstraintEngine
 from .mission_state import MissionStateStore
 from .mission_control import MissionControlStore, write_control_command, CONTROL_ACTIONS
+from .mission_report import (
+    MissionReportGenerator,
+    generate_and_save_reports,
+    mission_report_json_path,
+    mission_report_md_path,
+    load_report_json,
+    save_report_json,
+    save_report_markdown,
+    render_markdown,
+)
 
 
 def cmd_run(args) -> int:
@@ -69,6 +79,76 @@ def cmd_report(args) -> int:
 
     data = json.loads(report_path.read_text(encoding="utf-8"))
     print(json.dumps(data, indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_generate_report(args) -> int:
+    """Generate comprehensive mission report from existing report + mission state."""
+    runtime_root = Path(args.runtime_root).expanduser().resolve()
+    mission_id = args.mission_id
+    repository = Path(args.repository).expanduser().resolve() if args.repository else None
+
+    # Load base report from mission-specific path
+    base_path = mission_report_json_path(runtime_root, mission_id)
+    if not base_path.exists():
+        # Try loading from the legacy report file path
+        base_data = load_report_json(base_path)
+        if base_data is None:
+            print(json.dumps({"error": f"no report found for mission: {mission_id}"}), file=sys.stderr)
+            return 1
+    else:
+        base_data = load_report_json(base_path)
+
+    # Load mission state
+    state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
+    mission_state = state_store.load()
+
+    # Reconstruct MissionReport from dict
+    report_dict = base_data
+    base_report = MissionReport(
+        schema_version=report_dict.get("schema_version", "1"),
+        mission_id=report_dict.get("mission_id", mission_id),
+        mission_title=report_dict.get("mission_title", ""),
+        mission_type=report_dict.get("mission_type", "generic"),
+        status=report_dict.get("status", "UNKNOWN"),
+        started_at=report_dict.get("started_at", ""),
+        finished_at=report_dict.get("finished_at", ""),
+        duration_seconds=report_dict.get("duration_seconds", 0.0),
+        tasks_planned=report_dict.get("tasks_planned", 0),
+        tasks_completed=report_dict.get("tasks_completed", 0),
+        tasks_failed=report_dict.get("tasks_failed", 0),
+        tasks_skipped=report_dict.get("tasks_skipped", 0),
+        evidence_records=tuple(report_dict.get("evidence_records", [])),
+        independent_reviews=tuple(report_dict.get("independent_reviews", [])),
+        queue_summary={k: tuple(v) for k, v in report_dict.get("queue_summary", {}).items()},
+        runtime_health=report_dict.get("runtime_health", "UNKNOWN"),
+        metrics_summary=report_dict.get("metrics_summary", {}),
+        warnings=tuple(report_dict.get("warnings", [])),
+        errors=tuple(report_dict.get("errors", [])),
+        artifacts_produced=tuple(report_dict.get("artifacts_produced", [])),
+        mission_report_path=report_dict.get("mission_report_path"),
+        max_concurrency=report_dict.get("max_concurrency", 1),
+        peak_concurrent_tasks=report_dict.get("peak_concurrent_tasks", 0),
+    )
+
+    generator = MissionReportGenerator(
+        runtime_root=runtime_root,
+        repository=repository,
+    )
+    full_report = generator.generate(base_report, mission_state)
+
+    json_path = mission_report_json_path(runtime_root, mission_id)
+    md_path = mission_report_md_path(runtime_root, mission_id)
+    save_report_json(full_report, json_path)
+    save_report_markdown(full_report, md_path)
+
+    output = {
+        "status": "generated",
+        "mission_id": mission_id,
+        "json_path": str(json_path),
+        "md_path": str(md_path),
+    }
+    print(json.dumps(output, indent=2, sort_keys=True))
     return 0
 
 
@@ -408,6 +488,25 @@ def main() -> int:
     )
     abort_parser.add_argument("--reason", help="Reason for aborting")
 
+    # Report generation subcommand
+    gen_report_parser = subparsers.add_parser(
+        "generate-report",
+        help="Generate comprehensive mission report (JSON + Markdown)",
+    )
+    gen_report_parser.add_argument(
+        "mission_id",
+        help="Mission ID to generate report for",
+    )
+    gen_report_parser.add_argument(
+        "--runtime-root",
+        default=str(Path.home() / ".hermes" / "runtime"),
+        help="Runtime root directory (default: ~/.hermes/runtime)",
+    )
+    gen_report_parser.add_argument(
+        "--repository",
+        help="Repository path for git revision detection",
+    )
+
     args = parser.parse_args()
 
     handlers = {
@@ -421,6 +520,7 @@ def main() -> int:
         "resume": cmd_resume,
         "cancel": cmd_cancel,
         "abort": cmd_abort,
+        "generate-report": cmd_generate_report,
     }
 
     return handlers[args.command](args)

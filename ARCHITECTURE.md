@@ -26,6 +26,7 @@ hermes_v01/
   mission_constraints.py # Pre-execution constraint validation
   mission_state.py     # Mission lifecycle state machine and persistence
   mission_control.py   # Cross-process lifecycle control (mission_control.json)
+  mission_report.py    # Mission report generation, Markdown rendering, persistence
 
   # Queue & Scheduling
   work_queue.py        # Deterministic, restart-safe work queue
@@ -117,6 +118,33 @@ READY → RUNNING → COMPLETED
 ### Persistence Files
 - `mission_state.json`: Authoritative lifecycle state (state, counts, timestamps)
 - `mission_control.json`: Requested lifecycle action (action, reason, command_id)
+
+## Mission Reports
+
+Reports are first-class, durable artifacts generated from a single canonical model:
+
+```
+MissionReport (dataclass)
+├── as_dict() → deterministic JSON
+├── render_markdown() → human-readable Markdown
+└── save_report_atomically() → write + fsync + os.replace
+```
+
+### Report Generation
+- `MissionReportGenerator` builds comprehensive reports from base report + MissionState
+- Consumes existing health, evidence, and review systems (no parallel calculations)
+- Reports include: lifecycle state, task counts, evidence/review summaries, health, concurrency, capability usage
+
+### Persistence
+- Reports stored under `reports/<mission-id>/MISSION_REPORT.json` and `.md`
+- JSON is authoritative; Markdown is derived from the same model
+- Atomic writes prevent corruption
+- Reports are not overwritten unless regenerated with logical equivalence
+
+### Determinism
+- JSON keys sorted alphabetically (`sort_keys=True`)
+- Optional fields only included when non-default
+- Same persisted outcome → same logical report
 
 ## Evidence Integrity
 

@@ -4,6 +4,24 @@ All notable changes to the Hermes Runtime are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.9.6] - 2026-08-08
+
+### Added
+- Extended `MissionReport` with lifecycle, evidence, review, health, and concurrency summary fields
+- `MissionReportGenerator` builds comprehensive reports from runner state + existing health/metrics systems
+- `render_markdown()` produces human-readable Markdown from the same model as JSON
+- Deterministic JSON serialization with stable key ordering (`sort_keys=True`)
+- Atomic report persistence under `reports/<mission-id>/MISSION_REPORT.json` and `.md`
+- `hermes-mission generate-report <mission-id>` CLI subcommand
+- `MISSION_REPORT_SCHEMA.md` schema documentation
+- 64 report tests (`test_mission_report.py`)
+
+### Changed
+- `MissionReport.as_dict()` now includes v0.9.6 fields when set (backward compatible)
+- `MissionRunner.run()` automatically generates and persists JSON + Markdown report artifacts
+- Reports include `lifecycle_state`, `tasks_cancelled`, `tasks_aborted` fields
+- Reports include `evidence_summary`, `independent_review_summary`, `health_summary` aggregates
+
 ## [0.9.5] - 2026-08-08
 
 ### Added

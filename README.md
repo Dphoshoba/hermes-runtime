@@ -298,3 +298,33 @@ hermes-mission abort --runtime-root "$HOME/.hermes/runtime" --reason "emergency"
 - Commands use incrementing IDs to prevent stale replay
 - Commands are mission-scoped: wrong `mission_id` is rejected
 - Terminal states cannot be transitioned out of
+
+## Mission Reports
+
+`hermes-mission` automatically generates comprehensive report artifacts after each execution:
+
+```bash
+# Reports are generated automatically during hermes-mission run
+# Artifacts stored under reports/<mission-id>/
+
+# Generate report for an existing mission
+hermes-mission generate-report <mission-id> --runtime-root "$HOME/.hermes/runtime"
+
+# Or manually regenerate with repository context
+hermes-mission generate-report <mission-id> \
+  --runtime-root "$HOME/.hermes/runtime" \
+  --repository /path/to/repo
+```
+
+### Report Artifacts
+
+| File | Description |
+|------|-------------|
+| `reports/<mission-id>/MISSION_REPORT.json` | Authoritative JSON report (deterministic) |
+| `reports/<mission-id>/MISSION_REPORT.md` | Human-readable Markdown |
+
+### Report Contents
+
+Reports include: lifecycle state, task summary, queue summary, retry/scheduler/concurrency summaries, evidence and review aggregates, health status, capability usage, git revision, runtime version, warnings, and errors.
+
+See [MISSION_REPORT_SCHEMA.md](MISSION_REPORT_SCHEMA.md) for the full schema documentation.

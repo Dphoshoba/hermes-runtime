@@ -37,7 +37,7 @@ class MissionReport:
     mission_id: str
     mission_title: str
     mission_type: str
-    status: str  # COMPLETED | PARTIAL | FAILED
+    status: str  # COMPLETED | PARTIAL | FAILED | CANCELLED | ABORTED
     started_at: str
     finished_at: str
     duration_seconds: float
@@ -56,9 +56,23 @@ class MissionReport:
     mission_report_path: str | None = None
     max_concurrency: int = 1
     peak_concurrent_tasks: int = 0
+    # v0.9.6 lifecycle fields
+    lifecycle_state: str = ""
+    tasks_cancelled: int = 0
+    tasks_aborted: int = 0
+    retry_summary: dict[str, object] | None = None
+    scheduler_summary: dict[str, object] | None = None
+    concurrency_summary: dict[str, object] | None = None
+    capability_usage: dict[str, object] | None = None
+    evidence_summary: dict[str, object] | None = None
+    independent_review_summary: dict[str, object] | None = None
+    health_summary: dict[str, object] | None = None
+    repository: str | None = None
+    git_revision: str | None = None
+    runtime_version: str = ""
 
     def as_dict(self) -> dict:
-        d = {
+        d: dict[str, object] = {
             "schema_version": self.schema_version,
             "mission_id": self.mission_id,
             "mission_title": self.mission_title,
@@ -83,6 +97,33 @@ class MissionReport:
             "max_concurrency": self.max_concurrency,
             "peak_concurrent_tasks": self.peak_concurrent_tasks,
         }
+        # v0.9.6 fields — only include when set (deterministic output)
+        if self.lifecycle_state:
+            d["lifecycle_state"] = self.lifecycle_state
+        if self.tasks_cancelled:
+            d["tasks_cancelled"] = self.tasks_cancelled
+        if self.tasks_aborted:
+            d["tasks_aborted"] = self.tasks_aborted
+        if self.retry_summary is not None:
+            d["retry_summary"] = self.retry_summary
+        if self.scheduler_summary is not None:
+            d["scheduler_summary"] = self.scheduler_summary
+        if self.concurrency_summary is not None:
+            d["concurrency_summary"] = self.concurrency_summary
+        if self.capability_usage is not None:
+            d["capability_usage"] = self.capability_usage
+        if self.evidence_summary is not None:
+            d["evidence_summary"] = self.evidence_summary
+        if self.independent_review_summary is not None:
+            d["independent_review_summary"] = self.independent_review_summary
+        if self.health_summary is not None:
+            d["health_summary"] = self.health_summary
+        if self.repository is not None:
+            d["repository"] = self.repository
+        if self.git_revision is not None:
+            d["git_revision"] = self.git_revision
+        if self.runtime_version:
+            d["runtime_version"] = self.runtime_version
         return d
 
 
@@ -502,7 +543,7 @@ class MissionRunner:
         )
         self._persist_mission_state()
 
-        return _build_report(
+        report = _build_report(
             plan=plan,
             started_at=started_at,
             finished_at=finished_at,
@@ -525,6 +566,59 @@ class MissionRunner:
             max_concurrency=self.max_concurrency,
             peak_concurrent_tasks=peak_concurrent,
         )
+
+        # Generate comprehensive report artifacts (JSON + Markdown)
+        try:
+            from .mission_report import generate_and_save_reports
+            json_path, md_path = generate_and_save_reports(
+                runtime_root=self.runtime_root,
+                report=report,
+                mission_state=self._current_mission_state,
+                repository=self.repository,
+                executor_name=self.executor_name,
+            )
+            report = MissionReport(
+                schema_version=report.schema_version,
+                mission_id=report.mission_id,
+                mission_title=report.mission_title,
+                mission_type=report.mission_type,
+                status=report.status,
+                started_at=report.started_at,
+                finished_at=report.finished_at,
+                duration_seconds=report.duration_seconds,
+                tasks_planned=report.tasks_planned,
+                tasks_completed=report.tasks_completed,
+                tasks_failed=report.tasks_failed,
+                tasks_skipped=report.tasks_skipped,
+                evidence_records=report.evidence_records,
+                independent_reviews=report.independent_reviews,
+                queue_summary=report.queue_summary,
+                runtime_health=report.runtime_health,
+                metrics_summary=report.metrics_summary,
+                warnings=report.warnings,
+                errors=report.errors,
+                artifacts_produced=report.artifacts_produced,
+                mission_report_path=str(json_path),
+                max_concurrency=report.max_concurrency,
+                peak_concurrent_tasks=report.peak_concurrent_tasks,
+                lifecycle_state=report.lifecycle_state,
+                tasks_cancelled=report.tasks_cancelled,
+                tasks_aborted=report.tasks_aborted,
+                retry_summary=report.retry_summary,
+                scheduler_summary=report.scheduler_summary,
+                concurrency_summary=report.concurrency_summary,
+                capability_usage=report.capability_usage,
+                evidence_summary=report.evidence_summary,
+                independent_review_summary=report.independent_review_summary,
+                health_summary=report.health_summary,
+                repository=report.repository,
+                git_revision=report.git_revision,
+                runtime_version=report.runtime_version,
+            )
+        except Exception:
+            pass
+
+        return report
 
     def _run_sequential(
         self,

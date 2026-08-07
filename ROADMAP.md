@@ -168,5 +168,29 @@
 - 458 total tests passing
 - E2E validated: 6-task mission with dependencies, concurrent execution, and failure isolation
 
+### v0.9.5 — Mission Lifecycle Control ✅ COMPLETE
+- MissionState dataclass with full lifecycle state machine (READY → RUNNING → PAUSED → COMPLETED/CANCELLED/ABORTED/FAILED)
+- MissionStateStore for atomic persistence of lifecycle state
+- MissionControlCommand and MissionControlStore for cross-process lifecycle control
+- MissionRunner lifecycle methods: pause(), resume(), cancel(), abort(), status()
+- File-backed control: CLI writes mission_control.json, runner polls each iteration
+- Stale command replay prevention via command_id ordering
+- Mission-scoped control: wrong mission_id is rejected
+- Terminal state escape prevention: no transitions out of terminal states
+- CLI subcommands: status, pause, resume, cancel, abort
+- 71 lifecycle tests (test_mission_lifecycle.py)
+- 529 total tests passing
+
+### v0.9.6 — Mission Reports ✅ COMPLETE
+- Extended MissionReport with lifecycle, evidence, review, health, and concurrency summaries
+- MissionReportGenerator builds comprehensive reports from runner state + existing systems
+- Markdown renderer generates human-readable reports from the same model as JSON
+- Deterministic JSON serialization with stable key ordering
+- Atomic report persistence under reports/<mission-id>/MISSION_REPORT.json and .md
+- CLI: hermes-mission generate-report <mission-id>
+- 64 report tests (test_mission_report.py)
+- MISSION_REPORT_SCHEMA.md documentation
+- 593 total tests passing
+
 ## Quality Standard
 Every milestone must improve: Correctness, Reliability, Maintainability, Observability, Documentation, Test Coverage.
