@@ -1,6 +1,31 @@
-# Hermes Runtime v0.1
+# Hermes Runtime
 
-Minimal, read-only EVOS governance validation runtime.
+Autonomous engineering runtime for deterministic mission execution with full audit trails.
+
+## Installation
+
+```bash
+pip install -e .
+```
+
+Requires Python >= 3.10.
+
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `hermes-validate` | Read-only repository inspection |
+| `hermes-supervise` | Persistent execution supervisor |
+| `hermes-status` | Canonical runtime state projection |
+| `hermes-record` | Immutable evidence recorder |
+| `hermes-review` | Independent review of execution records |
+| `hermes-health` | Runtime health monitoring |
+| `hermes-runtime` | Queue-driven pipeline orchestrator |
+| `hermes-queue` | Work queue management |
+| `hermes-metrics` | Runtime and queue metrics |
+| `hermes-capabilities` | Plugin and executor management |
+| `hermes-plan` | Mission planning and validation |
+| `hermes-mission` | Mission execution and reporting |
 
 ## One-shot validation
 
@@ -174,3 +199,60 @@ hermes-mission run mission.json \
 Tasks are dispatched in dependency order. Independent tasks execute in parallel up to the concurrency limit. Failed tasks do not block independent siblings. The `MissionReport` includes `max_concurrency` and `peak_concurrent_tasks` fields.
 
 When `--concurrency` is omitted or set to 1, tasks execute sequentially (the default).
+
+## Health Monitoring
+
+`hermes-health` generates a health report from the runtime state:
+
+```bash
+hermes-health \
+  --runtime-root "$HOME/.hermes/runtime" \
+  --output-dir "$HOME/.hermes/runtime/health"
+```
+
+## Metrics
+
+`hermes-metrics` generates runtime and queue metrics:
+
+```bash
+hermes-metrics \
+  --runtime-root "$HOME/.hermes/runtime" \
+  --output-dir "$HOME/.hermes/runtime/metrics"
+```
+
+## Capabilities
+
+`hermes-capabilities` manages executor plugins:
+
+```bash
+hermes-capabilities list
+hermes-capabilities check-all
+```
+
+## Mission Planning
+
+`hermes-plan` validates and builds mission plans:
+
+```bash
+hermes-plan validate mission.json
+hermes-plan build mission.json --output plan.json
+hermes-plan enqueue plan.json --queue-file /tmp/queue.json
+```
+
+## Mission Types
+
+`hermes-mission` supports typed missions:
+
+```bash
+hermes-mission types
+hermes-mission type-show repository-maintenance
+hermes-mission run mission.json --mission-type security-audit
+```
+
+## Mission Constraints
+
+Validate mission constraints before execution:
+
+```bash
+hermes-mission constraints mission.json --repository /path/to/repo
+```

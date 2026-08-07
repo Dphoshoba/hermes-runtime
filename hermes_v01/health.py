@@ -6,6 +6,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from . import __version__
+
 
 HEALTHY = "HEALTHY"
 WARNING = "WARNING"
@@ -117,7 +119,7 @@ def build_health_report(runtime_root: Path) -> HealthReport:
         overall_health = HEALTHY
 
     return HealthReport(
-        runtime_version="0.2.0",
+        runtime_version=__version__,
         last_execution_id=last_execution_id,
         last_execution_time=last_execution_time,
         last_execution_exit_code=last_execution_exit_code,

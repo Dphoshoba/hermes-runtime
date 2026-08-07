@@ -5,12 +5,13 @@ import os
 import tempfile
 import importlib.util
 import subprocess
-import sys
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
+
+from . import __version__
 
 
 CAPABILITY_TYPES = ("executor", "validator", "provider", "notifier")
@@ -50,9 +51,9 @@ class CapabilityMetadata:
 class CapabilityState:
     metadata: CapabilityMetadata
     registered_at: str
-    last_health_check: Optional[str] = None
+    last_health_check: str | None = None
     health_status: str = "UNKNOWN"
-    health_error: Optional[str] = None
+    health_error: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -133,7 +134,7 @@ class CapabilityRegistry:
             raise KeyError(name)
         return self._capabilities[name]
 
-    def list(self, capability_type: Optional[str] = None, enabled_only: bool = False) -> list[CapabilityState]:
+    def list(self, capability_type: str | None = None, enabled_only: bool = False) -> list[CapabilityState]:
         result = list(self._capabilities.values())
         if capability_type:
             result = [c for c in result if c.metadata.capability_type == capability_type]
@@ -177,7 +178,7 @@ class CapabilityRegistry:
         self._save()
         return new_state
 
-    def update_health(self, name: str, status: str, error: Optional[str] = None) -> CapabilityState:
+    def update_health(self, name: str, status: str, error: str | None = None) -> CapabilityState:
         state = self.get(name)
         new_state = CapabilityState(
             metadata=state.metadata,
@@ -209,7 +210,7 @@ class PluginDiscovery:
                     continue
         return capabilities
 
-    def _load_metadata(self, path: Path) -> Optional[CapabilityMetadata]:
+    def _load_metadata(self, path: Path) -> CapabilityMetadata | None:
         data = json.loads(path.read_text(encoding="utf-8"))
         required = ("name", "version", "description", "capability_type", "entry_point", "required_runtime_version")
         if not all(k in data for k in required):
@@ -233,7 +234,7 @@ class ExecutorPlugin(ABC):
         pass
 
     @abstractmethod
-    def health_check(self) -> tuple[bool, Optional[str]]:
+    def health_check(self) -> tuple[bool, str | None]:
         pass
 
     @property
@@ -269,7 +270,7 @@ class LocalExecutorPlugin(ExecutorPlugin):
             stderr=result.stderr,
         )
 
-    def health_check(self) -> tuple[bool, Optional[str]]:
+    def health_check(self) -> tuple[bool, str | None]:
         return True, None
 
 
@@ -285,7 +286,7 @@ class CapabilityManager:
                 description="Built-in local subprocess executor",
                 capability_type="executor",
                 entry_point="hermes_v01.capabilities:LocalExecutorPlugin",
-                required_runtime_version="0.7.0",
+                required_runtime_version=__version__,
             ))
         except ValueError:
             pass

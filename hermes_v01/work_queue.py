@@ -404,7 +404,6 @@ class WorkQueueManager:
             return (0, len(active_items))
         
         # Save archived items
-        from .work_queue import WorkQueueState
         archive_state = WorkQueueState(
             schema_version=self._state.schema_version,
             revision=0,

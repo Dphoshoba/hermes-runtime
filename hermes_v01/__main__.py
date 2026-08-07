@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+
+from . import __version__
+from .utils import sha256_file
 
 DEFAULT_ARTIFACTS = [
     "governance/autonomous_execution_contract.md",
@@ -41,19 +43,12 @@ class Report:
     findings: list[Finding]
     compliance_assessment: str
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
 def inspect_repository(repo: Path, artifacts: list[str]) -> Report:
     now = datetime.now(timezone.utc).isoformat()
     if not repo.exists() or not repo.is_dir():
         reason = f"Repository directory is not accessible: {repo}"
         return Report(
-            "Hermes", "0.1.0", now, str(repo), "Inspection Failed",
+            "Hermes", __version__, now, str(repo), "Inspection Failed",
             [ToolStatus("read-only filesystem inspection", "Inspection Failed", reason)],
             [Finding(str(repo), "Path.exists() and Path.is_dir()", reason, "Unverified")],
             "Deferred: repository inspection did not begin.",
@@ -74,7 +69,7 @@ def inspect_repository(repo: Path, artifacts: list[str]) -> Report:
             findings.append(Finding(relative, "read-only filesystem inspection", f"Inspection error: {type(exc).__name__}: {exc}", "Unverified"))
 
     return Report(
-        "Hermes", "0.1.0", now, str(repo), "Observation Complete",
+        "Hermes", __version__, now, str(repo), "Observation Complete",
         [ToolStatus("read-only filesystem inspection", "Succeeded", "Requested artifacts were inspected without repository modification.")],
         findings,
         "Existence classified. Content-level governance compliance is deferred until governance rules are supplied and inspected.",

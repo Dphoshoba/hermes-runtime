@@ -4,8 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hermes-runtime-v01"
-version = "0.1.0"
+version = "0.9.4"
+description = "Autonomous engineering runtime for deterministic mission execution"
+readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
 
 [project.scripts]
 hermes-validate = "hermes_v01.__main__:main"

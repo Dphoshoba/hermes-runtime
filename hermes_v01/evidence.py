@@ -14,6 +14,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from .utils import sha256_file, format_utc, make_read_only, fsync_directory
+
 EXECUTION_ID_PATTERN = re.compile(r"^exec-[0-9]{8}T[0-9]{6}(?:\.[0-9]{1,6})?Z-[0-9a-f]{12}$")
 EVIDENCE_STATUSES = {"OBSERVED", "INCOMPLETE", "EVIDENCE_INCONSISTENT"}
 INTEGRITY_STATUSES = {"PASSED", "FAILED", "NOT_EVALUATED"}
@@ -23,25 +25,11 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def format_utc(value: datetime) -> str:
-    if value.tzinfo is None:
-        raise ValueError("timestamp must be timezone-aware")
-    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
 def parse_utc(value: str) -> datetime:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
         raise ValueError("timestamp must include a timezone")
     return parsed.astimezone(timezone.utc)
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def canonical_json_bytes(data: Mapping[str, Any]) -> bytes:
@@ -255,19 +243,11 @@ class ImmutableEvidenceStore:
 
     @staticmethod
     def _make_read_only(path: Path) -> None:
-        mode = stat.S_IMODE(path.stat().st_mode)
-        path.chmod(mode & ~0o222)
+        make_read_only(path)
 
     @staticmethod
     def _fsync_directory(directory: Path) -> None:
-        flags = os.O_RDONLY
-        if hasattr(os, "O_DIRECTORY"):
-            flags |= os.O_DIRECTORY
-        descriptor = os.open(directory, flags)
-        try:
-            os.fsync(descriptor)
-        finally:
-            os.close(descriptor)
+        fsync_directory(directory)
 
 
 class EvidenceRecorder:

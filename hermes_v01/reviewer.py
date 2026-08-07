@@ -13,16 +13,11 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from .evidence import EXECUTION_ID_PATTERN, canonical_json_bytes, parse_utc, sha256_file, utc_now
+from .utils import format_utc, make_read_only, fsync_directory
 
 REVIEW_ID_PATTERN = re.compile(r"^review-[0-9]{8}T[0-9]{6}(?:\.[0-9]{1,6})?Z-[0-9a-f]{12}$")
 REVIEW_OUTCOMES = {"REVIEW_PASSED", "REVIEW_FAILED", "REVIEW_INCOMPLETE"}
 SUPPORTED_SCHEMA_VERSIONS = {"1"}
-
-
-def format_utc(value: datetime) -> str:
-    if value.tzinfo is None:
-        raise ValueError("timestamp must be timezone-aware")
-    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 @dataclass(frozen=True)
@@ -107,19 +102,11 @@ class ImmutableReviewStore:
 
     @staticmethod
     def _make_read_only(path: Path) -> None:
-        mode = stat.S_IMODE(path.stat().st_mode)
-        path.chmod(mode & ~0o222)
+        make_read_only(path)
 
     @staticmethod
     def _fsync_directory(directory: Path) -> None:
-        flags = os.O_RDONLY
-        if hasattr(os, "O_DIRECTORY"):
-            flags |= os.O_DIRECTORY
-        descriptor = os.open(directory, flags)
-        try:
-            os.fsync(descriptor)
-        finally:
-            os.close(descriptor)
+        fsync_directory(directory)
 
 
 class IndependentReviewer:

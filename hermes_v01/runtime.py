@@ -5,10 +5,11 @@ import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Sequence, Optional
+from typing import Sequence
 
 from .work_queue import WorkQueueManager
 from .capabilities import CapabilityManager, ExecutorPlugin
+from .utils import utc_now_str
 
 
 @dataclass(frozen=True)
@@ -26,28 +27,19 @@ class RuntimeResult:
     errors: list[str]
 
 
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _latest_matching_file(root: Path, pattern: str) -> Path | None:
-    matches = sorted(root.glob(pattern))
-    return matches[-1] if matches else None
-
-
 def run_pipeline(
     command: Sequence[str],
     *,
     runtime_root: Path,
     repository: Path,
     working_directory: Path,
-    work_queue: Optional[WorkQueueManager] = None,
-    task_id: Optional[str] = None,
-    executor: Optional[ExecutorPlugin] = None,
-    capability_manager: Optional[CapabilityManager] = None,
-    executor_name: Optional[str] = None,
+    work_queue: WorkQueueManager | None = None,
+    task_id: str | None = None,
+    executor: ExecutorPlugin | None = None,
+    capability_manager: CapabilityManager | None = None,
+    executor_name: str | None = None,
 ) -> RuntimeResult:
-    started_at = _utc_now()
+    started_at = utc_now_str()
     run_id = datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%M%S.%fZ")
 
     evidence_dir = runtime_root / "evidence"
@@ -90,10 +82,6 @@ def run_pipeline(
         str(repository),
         *command,
     ]
-
-    # Add work queue args if provided
-    if work_queue and task_id:
-        pass
 
     record_result = executor.execute(record_command, working_directory)
 
@@ -202,7 +190,7 @@ def run_pipeline(
 
     status = "COMPLETED" if not errors else "FAILED"
     exit_code = 0 if not errors else 1
-    finished_at = _utc_now()
+    finished_at = utc_now_str()
 
     # Mark COMPLETE on full success
     if work_queue and task_id and not errors:

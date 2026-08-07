@@ -7,7 +7,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 from .work_queue import WorkQueueManager, WorkQueueStateStore
 from .mission import Plan, load_plan, enqueue_plan
@@ -16,6 +15,7 @@ from .capabilities import CapabilityManager, CapabilityRegistry, ExecutorPlugin
 from .health import build_health_report
 from .metrics import compute_queue_metrics, compute_runtime_metrics
 from .mission_types import MissionTypeRegistry, register_built_in_types
+from .utils import utc_now_str
 
 
 # ---------------------------------------------------------------------------
@@ -97,11 +97,11 @@ class MissionRunner:
         repository: Path,
         working_directory: Path,
         queue_path: Path,
-        executor_name: Optional[str] = None,
-        plugin_dirs: Optional[list[Path]] = None,
+        executor_name: str | None = None,
+        plugin_dirs: list[Path] | None = None,
         max_task_retries: int = 3,
         inter_task_delay: float = 0.0,
-        mission_type_name: Optional[str] = None,
+        mission_type_name: str | None = None,
         max_concurrency: int = 1,
     ) -> None:
         self.runtime_root = runtime_root
@@ -127,7 +127,7 @@ class MissionRunner:
         return cap_manager.get_executor(self.executor_name), cap_manager
 
     def run(self, plan: Plan) -> MissionReport:
-        started_at = _utc_now()
+        started_at = utc_now_str()
         started_time = time.monotonic()
         warnings: list[str] = []
         errors: list[str] = []
@@ -145,7 +145,7 @@ class MissionRunner:
             return _build_report(
                 plan=plan,
                 started_at=started_at,
-                finished_at=_utc_now(),
+                finished_at=utc_now_str(),
                 duration=0.0,
                 status="FAILED",
                 tasks_completed=0,
@@ -229,7 +229,7 @@ class MissionRunner:
             if t.task_id not in task_results
         ]
 
-        finished_at = _utc_now()
+        finished_at = utc_now_str()
         duration = time.monotonic() - started_time
 
         if tasks_failed == 0 and tasks_completed == len(plan.tasks):
@@ -516,8 +516,8 @@ class MissionRunner:
                 if type_errors:
                     return _build_report(
                         plan=plan,
-                        started_at=_utc_now(),
-                        finished_at=_utc_now(),
+                        started_at=utc_now_str(),
+                        finished_at=utc_now_str(),
                         duration=0.0,
                         status="FAILED",
                         tasks_completed=0,
@@ -541,9 +541,6 @@ class MissionRunner:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _build_report(

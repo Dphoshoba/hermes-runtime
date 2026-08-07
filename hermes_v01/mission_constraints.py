@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import os
-import platform
 import shutil
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .mission import Mission
 
