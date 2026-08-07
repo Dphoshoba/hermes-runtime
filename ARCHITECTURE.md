@@ -24,6 +24,8 @@ hermes_v01/
   mission_runner.py    # Mission execution orchestration (sequential + concurrent)
   mission_types.py     # Extensible mission type registry
   mission_constraints.py # Pre-execution constraint validation
+  mission_state.py     # Mission lifecycle state machine and persistence
+  mission_control.py   # Cross-process lifecycle control (mission_control.json)
 
   # Queue & Scheduling
   work_queue.py        # Deterministic, restart-safe work queue
@@ -83,7 +85,38 @@ RUNNING -> hermes-record (evidence) -> OBSERVED
 
 All state is persisted atomically via `AtomicJsonStateStore` pattern:
 - `mkstemp` -> write -> flush -> fsync -> `os.replace`
-- State files: queue.json, supervisor-state.json, runtime-state.json
+- State files: queue.json, supervisor-state.json, runtime-state.json, mission_state.json, mission_control.json
+
+## Mission Lifecycle
+
+Missions follow a state machine with persistent state:
+
+```
+READY → RUNNING → COMPLETED
+                 → FAILED
+                 → PAUSED → RUNNING (resume)
+                         → CANCELLED (terminal)
+                         → ABORTED (terminal)
+                 → CANCELLED (terminal)
+                 → ABORTED (terminal)
+```
+
+### State Machine Rules
+- **Terminal states** (COMPLETED, CANCELLED, ABORTED, FAILED): no outgoing transitions
+- **PAUSE**: stops dispatch, lets running tasks finish, resumes on `resume()`
+- **CANCEL**: permanent stop of future dispatch, running tasks finish, terminal state
+- **ABORT**: immediate stop, cancel pending futures, terminal state
+
+### Cross-Process Control
+- `mission_control.json`: CLI writes lifecycle commands atomically
+- `mission_state.json`: Runner writes authoritative observed state
+- Command ID ordering prevents stale replay: `command_id > last_control_command_id`
+- Mission-scoped: commands rejected if `mission_id` does not match
+- Runner polls control file each iteration (configurable interval)
+
+### Persistence Files
+- `mission_state.json`: Authoritative lifecycle state (state, counts, timestamps)
+- `mission_control.json`: Requested lifecycle action (action, reason, command_id)
 
 ## Evidence Integrity
 

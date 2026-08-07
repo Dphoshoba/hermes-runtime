@@ -10,6 +10,8 @@ from .mission import load_mission, MissionPlanner, load_plan
 from .mission_runner import MissionRunner, save_mission_report
 from .mission_types import MissionTypeRegistry, register_built_in_types
 from .mission_constraints import ConstraintEngine
+from .mission_state import MissionStateStore
+from .mission_control import MissionControlStore, write_control_command, CONTROL_ACTIONS
 
 
 def cmd_run(args) -> int:
@@ -139,6 +141,135 @@ def cmd_constraints(args) -> int:
     return 0 if summary["unsatisfied"] == 0 else 1
 
 
+# ---------------------------------------------------------------------------
+# Lifecycle CLI commands
+# ---------------------------------------------------------------------------
+
+
+def _resolve_runtime_root(args) -> Path:
+    return Path(args.runtime_root).expanduser().resolve()
+
+
+def cmd_status(args) -> int:
+    runtime_root = _resolve_runtime_root(args)
+    state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
+    state = state_store.load()
+    if state is None:
+        print(json.dumps({"error": "no active mission state found"}), file=sys.stderr)
+        return 1
+    print(json.dumps(state.as_dict(), indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_pause(args) -> int:
+    runtime_root = _resolve_runtime_root(args)
+    state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
+    control_store = MissionControlStore(runtime_root / "state" / "mission_control.json")
+
+    state = state_store.load()
+    if state is None:
+        print(json.dumps({"error": "no active mission to pause"}), file=sys.stderr)
+        return 1
+
+    from .mission_state import TERMINAL_MISSION_STATES
+    if state.state in TERMINAL_MISSION_STATES:
+        print(json.dumps({"error": f"mission in terminal state: {state.state}"}), file=sys.stderr)
+        return 1
+
+    reason = args.reason if hasattr(args, "reason") and args.reason else "CLI pause"
+    cmd = write_control_command(
+        control_store, state.mission_id, "pause", state.last_control_command_id, reason=reason,
+    )
+    print(json.dumps({
+        "status": "pause_command_written",
+        "command_id": cmd.command_id,
+        "mission_id": state.mission_id,
+        "reason": reason,
+    }, indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_resume(args) -> int:
+    runtime_root = _resolve_runtime_root(args)
+    state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
+    control_store = MissionControlStore(runtime_root / "state" / "mission_control.json")
+
+    state = state_store.load()
+    if state is None:
+        print(json.dumps({"error": "no active mission to resume"}), file=sys.stderr)
+        return 1
+
+    if state.state != "PAUSED":
+        print(json.dumps({"error": f"can only resume a PAUSED mission, current: {state.state}"}), file=sys.stderr)
+        return 1
+
+    cmd = write_control_command(
+        control_store, state.mission_id, "resume", state.last_control_command_id,
+    )
+    print(json.dumps({
+        "status": "resume_command_written",
+        "command_id": cmd.command_id,
+        "mission_id": state.mission_id,
+    }, indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_cancel(args) -> int:
+    runtime_root = _resolve_runtime_root(args)
+    state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
+    control_store = MissionControlStore(runtime_root / "state" / "mission_control.json")
+
+    state = state_store.load()
+    if state is None:
+        print(json.dumps({"error": "no active mission to cancel"}), file=sys.stderr)
+        return 1
+
+    from .mission_state import TERMINAL_MISSION_STATES
+    if state.state in TERMINAL_MISSION_STATES:
+        print(json.dumps({"error": f"mission in terminal state: {state.state}"}), file=sys.stderr)
+        return 1
+
+    reason = args.reason if hasattr(args, "reason") and args.reason else "CLI cancel"
+    cmd = write_control_command(
+        control_store, state.mission_id, "cancel", state.last_control_command_id, reason=reason,
+    )
+    print(json.dumps({
+        "status": "cancel_command_written",
+        "command_id": cmd.command_id,
+        "mission_id": state.mission_id,
+        "reason": reason,
+    }, indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_abort(args) -> int:
+    runtime_root = _resolve_runtime_root(args)
+    state_store = MissionStateStore(runtime_root / "state" / "mission_state.json")
+    control_store = MissionControlStore(runtime_root / "state" / "mission_control.json")
+
+    state = state_store.load()
+    if state is None:
+        print(json.dumps({"error": "no active mission to abort"}), file=sys.stderr)
+        return 1
+
+    from .mission_state import TERMINAL_MISSION_STATES
+    if state.state in TERMINAL_MISSION_STATES:
+        print(json.dumps({"error": f"mission in terminal state: {state.state}"}), file=sys.stderr)
+        return 1
+
+    reason = args.reason if hasattr(args, "reason") and args.reason else "CLI abort"
+    cmd = write_control_command(
+        control_store, state.mission_id, "abort", state.last_control_command_id, reason=reason,
+    )
+    print(json.dumps({
+        "status": "abort_command_written",
+        "command_id": cmd.command_id,
+        "mission_id": state.mission_id,
+        "reason": reason,
+    }, indent=2, sort_keys=True))
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Hermes Autonomous Mission Runner"
@@ -238,6 +369,45 @@ def main() -> int:
         help="Output as JSON",
     )
 
+    # Lifecycle subcommands
+    status_parser = subparsers.add_parser("status", help="Show current mission lifecycle state")
+    status_parser.add_argument(
+        "--runtime-root",
+        default=str(Path.home() / ".hermes" / "runtime"),
+        help="Runtime root directory (default: ~/.hermes/runtime)",
+    )
+
+    pause_parser = subparsers.add_parser("pause", help="Write a pause command for the active mission")
+    pause_parser.add_argument(
+        "--runtime-root",
+        default=str(Path.home() / ".hermes" / "runtime"),
+        help="Runtime root directory (default: ~/.hermes/runtime)",
+    )
+    pause_parser.add_argument("--reason", help="Reason for pausing")
+
+    resume_parser = subparsers.add_parser("resume", help="Write a resume command for the active mission")
+    resume_parser.add_argument(
+        "--runtime-root",
+        default=str(Path.home() / ".hermes" / "runtime"),
+        help="Runtime root directory (default: ~/.hermes/runtime)",
+    )
+
+    cancel_parser = subparsers.add_parser("cancel", help="Write a cancel command for the active mission")
+    cancel_parser.add_argument(
+        "--runtime-root",
+        default=str(Path.home() / ".hermes" / "runtime"),
+        help="Runtime root directory (default: ~/.hermes/runtime)",
+    )
+    cancel_parser.add_argument("--reason", help="Reason for cancelling")
+
+    abort_parser = subparsers.add_parser("abort", help="Write an abort command for the active mission")
+    abort_parser.add_argument(
+        "--runtime-root",
+        default=str(Path.home() / ".hermes" / "runtime"),
+        help="Runtime root directory (default: ~/.hermes/runtime)",
+    )
+    abort_parser.add_argument("--reason", help="Reason for aborting")
+
     args = parser.parse_args()
 
     handlers = {
@@ -246,6 +416,11 @@ def main() -> int:
         "types": cmd_types,
         "type-show": cmd_type_show,
         "constraints": cmd_constraints,
+        "status": cmd_status,
+        "pause": cmd_pause,
+        "resume": cmd_resume,
+        "cancel": cmd_cancel,
+        "abort": cmd_abort,
     }
 
     return handlers[args.command](args)

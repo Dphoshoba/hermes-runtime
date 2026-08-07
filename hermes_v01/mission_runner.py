@@ -15,6 +15,15 @@ from .capabilities import CapabilityManager, CapabilityRegistry, ExecutorPlugin
 from .health import build_health_report
 from .metrics import compute_queue_metrics, compute_runtime_metrics
 from .mission_types import MissionTypeRegistry, register_built_in_types
+from .mission_state import (
+    MissionState,
+    MissionStateStore,
+    create_initial_state,
+    transition_state,
+    update_counts,
+    TERMINAL_MISSION_STATES,
+)
+from .mission_control import MissionControlStore, MissionControlCommand, CONTROL_ACTIONS
 from .utils import utc_now_str
 
 
@@ -103,6 +112,7 @@ class MissionRunner:
         inter_task_delay: float = 0.0,
         mission_type_name: str | None = None,
         max_concurrency: int = 1,
+        lifecycle_poll_interval: float = 0.1,
     ) -> None:
         self.runtime_root = runtime_root
         self.repository = repository
@@ -114,7 +124,20 @@ class MissionRunner:
         self.inter_task_delay = inter_task_delay
         self.mission_type_name = mission_type_name
         self.max_concurrency = max(1, max_concurrency)
+        self.lifecycle_poll_interval = lifecycle_poll_interval
         self._queue_lock = threading.Lock()
+
+        # Lifecycle coordination
+        self._pause_event = threading.Event()
+        self._cancel_event = threading.Event()
+        self._abort_event = threading.Event()
+        self._pause_event.set()
+        self._cancel_event.set()
+        self._abort_event.set()
+        self._mission_state_store: MissionStateStore | None = None
+        self._mission_control_store: MissionControlStore | None = None
+        self._current_mission_state: MissionState | None = None
+        self._active_mission_id: str | None = None
 
     def _resolve_executor(self) -> tuple[ExecutorPlugin | None, CapabilityManager | None]:
         if not self.executor_name:
@@ -125,6 +148,212 @@ class MissionRunner:
         cap_manager = CapabilityManager(registry, self.plugin_dirs)
         cap_manager.discover_and_register()
         return cap_manager.get_executor(self.executor_name), cap_manager
+
+    # ------------------------------------------------------------------
+    # Lifecycle control methods
+    # ------------------------------------------------------------------
+
+    def _ensure_lifecycle_stores(self) -> tuple[MissionStateStore, MissionControlStore]:
+        if self._mission_state_store is None:
+            self._mission_state_store = MissionStateStore(
+                self.runtime_root / "state" / "mission_state.json"
+            )
+        if self._mission_control_store is None:
+            self._mission_control_store = MissionControlStore(
+                self.runtime_root / "state" / "mission_control.json"
+            )
+        return self._mission_state_store, self._mission_control_store
+
+    def _persist_mission_state(self) -> None:
+        if self._current_mission_state is not None and self._mission_state_store is not None:
+            self._mission_state_store.save(self._current_mission_state)
+
+    def pause(self, reason: str | None = None) -> MissionState:
+        """Request pause: stop dispatching, let running tasks finish."""
+        state_store, control_store = self._ensure_lifecycle_stores()
+        state = self._current_mission_state
+        if state is None:
+            state = state_store.load()
+        if state is None:
+            raise RuntimeError("no active mission to pause")
+        if state.is_terminal():
+            raise ValueError(f"cannot pause mission in terminal state: {state.state}")
+        if state.state == "PAUSED":
+            return state
+        cmd = MissionControlCommand(
+            schema_version="1",
+            mission_id=state.mission_id,
+            command_id=control_store.next_command_id(state.last_control_command_id),
+            action="pause",
+            reason=reason,
+            requested_at=utc_now_str(),
+        )
+        control_store.save(cmd)
+        self._cancel_event.set()
+        self._abort_event.set()
+        self._pause_event.clear()
+        new_state = transition_state(state, "PAUSED", reason=reason, command_id=cmd.command_id)
+        self._current_mission_state = new_state
+        self._persist_mission_state()
+        return new_state
+
+    def resume(self) -> MissionState:
+        """Resume a paused mission."""
+        state_store, control_store = self._ensure_lifecycle_stores()
+        state = self._current_mission_state
+        if state is None:
+            state = state_store.load()
+        if state is None:
+            raise RuntimeError("no active mission to resume")
+        if state.state != "PAUSED":
+            raise ValueError(f"can only resume a PAUSED mission, current: {state.state}")
+        cmd = MissionControlCommand(
+            schema_version="1",
+            mission_id=state.mission_id,
+            command_id=control_store.next_command_id(state.last_control_command_id),
+            action="resume",
+            reason=None,
+            requested_at=utc_now_str(),
+        )
+        control_store.save(cmd)
+        self._pause_event.set()
+        new_state = transition_state(state, "RUNNING", command_id=cmd.command_id)
+        self._current_mission_state = new_state
+        self._persist_mission_state()
+        return new_state
+
+    def cancel(self, reason: str | None = None) -> MissionState:
+        """Cancel mission: stop future dispatch, let running tasks finish."""
+        state_store, control_store = self._ensure_lifecycle_stores()
+        state = self._current_mission_state
+        if state is None:
+            state = state_store.load()
+        if state is None:
+            raise RuntimeError("no active mission to cancel")
+        if state.is_terminal():
+            raise ValueError(f"cannot cancel mission in terminal state: {state.state}")
+        if state.state == "CANCELLED":
+            return state
+        cmd = MissionControlCommand(
+            schema_version="1",
+            mission_id=state.mission_id,
+            command_id=control_store.next_command_id(state.last_control_command_id),
+            action="cancel",
+            reason=reason,
+            requested_at=utc_now_str(),
+        )
+        control_store.save(cmd)
+        self._cancel_event.clear()
+        self._abort_event.set()
+        self._pause_event.set()
+        new_state = transition_state(state, "CANCELLED", reason=reason, command_id=cmd.command_id)
+        self._current_mission_state = new_state
+        self._persist_mission_state()
+        return new_state
+
+    def abort(self, reason: str | None = None) -> MissionState:
+        """Abort mission: immediate termination, cancel pending futures."""
+        state_store, control_store = self._ensure_lifecycle_stores()
+        state = self._current_mission_state
+        if state is None:
+            state = state_store.load()
+        if state is None:
+            raise RuntimeError("no active mission to abort")
+        if state.is_terminal():
+            raise ValueError(f"cannot abort mission in terminal state: {state.state}")
+        if state.state == "ABORTED":
+            return state
+        cmd = MissionControlCommand(
+            schema_version="1",
+            mission_id=state.mission_id,
+            command_id=control_store.next_command_id(state.last_control_command_id),
+            action="abort",
+            reason=reason,
+            requested_at=utc_now_str(),
+        )
+        control_store.save(cmd)
+        self._abort_event.clear()
+        self._cancel_event.clear()
+        self._pause_event.set()
+        new_state = transition_state(state, "ABORTED", reason=reason, command_id=cmd.command_id)
+        self._current_mission_state = new_state
+        self._persist_mission_state()
+        return new_state
+
+    def status(self) -> MissionState | None:
+        """Return the current persisted mission state."""
+        state_store, _ = self._ensure_lifecycle_stores()
+        if self._current_mission_state is not None:
+            return self._current_mission_state
+        return state_store.load()
+
+    def _poll_control_command(self) -> MissionControlCommand | None:
+        """Read and apply a fresh control command from the control file."""
+        if self._mission_control_store is None or self._current_mission_state is None:
+            return None
+        cmd = self._mission_control_store.load()
+        if cmd is None:
+            return None
+        if cmd.mission_id != self._active_mission_id:
+            return None
+        if cmd.command_id <= self._current_mission_state.last_control_command_id:
+            return None
+        return cmd
+
+    def _apply_control_command(self, cmd: MissionControlCommand) -> None:
+        """Apply a validated control command to the runner and persist state."""
+        action = cmd.action
+        if action == "pause":
+            self._cancel_event.set()
+            self._abort_event.set()
+            self._pause_event.clear()
+            self._current_mission_state = transition_state(
+                self._current_mission_state, "PAUSED",
+                reason=cmd.reason, command_id=cmd.command_id,
+            )
+        elif action == "resume":
+            self._pause_event.set()
+            self._current_mission_state = transition_state(
+                self._current_mission_state, "RUNNING",
+                command_id=cmd.command_id,
+            )
+        elif action == "cancel":
+            self._cancel_event.clear()
+            self._abort_event.set()
+            self._pause_event.set()
+            self._current_mission_state = transition_state(
+                self._current_mission_state, "CANCELLED",
+                reason=cmd.reason, command_id=cmd.command_id,
+            )
+        elif action == "abort":
+            self._abort_event.clear()
+            self._cancel_event.clear()
+            self._pause_event.set()
+            self._current_mission_state = transition_state(
+                self._current_mission_state, "ABORTED",
+                reason=cmd.reason, command_id=cmd.command_id,
+            )
+        self._persist_mission_state()
+
+    def _check_lifecycle(self) -> str:
+        """Check for control commands and event signals.
+
+        Returns:
+            "continue" — normal operation
+            "pause"    — paused, poll until resumed or cancelled
+            "stop"     — cancelled or aborted, exit the loop
+        """
+        cmd = self._poll_control_command()
+        if cmd is not None:
+            self._apply_control_command(cmd)
+
+        if not self._abort_event.is_set():
+            return "stop"
+        if not self._cancel_event.is_set():
+            return "stop"
+        if not self._pause_event.is_set():
+            return "pause"
+        return "continue"
 
     def run(self, plan: Plan) -> MissionReport:
         started_at = utc_now_str()
@@ -141,7 +370,23 @@ class MissionRunner:
         for t in plan.tasks:
             task_command_map[t.task_id] = list(t.command)
 
+        # Initialize lifecycle state
+        state_store, _ = self._ensure_lifecycle_stores()
+        self._active_mission_id = plan.mission_id
+        initial = create_initial_state(plan.mission_id, plan.mission_title, len(plan.tasks))
+        self._current_mission_state = initial
+        self._mission_state_store.save(transition_state(initial, "RUNNING"))
+        self._current_mission_state = transition_state(initial, "RUNNING")
+
+        # Reset lifecycle events for a fresh run
+        self._pause_event.set()
+        self._cancel_event.set()
+        self._abort_event.set()
+
         if not plan.valid:
+            final = transition_state(self._current_mission_state, "FAILED")
+            self._current_mission_state = final
+            self._persist_mission_state()
             return _build_report(
                 plan=plan,
                 started_at=started_at,
@@ -232,12 +477,30 @@ class MissionRunner:
         finished_at = utc_now_str()
         duration = time.monotonic() - started_time
 
-        if tasks_failed == 0 and tasks_completed == len(plan.tasks):
+        if self._current_mission_state.is_terminal():
+            status = self._current_mission_state.state
+            if status == "COMPLETED":
+                status = "COMPLETED"
+            elif status in ("CANCELLED", "ABORTED"):
+                status = "PARTIAL" if tasks_completed > 0 else "FAILED"
+            else:
+                status = status
+        elif tasks_failed == 0 and tasks_completed == len(plan.tasks):
             status = "COMPLETED"
+            self._current_mission_state = transition_state(self._current_mission_state, "COMPLETED")
         elif tasks_completed > 0:
             status = "PARTIAL"
+            self._current_mission_state = transition_state(self._current_mission_state, "FAILED")
         else:
             status = "FAILED"
+            self._current_mission_state = transition_state(self._current_mission_state, "FAILED")
+
+        self._current_mission_state = update_counts(
+            self._current_mission_state,
+            tasks_completed=tasks_completed,
+            tasks_failed=tasks_failed,
+        )
+        self._persist_mission_state()
 
         return _build_report(
             plan=plan,
@@ -281,6 +544,21 @@ class MissionRunner:
 
         max_iterations = len(plan.tasks) * 20
         for _ in range(max_iterations):
+            # Lifecycle check
+            lc = self._check_lifecycle()
+            if lc == "stop":
+                break
+            if lc == "pause":
+                while not self._pause_event.is_set():
+                    if not self._abort_event.is_set() or not self._cancel_event.is_set():
+                        break
+                    cmd = self._poll_control_command()
+                    if cmd is not None:
+                        self._apply_control_command(cmd)
+                    time.sleep(self.lifecycle_poll_interval)
+                if self._check_lifecycle() == "stop":
+                    break
+
             work_queue.refresh()
             summary = work_queue.summary()
             terminal = set(summary.get("COMPLETE", [])) | set(summary.get("VERIFIED", []))
@@ -424,6 +702,21 @@ class MissionRunner:
 
             max_iterations = len(plan.tasks) * 20
             for _ in range(max_iterations):
+                # Lifecycle check
+                lc = self._check_lifecycle()
+                if lc == "stop":
+                    break
+                if lc == "pause":
+                    while not self._pause_event.is_set():
+                        if not self._abort_event.is_set() or not self._cancel_event.is_set():
+                            break
+                        cmd = self._poll_control_command()
+                        if cmd is not None:
+                            self._apply_control_command(cmd)
+                        time.sleep(self.lifecycle_poll_interval)
+                    if self._check_lifecycle() == "stop":
+                        break
+
                 dispatched = _dispatch_batch()
                 for item in dispatched:
                     task_cmd = task_command_map.get(item.task_id)
@@ -479,6 +772,12 @@ class MissionRunner:
 
                 if not done_futures:
                     time.sleep(0.01)
+
+            # Abort: cancel all pending futures
+            if not self._abort_event.is_set():
+                for key, fut in futures.items():
+                    if not fut.done():
+                        fut.cancel()
 
             for key, fut in futures.items():
                 if not fut.done():

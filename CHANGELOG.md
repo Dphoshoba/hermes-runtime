@@ -4,6 +4,25 @@ All notable changes to the Hermes Runtime are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.9.5] - 2026-08-08
+
+### Added
+- `MissionState` dataclass with full lifecycle state machine: READY → RUNNING → PAUSED → COMPLETED/CANCELLED/ABORTED/FAILED
+- `MissionStateStore` for atomic persistence of mission lifecycle state
+- `MissionControlCommand` and `MissionControlStore` for atomic cross-process lifecycle control
+- `MissionRunner` lifecycle methods: `pause()`, `resume()`, `cancel()`, `abort()`, `status()`
+- File-backed lifecycle control: CLI writes `mission_control.json`, runner polls and applies
+- Stale command replay prevention via `command_id > last_control_command_id` check
+- Mission-scoped control: commands rejected if `mission_id` does not match active mission
+- Terminal state escape prevention: no transitions from COMPLETED/CANCELLED/ABORTED/FAILED
+- CLI subcommands: `hermes-mission status`, `pause`, `resume`, `cancel`, `abort`
+- 71 lifecycle tests covering state model, persistence, control store, and runner integration
+
+### Changed
+- `MissionRunner.run()` now persists mission state at start and end of execution
+- Sequential and concurrent execution loops check lifecycle events each iteration
+- `MissionReport.status` now also reflects CANCELLED and ABORTED states
+
 ## [0.9.4] - 2026-08-07
 
 ### Added

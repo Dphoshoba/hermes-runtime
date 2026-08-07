@@ -256,3 +256,45 @@ Validate mission constraints before execution:
 ```bash
 hermes-mission constraints mission.json --repository /path/to/repo
 ```
+
+## Mission Lifecycle Control
+
+Control running missions with lifecycle commands. The CLI writes commands atomically to `mission_control.json`; the running `MissionRunner` polls and applies them.
+
+```bash
+# Check current mission state
+hermes-mission status --runtime-root "$HOME/.hermes/runtime"
+
+# Pause a running mission (lets in-flight tasks finish)
+hermes-mission pause --runtime-root "$HOME/.hermes/runtime" --reason "debugging"
+
+# Resume a paused mission
+hermes-mission resume --runtime-root "$HOME/.hermes/runtime"
+
+# Cancel a mission (stop future work, preserve evidence)
+hermes-mission cancel --runtime-root "$HOME/.hermes/runtime" --reason "no longer needed"
+
+# Abort a mission (immediate stop, cancel pending futures)
+hermes-mission abort --runtime-root "$HOME/.hermes/runtime" --reason "emergency"
+```
+
+### Lifecycle States
+
+| State | Description |
+|-------|-------------|
+| `READY` | Plan loaded, not yet executing |
+| `RUNNING` | Actively executing tasks |
+| `PAUSED` | Paused: no new tasks dispatched, running tasks finish |
+| `COMPLETED` | All tasks succeeded (terminal) |
+| `PARTIAL` | Some tasks succeeded, some failed/cancelled |
+| `FAILED` | Execution error (terminal) |
+| `CANCELLED` | User cancelled: future work stopped (terminal) |
+| `ABORTED` | Immediate termination requested (terminal) |
+
+### Control Architecture
+
+- **`mission_control.json`**: Requested lifecycle action (written by CLI)
+- **`mission_state.json`**: Authoritative observed state (written by runner)
+- Commands use incrementing IDs to prevent stale replay
+- Commands are mission-scoped: wrong `mission_id` is rejected
+- Terminal states cannot be transitioned out of
