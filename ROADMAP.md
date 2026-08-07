@@ -42,11 +42,15 @@
 - State integrity verification (verify_integrity)
 - Automatic repair of common issues (repair_common_issues)
 
-### v0.7.5 — Capability Plugins 🎯 CURRENT
-- Pluggable task executors
-- External task providers
-- Capability discovery
-- Extension registry
+### v0.7.5 — Capability Plugins ✅ COMPLETE
+- Pluggable task executors (ExecutorPlugin ABC, LocalExecutorPlugin)
+- Capability registry with enable/disable, health checks (CapabilityRegistry)
+- Capability discovery from plugin directories (PluginDiscovery)
+- CapabilityManager ties registry + discovery + executor loading
+- `hermes-capabilities` CLI (list, show, discover, enable, disable, check, check-all)
+- `hermes-runtime` CLI accepts `--executor` and `--plugin-dirs`
+- `run_pipeline` accepts optional executor/capability_manager params
+- 15 focused tests (test_capabilities.py)
 
 ### v0.7.6 — Resilience Testing
 - Chaos tests: runtime interruption, queue corruption, evidence failures, review failures, partial writes, restart recovery

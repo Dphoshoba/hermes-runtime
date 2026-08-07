@@ -45,6 +45,16 @@ def main() -> int:
         help="Path to work queue state file",
     )
     parser.add_argument(
+        "--executor",
+        help="Executor plugin name to use (default: local)",
+    )
+    parser.add_argument(
+        "--plugin-dirs",
+        type=Path,
+        nargs="*",
+        help="Directories to search for capability plugin metadata",
+    )
+    parser.add_argument(
         "command",
         nargs=argparse.REMAINDER,
     )
@@ -76,20 +86,22 @@ def main() -> int:
         parser.error("a command is required")
 
     # Build the hermes-record command with work queue args if needed
-    import sys
     record_args = []
     if work_queue and task_id:
         record_args = ["--task-id", task_id, "--work-queue", str(args.work_queue)]
 
-    # We need to inject the work queue args into the subprocess calls
-    # For simplicity, let's modify the approach - we'll pass the work queue and task_id
-    # to run_pipeline and let it handle the transitions, but the subprocess calls
-    # to hermes-record/hermes-review need the CLI args too.
-    # Actually, the current design has run_pipeline calling subprocesses.
-    # The work queue transitions are done in-process via the WorkQueueManager.
-    # The hermes-record/hermes-review subprocesses don't need to know about the work queue
-    # for the transitions - they just do their job.
-    # The in-process transitions are sufficient.
+    executor_plugin = None
+    cap_manager = None
+    if args.executor:
+        from .capabilities import CapabilityManager, CapabilityRegistry
+
+        plugin_dirs = args.plugin_dirs or []
+        registry_path = args.runtime_root / "state" / "capabilities.json"
+        registry_path.parent.mkdir(parents=True, exist_ok=True)
+        registry = CapabilityRegistry(registry_path)
+        cap_manager = CapabilityManager(registry, plugin_dirs)
+        cap_manager.discover_and_register()
+        executor_plugin = cap_manager.get_executor(args.executor)
 
     result = run_pipeline(
         args.command,
@@ -98,6 +110,9 @@ def main() -> int:
         working_directory=args.cwd,
         work_queue=work_queue,
         task_id=task_id,
+        executor=executor_plugin,
+        capability_manager=cap_manager,
+        executor_name=args.executor,
     )
 
     print(json.dumps(asdict(result), indent=2, sort_keys=True))

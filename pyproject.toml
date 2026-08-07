@@ -17,6 +17,7 @@ hermes-health = "hermes_v01.health_cli:main"
 hermes-runtime = "hermes_v01.runtime_cli:main"
 hermes-queue = "hermes_v01.work_queue_cli:main"
 hermes-metrics = "hermes_v01.metrics_cli:main"
+hermes-capabilities = "hermes_v01.capabilities_cli:main"
 
 [tool.setuptools]
 packages = ["hermes_v01"]

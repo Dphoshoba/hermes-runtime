@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Sequence, Optional
 
 from .work_queue import WorkQueueManager
+from .capabilities import CapabilityManager, ExecutorPlugin
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,9 @@ def run_pipeline(
     working_directory: Path,
     work_queue: Optional[WorkQueueManager] = None,
     task_id: Optional[str] = None,
+    executor: Optional[ExecutorPlugin] = None,
+    capability_manager: Optional[CapabilityManager] = None,
+    executor_name: Optional[str] = None,
 ) -> RuntimeResult:
     started_at = _utc_now()
     run_id = datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%M%S.%fZ")
@@ -61,6 +65,17 @@ def run_pipeline(
     if work_queue and task_id:
         work_queue.transition(task_id, "RUNNING", increment_attempts=True)
 
+    # Resolve executor
+    if executor is None:
+        if capability_manager and executor_name:
+            executor = capability_manager.get_executor(executor_name)
+        else:
+            executor = capability_manager._executors.get("local") if capability_manager else None
+            if executor is None:
+                from .capabilities import LocalExecutorPlugin
+                executor = LocalExecutorPlugin()
+
+    # Execute using the executor plugin
     record_command = [
         "hermes-record",
         "--evidence-dir",
@@ -76,40 +91,32 @@ def run_pipeline(
 
     # Add work queue args if provided
     if work_queue and task_id:
-        # We need to pass the work queue state file - but we don't have direct access to it
-        # The CLI will handle this by adding the args when calling hermes-record
         pass
 
-    record_process = subprocess.run(
-        record_command,
-        cwd=working_directory,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    record_result = executor.execute(record_command, working_directory)
 
     (run_dir / "record.stdout.log").write_text(
-        record_process.stdout,
+        record_result.stdout,
         encoding="utf-8",
     )
     (run_dir / "record.stderr.log").write_text(
-        record_process.stderr,
+        record_result.stderr,
         encoding="utf-8",
     )
 
-    if record_process.returncode != 0:
+    if record_result.exit_code != 0:
         errors.append(
-            f"hermes-record exited with code {record_process.returncode}"
+            f"hermes-record exited with code {record_result.exit_code}"
         )
 
-    for line in reversed(record_process.stdout.splitlines()):
+    for line in reversed(record_result.stdout.splitlines()):
         candidate = Path(line.strip())
         if candidate.name == "execution-record.json" and candidate.exists():
             execution_record_path = candidate
             break
 
     if execution_record_path is None:
-        errors.append("execution record path not found in hermes-record output")
+        errors.append("execution record path not found in executor output")
     else:
         # Mark OBSERVED after successful evidence recording
         if work_queue and task_id:
