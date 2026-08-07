@@ -26,16 +26,16 @@
 - Manual scheduling (schedule_task)
 - Fairness via priority + task_id ordering
 
-### v0.7.3 — Observability 🎯 CURRENT
-- Structured JSON logs
-- Runtime metrics
-- Queue metrics
-- Execution latency
-- Throughput
-- Failure classification
-- Runtime dashboard/metrics export
+### v0.7.3 — Observability ✅ COMPLETE
+- Structured metrics module (metrics.py)
+- Metrics CLI (`hermes-metrics`)
+- Queue metrics (tasks by state, attempts, retryable counts)
+- Runtime metrics (duration stats, throughput, execution history)
+- Failure classification (INFRASTRUCTURE, TRANSIENT, DEPENDENCY, VALIDATION)
+- Recoverable vs non-recoverable failure detection
+- Metrics report output (JSON + Markdown)
 
-### v0.7.4 — Queue Maintenance
+### v0.7.4 — Queue Maintenance 🎯 CURRENT
 - Queue compaction
 - Archiving completed work
 - Pruning old evidence
