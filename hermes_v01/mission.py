@@ -291,8 +291,13 @@ class MissionPlanner:
         self,
         mission: Mission,
         capability_registry: Any | None = None,
+        constraint_context: dict[str, Any] | None = None,
     ) -> Plan:
-        """Build a plan from a mission. Validates capabilities if registry provided."""
+        """Build a plan from a mission.
+
+        Validates capabilities if registry provided.
+        Validates constraints if constraint_context provided or mission has constraints.
+        """
         errors, warnings = self.validate(mission)
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -309,6 +314,20 @@ class MissionPlanner:
                         errors.append(f"Required capability is disabled: {cap_name}")
                 except KeyError:
                     errors.append(f"Required capability not found: {cap_name}")
+
+        # Validate constraints
+        if mission.constraints or constraint_context:
+            from .mission_constraints import validate_mission_constraints
+            ctx = dict(constraint_context or {})
+            if capability_registry is not None:
+                ctx.setdefault("capability_registry", capability_registry)
+            if mission.working_directory:
+                ctx.setdefault("working_directory", Path(mission.working_directory))
+            if mission.repository:
+                ctx.setdefault("repository", Path(mission.repository))
+            constraint_errors, constraint_warnings = validate_mission_constraints(mission, ctx)
+            errors.extend(constraint_errors)
+            warnings.extend(constraint_warnings)
 
         # Build tasks
         plan_tasks: list[PlanTask] = []

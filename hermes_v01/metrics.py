@@ -65,6 +65,29 @@ class FailureClassification:
     error_signature: str
 
 
+@dataclass(frozen=True)
+class ConcurrentMissionMetrics:
+    """Metrics for concurrent mission execution."""
+    max_concurrency: int
+    peak_concurrent_tasks: int
+    total_tasks: int
+    tasks_completed: int
+    tasks_failed: int
+    parallelism_ratio: float  # peak / max_concurrency
+    sequential_equivalent: bool  # True if max_concurrency == 1
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "max_concurrency": self.max_concurrency,
+            "peak_concurrent_tasks": self.peak_concurrent_tasks,
+            "total_tasks": self.total_tasks,
+            "tasks_completed": self.tasks_completed,
+            "tasks_failed": self.tasks_failed,
+            "parallelism_ratio": self.parallelism_ratio,
+            "sequential_equivalent": self.sequential_equivalent,
+        }
+
+
 def classify_failure(error: str, exit_code: int | None, task_state: str) -> FailureClassification:
     """Classify a failure based on error message, exit code, and task state."""
     error_lower = error.lower() if error else ""
@@ -152,6 +175,25 @@ def classify_failure(error: str, exit_code: int | None, task_state: str) -> Fail
         recoverable=True,
         suggested_action="Retry with exponential backoff",
         error_signature=error[:100] if error else "unknown"
+    )
+
+
+def compute_concurrent_mission_metrics(report: dict) -> ConcurrentMissionMetrics:
+    """Compute concurrency metrics from a mission report dict."""
+    max_concurrency = report.get("max_concurrency", 1)
+    peak_concurrent_tasks = report.get("peak_concurrent_tasks", 0)
+    tasks_planned = report.get("tasks_planned", 0)
+    tasks_completed = report.get("tasks_completed", 0)
+    tasks_failed = report.get("tasks_failed", 0)
+    parallelism_ratio = peak_concurrent_tasks / max_concurrency if max_concurrency > 0 else 0.0
+    return ConcurrentMissionMetrics(
+        max_concurrency=max_concurrency,
+        peak_concurrent_tasks=peak_concurrent_tasks,
+        total_tasks=tasks_planned,
+        tasks_completed=tasks_completed,
+        tasks_failed=tasks_failed,
+        parallelism_ratio=round(parallelism_ratio, 3),
+        sequential_equivalent=(max_concurrency <= 1),
     )
 
 

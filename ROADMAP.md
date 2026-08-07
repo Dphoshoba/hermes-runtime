@@ -93,7 +93,7 @@
 ### v0.9.1 — Mission Runner ✅ COMPLETE
 - MissionRunner: orchestrates full mission execution (plan → enqueue → execute → report)
 - MissionReport: deterministic, machine-readable report after every mission
-  - Fields: mission_id, mission_title, status, duration, tasks_planned/completed/failed/skipped
+  - Fields: mission_id, mission_title, mission_type, status, duration, tasks_planned/completed/failed/skipped
   - Evidence records, independent reviews, queue summary, runtime health, metrics summary
   - Warnings, errors, artifacts_produced
 - `hermes-mission run <mission.json>` — execute a complete mission end-to-end
@@ -104,6 +104,69 @@
 - Health and metrics collected automatically after mission completion
 - 21 tests (test_mission_runner.py)
 - 314 total tests passing
+
+### v0.9.2 — Mission Type Registry ✅ COMPLETE
+- MissionType ABC: extensible base class for mission types
+  - `get_metadata()`: return MissionTypeMetadata (name, version, description, category, constraints, capabilities)
+  - `validate_mission()`: type-specific validation beyond base planner
+  - `build_tasks()`: optional automated task generation
+  - `get_default_constraints()` / `get_required_capabilities()`: introspection
+- MissionTypeRegistry: singleton registry with register/unregister/get/list/discover
+  - Entry point discovery via `hermes_v01.mission_types` group
+  - Category filtering, sorted listing, idempotent registration
+- 7 built-in mission types:
+  - `repository-maintenance` (category: maintenance)
+  - `dependency-upgrade` (category: maintenance)
+  - `documentation-refresh` (category: documentation)
+  - `security-audit` (category: security, requires: security-scanner)
+  - `performance-audit` (category: performance)
+  - `release-preparation` (category: release)
+  - `ci-verification` (category: testing)
+- Type-specific validation integrated into MissionRunner
+- `hermes-mission types` — list available mission types
+- `hermes-mission type-show <name>` — display type details
+- `hermes-mission run --mission-type <name>` — run with type validation
+- MissionReport includes `mission_type` field
+- 48 tests (test_mission_types.py)
+- 362 total tests passing
+
+### v0.9.3 — Mission Constraint Engine ✅ COMPLETE
+- ConstraintEngine: validates missions against a set of constraints before execution
+- 7 built-in constraint types:
+  - `RequiredCapabilityConstraint`: checks all required capabilities are registered and enabled
+  - `RuntimeVersionConstraint`: checks Python runtime version (min/max)
+  - `RepositoryConstraint`: checks repository path exists and is accessible
+  - `WorkingDirectoryConstraint`: checks working directories exist and are writable
+  - `ResourceLimitConstraint`: checks available disk space and memory
+  - `ExecutionWindowConstraint`: checks execution time windows, excluded days
+  - `DependencyPolicyConstraint`: checks network access, determinism policies
+- ConstraintResult: deterministic, machine-readable result per constraint
+- `validate_mission_constraints()`: convenience function for mission validation
+- `MissionPlanner.build()` accepts `constraint_context` for automatic validation
+- `hermes-mission constraints <mission.json>` — validate constraints against a mission
+  - `--repository <path>`, `--cwd <path>` for context
+  - `--json` for structured output
+- Exit code 1 if any constraints are unsatisfied
+- 59 tests (test_mission_constraints.py)
+- 421 total tests passing
+
+### v0.9.4 — Concurrent Mission Execution ✅ COMPLETE
+- WorkQueueManager.dispatch_ready(max_concurrent): batch dispatch up to N READY tasks atomically
+- MissionRunner concurrent path: ThreadPoolExecutor-based parallel task execution
+  - `max_concurrency` parameter (default 1 = sequential)
+  - `--concurrency N` CLI flag on `hermes-mission run`
+  - `_queue_lock` (threading.Lock) protects shared counters
+  - Dependency-aware: only dispatches tasks whose dependencies are COMPLETE/VERIFIED
+  - Failure isolation: failed tasks don't block independent siblings
+- MissionReport additions: `max_concurrency`, `peak_concurrent_tasks` fields
+- ConcurrentMissionMetrics: parallelism_ratio, sequential_equivalent detection
+- Concurrency defects found and fixed during implementation:
+  - Re-entrant deadlock: WorkQueueManager._replace_item held Lock while calling _normalize → _normalize_item which also acquired Lock. Fixed: Lock → RLock.
+  - Spin-loop starvation: main dispatch loop had no yield when no futures completed, starving pool workers. Fixed: sleep(0.01) when no progress.
+  - Retry future-key collision: futures dict keyed by task_id; on retry new future overwrote old. Fixed: key = `{task_id}:{attempts}`.
+- 37 concurrency tests (test_concurrent_execution.py)
+- 458 total tests passing
+- E2E validated: 6-task mission with dependencies, concurrent execution, and failure isolation
 
 ## Quality Standard
 Every milestone must improve: Correctness, Reliability, Maintainability, Observability, Documentation, Test Coverage.

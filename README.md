@@ -157,3 +157,20 @@ hermes-runtime \
 
 On success, the task advances: `RUNNING` → `OBSERVED` → `VERIFICATION_PENDING` → `VERIFIED` → `COMPLETE`.
 On failure, the task stops at `VERIFIED` (review passed) or `OBSERVED` (record failed), leaving the queue recoverable.
+
+## Concurrent Mission Execution
+
+`hermes-mission run` supports concurrent execution of independent tasks via `--concurrency N`:
+
+```bash
+hermes-mission run mission.json \
+  --runtime-root "$HOME/.hermes/runtime" \
+  --repository /path/to/repo \
+  --cwd /path/to/workspace \
+  --queue-file /tmp/queue.json \
+  --concurrency 4
+```
+
+Tasks are dispatched in dependency order. Independent tasks execute in parallel up to the concurrency limit. Failed tasks do not block independent siblings. The `MissionReport` includes `max_concurrency` and `peak_concurrent_tasks` fields.
+
+When `--concurrency` is omitted or set to 1, tasks execute sequentially (the default).

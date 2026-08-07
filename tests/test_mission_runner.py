@@ -141,6 +141,7 @@ class TestMissionReport:
             schema_version="1",
             mission_id="m1",
             mission_title="M",
+            mission_type="generic",
             status="COMPLETED",
             started_at="2026-01-01T00:00:00Z",
             finished_at="2026-01-01T00:01:00Z",
@@ -165,6 +166,7 @@ class TestMissionReport:
             schema_version="1",
             mission_id="m1",
             mission_title="M",
+            mission_type="generic",
             status="COMPLETED",
             started_at="2026-01-01T00:00:00Z",
             finished_at="2026-01-01T00:01:00Z",
@@ -200,7 +202,7 @@ class TestMissionReport:
         for status in ("COMPLETED", "PARTIAL", "FAILED"):
             report = MissionReport(
                 schema_version="1", mission_id="m", mission_title="M",
-                status=status, started_at="", finished_at="",
+                mission_type="generic", status=status, started_at="", finished_at="",
                 duration_seconds=0.0, tasks_planned=0, tasks_completed=0,
                 tasks_failed=0, tasks_skipped=0, evidence_records=(),
                 independent_reviews=(), queue_summary={}, runtime_health="UNKNOWN",
@@ -211,7 +213,7 @@ class TestMissionReport:
     def test_report_deterministic(self) -> None:
         args = dict(
             schema_version="1", mission_id="m", mission_title="M",
-            status="COMPLETED", started_at="t", finished_at="t",
+            mission_type="generic", status="COMPLETED", started_at="t", finished_at="t",
             duration_seconds=1.0, tasks_planned=1, tasks_completed=1,
             tasks_failed=0, tasks_skipped=0, evidence_records=("e1",),
             independent_reviews=("r1",), queue_summary={}, runtime_health="HEALTHY",
@@ -230,7 +232,7 @@ class TestMissionReportPersistence:
     def test_save_and_load(self, tmp_path: Path) -> None:
         report = MissionReport(
             schema_version="1", mission_id="m1", mission_title="M",
-            status="COMPLETED", started_at="t1", finished_at="t2",
+            mission_type="generic", status="COMPLETED", started_at="t1", finished_at="t2",
             duration_seconds=10.0, tasks_planned=3, tasks_completed=3,
             tasks_failed=0, tasks_skipped=0, evidence_records=("e1", "e2"),
             independent_reviews=("r1",), queue_summary={"COMPLETE": ("t1", "t2", "t3")},
@@ -249,7 +251,7 @@ class TestMissionReportPersistence:
     def test_save_creates_parent_dirs(self, tmp_path: Path) -> None:
         report = MissionReport(
             schema_version="1", mission_id="m", mission_title="M",
-            status="FAILED", started_at="", finished_at="",
+            mission_type="generic", status="FAILED", started_at="", finished_at="",
             duration_seconds=0.0, tasks_planned=0, tasks_completed=0,
             tasks_failed=0, tasks_skipped=0, evidence_records=(),
             independent_reviews=(), queue_summary={}, runtime_health="UNKNOWN",
@@ -262,7 +264,7 @@ class TestMissionReportPersistence:
     def test_load_preserves_all_fields(self, tmp_path: Path) -> None:
         report = MissionReport(
             schema_version="1", mission_id="m1", mission_title="Test",
-            status="PARTIAL", started_at="2026-01-01T00:00:00Z",
+            mission_type="security-audit", status="PARTIAL", started_at="2026-01-01T00:00:00Z",
             finished_at="2026-01-01T00:00:30Z", duration_seconds=30.0,
             tasks_planned=5, tasks_completed=3, tasks_failed=1, tasks_skipped=1,
             evidence_records=("exec-1", "exec-2", "exec-3"),

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +15,7 @@ from .runtime import run_pipeline
 from .capabilities import CapabilityManager, CapabilityRegistry, ExecutorPlugin
 from .health import build_health_report
 from .metrics import compute_queue_metrics, compute_runtime_metrics
+from .mission_types import MissionTypeRegistry, register_built_in_types
 
 
 # ---------------------------------------------------------------------------
@@ -24,6 +27,7 @@ class MissionReport:
     schema_version: str
     mission_id: str
     mission_title: str
+    mission_type: str
     status: str  # COMPLETED | PARTIAL | FAILED
     started_at: str
     finished_at: str
@@ -41,12 +45,15 @@ class MissionReport:
     errors: tuple[str, ...]
     artifacts_produced: tuple[str, ...]
     mission_report_path: str | None = None
+    max_concurrency: int = 1
+    peak_concurrent_tasks: int = 0
 
     def as_dict(self) -> dict:
         d = {
             "schema_version": self.schema_version,
             "mission_id": self.mission_id,
             "mission_title": self.mission_title,
+            "mission_type": self.mission_type,
             "status": self.status,
             "started_at": self.started_at,
             "finished_at": self.finished_at,
@@ -64,6 +71,8 @@ class MissionReport:
             "errors": list(self.errors),
             "artifacts_produced": list(self.artifacts_produced),
             "mission_report_path": self.mission_report_path,
+            "max_concurrency": self.max_concurrency,
+            "peak_concurrent_tasks": self.peak_concurrent_tasks,
         }
         return d
 
@@ -78,6 +87,8 @@ class MissionRunner:
     Pipeline:
         Plan → enqueue → dispatch tasks in dependency order →
         execute each via run_pipeline → collect results → MissionReport
+
+    Supports concurrent execution of independent tasks when max_concurrency > 1.
     """
 
     def __init__(
@@ -90,6 +101,8 @@ class MissionRunner:
         plugin_dirs: Optional[list[Path]] = None,
         max_task_retries: int = 3,
         inter_task_delay: float = 0.0,
+        mission_type_name: Optional[str] = None,
+        max_concurrency: int = 1,
     ) -> None:
         self.runtime_root = runtime_root
         self.repository = repository
@@ -99,6 +112,9 @@ class MissionRunner:
         self.plugin_dirs = plugin_dirs or []
         self.max_task_retries = max_task_retries
         self.inter_task_delay = inter_task_delay
+        self.mission_type_name = mission_type_name
+        self.max_concurrency = max(1, max_concurrency)
+        self._queue_lock = threading.Lock()
 
     def _resolve_executor(self) -> tuple[ExecutorPlugin | None, CapabilityManager | None]:
         if not self.executor_name:
@@ -118,6 +134,8 @@ class MissionRunner:
         evidence_records: list[str] = []
         independent_reviews: list[str] = []
         artifacts_produced: list[str] = []
+
+        mission_type_str = self.mission_type_name or "generic"
 
         task_command_map: dict[str, list[str]] = {}
         for t in plan.tasks:
@@ -140,6 +158,8 @@ class MissionRunner:
                 artifacts_produced=[],
                 runtime_root=self.runtime_root,
                 queue_path=self.queue_path,
+                mission_type=mission_type_str,
+                max_concurrency=self.max_concurrency,
             )
 
         enqueue_plan(plan, self.queue_path)
@@ -153,69 +173,20 @@ class MissionRunner:
         tasks_completed = 0
         tasks_failed = 0
         task_results: dict[str, str] = {}
+        peak_concurrent = 0
 
-        max_iterations = len(plan.tasks) * 20
-        for _ in range(max_iterations):
-            work_queue.refresh()
-            summary = work_queue.summary()
-            terminal = set(summary.get("COMPLETE", [])) | set(summary.get("VERIFIED", []))
-
-            if len(terminal) >= len(plan.tasks):
-                break
-
-            ready = work_queue.next_ready()
-            if ready is None:
-                blocked = summary.get("BLOCKED", [])
-                failed_ids = [tid for tid, state in task_results.items() if state == "FAILED"]
-                blocked_without_failed_deps = []
-                for tid in blocked:
-                    item = work_queue.get(tid)
-                    deps_failed = any(d in failed_ids for d in item.dependencies)
-                    if not deps_failed:
-                        blocked_without_failed_deps.append(tid)
-
-                if not blocked_without_failed_deps and not failed_ids:
-                    break
-                if blocked_without_failed_deps:
-                    warnings.append(f"deadlock: tasks {blocked_without_failed_deps} blocked with no ready path")
-                break
-
-            task_cmd = task_command_map.get(ready.task_id)
-            if task_cmd is None:
-                errors.append(f"task {ready.task_id} not found in plan")
-                work_queue.mark_failed(ready.task_id, "missing from plan")
-                continue
-
-            result = run_pipeline(
-                task_cmd,
-                runtime_root=self.runtime_root,
-                repository=self.repository,
-                working_directory=self.working_directory,
-                work_queue=work_queue,
-                task_id=ready.task_id,
-                executor=executor,
-                capability_manager=cap_manager,
-                executor_name=self.executor_name,
+        if self.max_concurrency <= 1:
+            tasks_completed, tasks_failed, evidence_records, independent_reviews, task_results, warnings, errors = (
+                self._run_sequential(
+                    plan, work_queue, task_command_map, executor, cap_manager,
+                )
             )
-
-            if result.execution_record_path:
-                evidence_records.append(result.execution_record_path)
-            if result.review_path:
-                independent_reviews.append(result.review_path)
-
-            if result.status == "COMPLETED":
-                tasks_completed += 1
-                task_results[ready.task_id] = "COMPLETED"
-            else:
-                tasks_failed += 1
-                task_results[ready.task_id] = "FAILED"
-                work_queue.refresh()
-                item = work_queue.get(ready.task_id)
-                if not item.can_retry():
-                    errors.append(f"task {ready.task_id} failed permanently: {'; '.join(result.errors)}")
-
-            if self.inter_task_delay > 0:
-                time.sleep(self.inter_task_delay)
+        else:
+            tasks_completed, tasks_failed, evidence_records, independent_reviews, task_results, warnings, errors, peak_concurrent = (
+                self._run_concurrent(
+                    plan, work_queue, task_command_map, executor, cap_manager,
+                )
+            )
 
         work_queue.refresh()
         queue_summary = {k: tuple(v) for k, v in work_queue.summary().items()}
@@ -287,13 +258,283 @@ class MissionRunner:
             queue_summary=queue_summary,
             runtime_health=health_str,
             metrics_summary=metrics_summary,
+            mission_type=mission_type_str,
+            max_concurrency=self.max_concurrency,
+            peak_concurrent_tasks=peak_concurrent,
         )
+
+    def _run_sequential(
+        self,
+        plan: Plan,
+        work_queue: WorkQueueManager,
+        task_command_map: dict[str, list[str]],
+        executor: ExecutorPlugin | None,
+        cap_manager: CapabilityManager | None,
+    ) -> tuple[int, int, list[str], list[str], dict[str, str], list[str], list[str]]:
+        tasks_completed = 0
+        tasks_failed = 0
+        evidence_records: list[str] = []
+        independent_reviews: list[str] = []
+        task_results: dict[str, str] = {}
+        warnings: list[str] = []
+        errors: list[str] = []
+
+        max_iterations = len(plan.tasks) * 20
+        for _ in range(max_iterations):
+            work_queue.refresh()
+            summary = work_queue.summary()
+            terminal = set(summary.get("COMPLETE", [])) | set(summary.get("VERIFIED", []))
+
+            if len(terminal) >= len(plan.tasks):
+                break
+
+            ready = work_queue.next_ready()
+            if ready is None:
+                blocked = summary.get("BLOCKED", [])
+                failed_ids = [tid for tid, state in task_results.items() if state == "FAILED"]
+                blocked_without_failed_deps = []
+                for tid in blocked:
+                    item = work_queue.get(tid)
+                    deps_failed = any(d in failed_ids for d in item.dependencies)
+                    if not deps_failed:
+                        blocked_without_failed_deps.append(tid)
+
+                if not blocked_without_failed_deps and not failed_ids:
+                    break
+                if blocked_without_failed_deps:
+                    warnings.append(f"deadlock: tasks {blocked_without_failed_deps} blocked with no ready path")
+                break
+
+            task_cmd = task_command_map.get(ready.task_id)
+            if task_cmd is None:
+                errors.append(f"task {ready.task_id} not found in plan")
+                work_queue.mark_failed(ready.task_id, "missing from plan")
+                continue
+
+            result = run_pipeline(
+                task_cmd,
+                runtime_root=self.runtime_root,
+                repository=self.repository,
+                working_directory=self.working_directory,
+                work_queue=work_queue,
+                task_id=ready.task_id,
+                executor=executor,
+                capability_manager=cap_manager,
+                executor_name=self.executor_name,
+            )
+
+            if result.execution_record_path:
+                evidence_records.append(result.execution_record_path)
+            if result.review_path:
+                independent_reviews.append(result.review_path)
+
+            if result.status == "COMPLETED":
+                tasks_completed += 1
+                task_results[ready.task_id] = "COMPLETED"
+            else:
+                tasks_failed += 1
+                task_results[ready.task_id] = "FAILED"
+                work_queue.refresh()
+                item = work_queue.get(ready.task_id)
+                if not item.can_retry():
+                    errors.append(f"task {ready.task_id} failed permanently: {'; '.join(result.errors)}")
+
+            if self.inter_task_delay > 0:
+                time.sleep(self.inter_task_delay)
+
+        return tasks_completed, tasks_failed, evidence_records, independent_reviews, task_results, warnings, errors
+
+    def _run_concurrent(
+        self,
+        plan: Plan,
+        work_queue: WorkQueueManager,
+        task_command_map: dict[str, list[str]],
+        executor: ExecutorPlugin | None,
+        cap_manager: CapabilityManager | None,
+    ) -> tuple[int, int, list[str], list[str], dict[str, str], list[str], list[str], int]:
+        tasks_completed = 0
+        tasks_failed = 0
+        evidence_records: list[str] = []
+        independent_reviews: list[str] = []
+        task_results: dict[str, str] = {}
+        warnings: list[str] = []
+        errors: list[str] = []
+        peak_concurrent = 0
+
+        def _execute_task(task_id: str, command: list[str]) -> tuple[str, object]:
+            result = run_pipeline(
+                command,
+                runtime_root=self.runtime_root,
+                repository=self.repository,
+                working_directory=self.working_directory,
+                work_queue=work_queue,
+                task_id=task_id,
+                executor=executor,
+                capability_manager=cap_manager,
+                executor_name=self.executor_name,
+            )
+            return task_id, result
+
+        def _handle_result(task_id: str, result: object) -> None:
+            nonlocal tasks_completed, tasks_failed
+            if result.execution_record_path:
+                evidence_records.append(result.execution_record_path)
+            if result.review_path:
+                independent_reviews.append(result.review_path)
+
+            with self._queue_lock:
+                if result.status == "COMPLETED":
+                    tasks_completed += 1
+                    task_results[task_id] = "COMPLETED"
+                else:
+                    tasks_failed += 1
+                    task_results[task_id] = "FAILED"
+                    work_queue.refresh()
+                    try:
+                        item = work_queue.get(task_id)
+                        if not item.can_retry():
+                            errors.append(f"task {task_id} failed permanently: {'; '.join(result.errors)}")
+                    except KeyError:
+                        errors.append(f"task {task_id} failed permanently: {'; '.join(result.errors)}")
+
+        def _dispatch_batch() -> list[WorkItem]:
+            nonlocal peak_concurrent
+            with self._queue_lock:
+                work_queue.refresh()
+                summary = work_queue.summary()
+                terminal = set(summary.get("COMPLETE", [])) | set(summary.get("VERIFIED", []))
+
+                if len(terminal) >= len(plan.tasks):
+                    return []
+
+                running_count = sum(
+                    1 for item in work_queue.items() if item.state == "RUNNING"
+                )
+                available = self.max_concurrency - running_count
+                if available <= 0:
+                    return []
+
+                dispatched = work_queue.dispatch_ready(max_concurrent=available)
+                if running_count + len(dispatched) > peak_concurrent:
+                    peak_concurrent = running_count + len(dispatched)
+                return dispatched
+
+        with ThreadPoolExecutor(max_workers=self.max_concurrency) as pool:
+            futures: dict[str, object] = {}
+
+            max_iterations = len(plan.tasks) * 20
+            for _ in range(max_iterations):
+                dispatched = _dispatch_batch()
+                for item in dispatched:
+                    task_cmd = task_command_map.get(item.task_id)
+                    if task_cmd is None:
+                        errors.append(f"task {item.task_id} not found in plan")
+                        with self._queue_lock:
+                            work_queue.mark_failed(item.task_id, "missing from plan")
+                        tasks_failed += 1
+                        task_results[item.task_id] = "FAILED"
+                        continue
+                    future = pool.submit(_execute_task, item.task_id, task_cmd)
+                    futures[f"{item.task_id}:{item.attempts}"] = future
+
+                if not futures:
+                    with self._queue_lock:
+                        work_queue.refresh()
+                        summary = work_queue.summary()
+                        terminal = set(summary.get("COMPLETE", [])) | set(summary.get("VERIFIED", []))
+                        if len(terminal) >= len(plan.tasks):
+                            break
+                        blocked = summary.get("BLOCKED", [])
+                        failed_ids = [tid for tid, state in task_results.items() if state == "FAILED"]
+                        blocked_without_failed_deps = [
+                            tid for tid in blocked
+                            if not any(d in failed_ids for d in work_queue.get(tid).dependencies)
+                        ]
+                        if not blocked_without_failed_deps and not failed_ids:
+                            break
+                        if blocked_without_failed_deps:
+                            warnings.append(f"deadlock: tasks {blocked_without_failed_deps} blocked with no ready path")
+                    break
+
+                done_futures = []
+                for key, fut in list(futures.items()):
+                    if fut.done():
+                        done_futures.append(key)
+
+                for key in done_futures:
+                    fut = futures.pop(key)
+                    try:
+                        _, result = fut.result()
+                        _handle_result(key.split(":")[0], result)
+                    except Exception as exc:
+                        task_id = key.split(":")[0]
+                        with self._queue_lock:
+                            tasks_failed += 1
+                            task_results[task_id] = "FAILED"
+                            errors.append(f"task {task_id} raised exception: {exc}")
+                            try:
+                                work_queue.mark_failed(task_id, f"exception: {exc}")
+                            except (KeyError, ValueError):
+                                pass
+
+                if not done_futures:
+                    time.sleep(0.01)
+
+            for key, fut in futures.items():
+                if not fut.done():
+                    fut.cancel()
+                else:
+                    try:
+                        _, result = fut.result()
+                        _handle_result(key.split(":")[0], result)
+                    except Exception as exc:
+                        task_id = key.split(":")[0]
+                        with self._queue_lock:
+                            tasks_failed += 1
+                            task_results[task_id] = "FAILED"
+
+        return tasks_completed, tasks_failed, evidence_records, independent_reviews, task_results, warnings, errors, peak_concurrent
 
     def run_mission_file(self, mission_path: Path) -> MissionReport:
         from .mission import load_mission, MissionPlanner
         mission = load_mission(mission_path)
         planner = MissionPlanner()
         plan = planner.build(mission)
+
+        mission_type_str = self.mission_type_name or mission.metadata.get("type", "generic")
+
+        if mission_type_str and mission_type_str != "generic":
+            registry = MissionTypeRegistry.instance()
+            if not registry.is_registered(mission_type_str):
+                try:
+                    register_built_in_types(registry)
+                except Exception:
+                    pass
+            if registry.is_registered(mission_type_str):
+                mt = registry.get(mission_type_str)
+                type_errors, type_warnings = mt.validate_mission(mission)
+                if type_errors:
+                    return _build_report(
+                        plan=plan,
+                        started_at=_utc_now(),
+                        finished_at=_utc_now(),
+                        duration=0.0,
+                        status="FAILED",
+                        tasks_completed=0,
+                        tasks_failed=0,
+                        tasks_skipped=list(plan.tasks),
+                        evidence_records=[],
+                        independent_reviews=[],
+                        warnings=list(type_warnings),
+                        errors=type_errors,
+                        artifacts_produced=[],
+                        runtime_root=self.runtime_root,
+                        queue_path=self.queue_path,
+                        mission_type=mission_type_str,
+                        max_concurrency=self.max_concurrency,
+                    )
+
+        self.mission_type_name = mission_type_str
         return self.run(plan)
 
 
@@ -324,6 +565,9 @@ def _build_report(
     queue_summary: dict | None = None,
     runtime_health: str = "UNKNOWN",
     metrics_summary: dict | None = None,
+    mission_type: str = "generic",
+    max_concurrency: int = 1,
+    peak_concurrent_tasks: int = 0,
 ) -> MissionReport:
     if queue_summary is None:
         queue_summary = {}
@@ -334,6 +578,7 @@ def _build_report(
         schema_version="1",
         mission_id=plan.mission_id,
         mission_title=plan.mission_title,
+        mission_type=mission_type,
         status=status,
         started_at=started_at,
         finished_at=finished_at,
@@ -350,6 +595,8 @@ def _build_report(
         warnings=tuple(warnings),
         errors=tuple(errors),
         artifacts_produced=tuple(artifacts_produced),
+        max_concurrency=max_concurrency,
+        peak_concurrent_tasks=peak_concurrent_tasks,
     )
     return report
 

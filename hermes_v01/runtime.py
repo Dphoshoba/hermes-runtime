@@ -63,7 +63,9 @@ def run_pipeline(
 
     # Transition task to RUNNING if work queue is provided
     if work_queue and task_id:
-        work_queue.transition(task_id, "RUNNING", increment_attempts=True)
+        current = work_queue.get(task_id)
+        if current.state != "RUNNING":
+            work_queue.transition(task_id, "RUNNING", increment_attempts=True)
 
     # Resolve executor
     if executor is None:

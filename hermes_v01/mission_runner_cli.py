@@ -8,6 +8,8 @@ from pathlib import Path
 
 from .mission import load_mission, MissionPlanner, load_plan
 from .mission_runner import MissionRunner, save_mission_report
+from .mission_types import MissionTypeRegistry, register_built_in_types
+from .mission_constraints import ConstraintEngine
 
 
 def cmd_run(args) -> int:
@@ -27,6 +29,8 @@ def cmd_run(args) -> int:
         queue_path=queue_path,
         executor_name=args.executor,
         plugin_dirs=plugin_dirs,
+        mission_type_name=args.mission_type,
+        max_concurrency=args.concurrency,
     )
 
     if mission_path.suffix == ".json":
@@ -64,6 +68,75 @@ def cmd_report(args) -> int:
     data = json.loads(report_path.read_text(encoding="utf-8"))
     print(json.dumps(data, indent=2, sort_keys=True))
     return 0
+
+
+def cmd_types(args) -> int:
+    registry = MissionTypeRegistry.instance()
+    register_built_in_types(registry)
+
+    category = getattr(args, "category", None)
+    types = registry.list_types(category=category)
+
+    if args.json:
+        output = [t.as_dict() for t in types]
+        print(json.dumps(output, indent=2, sort_keys=True))
+    else:
+        if not types:
+            print("No mission types registered.")
+            return 0
+        print(f"{'Name':<30} {'Category':<15} {'Version':<10} Description")
+        print("-" * 100)
+        for t in types:
+            print(f"{t.name:<30} {t.category:<15} {t.version:<10} {t.description}")
+    return 0
+
+
+def cmd_type_show(args) -> int:
+    registry = MissionTypeRegistry.instance()
+    register_built_in_types(registry)
+
+    name = args.type_name
+    if not registry.is_registered(name):
+        print(json.dumps({"error": f"mission type not found: {name}"}), file=sys.stderr)
+        return 1
+
+    metadata = registry.get_metadata(name)
+    print(json.dumps(metadata.as_dict(), indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_constraints(args) -> int:
+    mission_path = Path(args.mission_file).expanduser().resolve()
+    repository = Path(args.repository) if args.repository else None
+    working_directory = Path(args.cwd) if args.cwd else None
+
+    try:
+        mission = load_mission(mission_path)
+    except (json.JSONDecodeError, KeyError, ValueError, FileNotFoundError) as exc:
+        print(json.dumps({"error": str(exc)}), file=sys.stderr)
+        return 1
+
+    context: dict = {}
+    if repository:
+        context["repository"] = repository
+    if working_directory:
+        context["working_directory"] = working_directory
+
+    engine = ConstraintEngine(context=context)
+    errors, warnings = engine.validate_mission_constraints(mission)
+    results = engine.validate(mission)
+    summary = engine.get_results_summary(results)
+
+    if args.json:
+        print(json.dumps(summary, indent=2, sort_keys=True))
+    else:
+        print(f"Constraint Validation: {summary['satisfied']}/{summary['total']} satisfied")
+        print()
+        for r in results:
+            status = "PASS" if r.satisfied else "FAIL"
+            print(f"  [{status}] {r.constraint_type}: {r.message}")
+
+    return 0 if summary["unsatisfied"] == 0 else 1
 
 
 def main() -> int:
@@ -110,6 +183,16 @@ def main() -> int:
         nargs="*",
         help="Plugin directories for capability discovery",
     )
+    run_parser.add_argument(
+        "--mission-type",
+        help="Mission type name for type-specific validation",
+    )
+    run_parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=1,
+        help="Maximum number of independent tasks to execute concurrently (default: 1)",
+    )
 
     report_parser = subparsers.add_parser("report", help="Display a mission report")
     report_parser.add_argument(
@@ -117,11 +200,52 @@ def main() -> int:
         help="Path to mission report JSON",
     )
 
+    types_parser = subparsers.add_parser("types", help="List available mission types")
+    types_parser.add_argument(
+        "--category",
+        help="Filter by category (maintenance, security, performance, documentation, release, testing)",
+    )
+    types_parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="json",
+        help="Output as JSON",
+    )
+
+    type_show_parser = subparsers.add_parser("type-show", help="Show details of a mission type")
+    type_show_parser.add_argument(
+        "type_name",
+        help="Mission type name",
+    )
+
+    constraints_parser = subparsers.add_parser("constraints", help="Validate mission constraints")
+    constraints_parser.add_argument(
+        "mission_file",
+        help="Path to mission JSON file",
+    )
+    constraints_parser.add_argument(
+        "--repository",
+        help="Repository path for constraint validation",
+    )
+    constraints_parser.add_argument(
+        "--cwd",
+        help="Working directory for constraint validation",
+    )
+    constraints_parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="json",
+        help="Output as JSON",
+    )
+
     args = parser.parse_args()
 
     handlers = {
         "run": cmd_run,
         "report": cmd_report,
+        "types": cmd_types,
+        "type-show": cmd_type_show,
+        "constraints": cmd_constraints,
     }
 
     return handlers[args.command](args)

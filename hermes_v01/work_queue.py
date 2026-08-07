@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import threading
 import time
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
@@ -175,6 +176,7 @@ class WorkQueueManager:
 
     def __init__(self, *, state_store: WorkQueueStateStore, items: Iterable[WorkItem] = ()) -> None:
         self._state_store = state_store
+        self._lock = threading.RLock()
         loaded = state_store.load()
         if loaded is not None:
             self._state = self._normalize(loaded)
@@ -210,6 +212,42 @@ class WorkQueueManager:
         if item is None:
             return None
         return self.transition(item.task_id, "RUNNING", increment_attempts=True)
+
+    def dispatch_ready(self, max_concurrent: int = 1) -> list[WorkItem]:
+        """Dispatch up to max_concurrent READY tasks to RUNNING atomically.
+
+        Returns the list of tasks dispatched (may be fewer than max_concurrent
+        if fewer tasks are READY). Each task is transitioned from READY to
+        RUNNING with attempt increment in a single persisted state update.
+        """
+        if max_concurrent < 1:
+            raise ValueError("max_concurrent must be >= 1")
+        ready = sorted(
+            [item for item in self._state.items if item.state == "READY"],
+            key=lambda item: (item.priority, item.task_id),
+        )
+        to_dispatch = ready[:max_concurrent]
+        if not to_dispatch:
+            return []
+
+        dispatched: list[WorkItem] = []
+        items = list(self._state.items)
+        for i, item in enumerate(items):
+            if item.task_id in {d.task_id for d in to_dispatch}:
+                items[i] = replace(
+                    item,
+                    state="RUNNING",
+                    attempts=item.attempts + 1,
+                )
+                dispatched.append(items[i])
+
+        new_state = WorkQueueState(
+            schema_version=self._state.schema_version,
+            revision=self._state.revision + 1,
+            items=tuple(items),
+        )
+        self._persist(self._normalize(new_state))
+        return dispatched
 
     def transition(
         self,
@@ -552,13 +590,14 @@ class WorkQueueManager:
         return result
 
     def _replace_item(self, updated: WorkItem) -> None:
-        items = tuple(updated if item.task_id == updated.task_id else item for item in self._state.items)
-        next_state = WorkQueueState(
-            schema_version=self._state.schema_version,
-            revision=self._state.revision + 1,
-            items=items,
-        )
-        self._persist(self._normalize(next_state))
+        with self._lock:
+            items = tuple(updated if item.task_id == updated.task_id else item for item in self._state.items)
+            next_state = WorkQueueState(
+                schema_version=self._state.schema_version,
+                revision=self._state.revision + 1,
+                items=items,
+            )
+            self._persist(self._normalize(next_state))
 
     def _persist(self, state: WorkQueueState) -> None:
         self._validate_graph(state.items)
