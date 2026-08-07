@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -320,3 +321,164 @@ def test_recover_incomplete_tasks_respects_retry_limits(tmp_path: Path) -> None:
     
     assert len(recovered) == 0  # cannot retry
     assert queue.get("exhausted-task").state == "RUNNING"  # unchanged
+
+
+def test_work_item_scheduling_fields_defaults(tmp_path: Path) -> None:
+    item = WorkItem("test", "Test Task")
+    assert item.scheduled_at is None
+    assert item.recurring is False
+    assert item.interval_seconds == 0.0
+    assert item.last_run_at is None
+    assert item.is_due() is True
+
+
+def test_work_item_scheduling_fields_custom(tmp_path: Path) -> None:
+    future = datetime.now(timezone.utc).timestamp() + 3600
+    scheduled = datetime.fromtimestamp(future, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    item = WorkItem("test", "Test Task", scheduled_at=scheduled, recurring=True, interval_seconds=60.0)
+    assert item.scheduled_at == scheduled
+    assert item.recurring is True
+    assert item.interval_seconds == 60.0
+    assert item.is_due() is False  # not due yet
+
+
+def test_work_item_is_due_with_past_scheduled(tmp_path: Path) -> None:
+    past = datetime.now(timezone.utc).timestamp() - 3600
+    scheduled = datetime.fromtimestamp(past, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    item = WorkItem("test", "Test Task", scheduled_at=scheduled)
+    assert item.is_due() is True
+
+
+def test_work_item_next_scheduled_at_recurring(tmp_path: Path) -> None:
+    item = WorkItem("test", "Test Task", recurring=True, interval_seconds=60.0)
+    next_run = item.next_scheduled_at()
+    assert next_run is not None
+    # Should be approximately 60 seconds from now
+    next_dt = datetime.fromisoformat(next_run.replace("Z", "+00:00"))
+    now = datetime.now(timezone.utc)
+    diff = abs((next_dt - now).total_seconds() - 60.0)
+    assert diff < 2.0  # within 2 seconds
+
+
+def test_work_item_next_scheduled_at_non_recurring(tmp_path: Path) -> None:
+    item = WorkItem("test", "Test Task", recurring=False, interval_seconds=60.0)
+    assert item.next_scheduled_at() is None
+
+
+def test_get_due_tasks_returns_only_due_ready_tasks(tmp_path: Path) -> None:
+    now = datetime.now(timezone.utc)
+    past = (now.timestamp() - 3600)
+    past_str = datetime.fromtimestamp(past, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    future = (now.timestamp() + 3600)
+    future_str = datetime.fromtimestamp(future, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    
+    queue = WorkQueueManager(
+        state_store=WorkQueueStateStore(tmp_path / "queue.json"),
+        items=(
+            WorkItem("due-task", "Due Task", priority=10, scheduled_at=past_str),
+            WorkItem("not-due-task", "Not Due Task", priority=20, scheduled_at=future_str),
+            WorkItem("no-schedule-task", "No Schedule Task", priority=30),
+            WorkItem("blocked-task", "Blocked Task", priority=5, scheduled_at=past_str, dependencies=("dependency-task",)),
+            WorkItem("dependency-task", "Dependency Task", priority=1, state="RUNNING"),  # Not terminal
+        ),
+    )
+    
+    due = queue.get_due_tasks(now)
+    assert len(due) == 2
+    assert due[0].task_id == "due-task"  # priority 10
+    assert due[1].task_id == "no-schedule-task"  # priority 30
+
+
+def test_dispatch_next_due_selects_highest_priority(tmp_path: Path) -> None:
+    now = datetime.now(timezone.utc)
+    past = (now.timestamp() - 3600)
+    past_str = datetime.fromtimestamp(past, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    
+    queue = WorkQueueManager(
+        state_store=WorkQueueStateStore(tmp_path / "queue.json"),
+        items=(
+            WorkItem("low-priority", "Low Priority", priority=100, scheduled_at=past_str),
+            WorkItem("high-priority", "High Priority", priority=10, scheduled_at=past_str),
+        ),
+    )
+    
+    dispatched = queue.dispatch_next_due(now)
+    assert dispatched is not None
+    assert dispatched.task_id == "high-priority"
+    assert dispatched.state == "RUNNING"
+
+
+def test_schedule_task_sets_scheduled_at(tmp_path: Path) -> None:
+    queue = WorkQueueManager(
+        state_store=WorkQueueStateStore(tmp_path / "queue.json"),
+        items=(WorkItem("task-1", "Task 1"),),
+    )
+    
+    future = datetime.now(timezone.utc).timestamp() + 3600
+    scheduled = datetime.fromtimestamp(future, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    
+    scheduled_item = queue.schedule_task("task-1", scheduled)
+    assert scheduled_item.scheduled_at == scheduled
+    assert scheduled_item.state == "READY"
+
+
+def test_schedule_task_validates_state(tmp_path: Path) -> None:
+    queue = WorkQueueManager(
+        state_store=WorkQueueStateStore(tmp_path / "queue.json"),
+        items=(WorkItem("task-1", "Task 1"),),
+    )
+    queue.dispatch_next()  # RUNNING
+    
+    future = datetime.now(timezone.utc).timestamp() + 3600
+    scheduled = datetime.fromtimestamp(future, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    
+    with pytest.raises(ValueError, match="cannot schedule task"):
+        queue.schedule_task("task-1", scheduled)
+
+
+def test_schedule_task_validates_timestamp(tmp_path: Path) -> None:
+    queue = WorkQueueManager(
+        state_store=WorkQueueStateStore(tmp_path / "queue.json"),
+        items=(WorkItem("task-1", "Task 1"),),
+    )
+    
+    with pytest.raises(ValueError, match="scheduled_at must be valid ISO format"):
+        queue.schedule_task("task-1", "invalid-timestamp")
+
+
+def test_reschedule_recurring_after_completion(tmp_path: Path) -> None:
+    queue = WorkQueueManager(
+        state_store=WorkQueueStateStore(tmp_path / "queue.json"),
+        items=(WorkItem("recurring-task", "Recurring Task", recurring=True, interval_seconds=60.0),),
+    )
+    queue.dispatch_next()  # RUNNING
+    queue.mark_observed("recurring-task")
+    queue.mark_verification_pending("recurring-task")
+    queue.record_independent_verification("recurring-task")
+    queue.mark_complete("recurring-task")  # COMPLETE
+    
+    # Reschedule for next run
+    rescheduled = queue.reschedule_recurring("recurring-task")
+    assert rescheduled.state == "READY"
+    assert rescheduled.scheduled_at is not None
+    assert rescheduled.last_run_at is not None
+    # Should be scheduled ~60 seconds from now
+    next_dt = datetime.fromisoformat(rescheduled.scheduled_at.replace("Z", "+00:00"))
+    now = datetime.now(timezone.utc)
+    diff = abs((next_dt - now).total_seconds() - 60.0)
+    assert diff < 2.0
+
+
+def test_reschedule_recurring_non_recurring_fails(tmp_path: Path) -> None:
+    queue = WorkQueueManager(
+        state_store=WorkQueueStateStore(tmp_path / "queue.json"),
+        items=(WorkItem("task-1", "Task 1"),),
+    )
+    queue.dispatch_next()
+    queue.mark_observed("task-1")
+    queue.mark_verification_pending("task-1")
+    queue.record_independent_verification("task-1")
+    queue.mark_complete("task-1")
+    
+    with pytest.raises(ValueError, match="is not recurring"):
+        queue.reschedule_recurring("task-1")

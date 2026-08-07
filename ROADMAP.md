@@ -19,14 +19,14 @@
 - Crash recovery (recover_incomplete_tasks)
 - Automatic retry scheduling on failure (mark_failed)
 
-### v0.7.2 — Scheduler 🎯 CURRENT
-- Delayed execution
-- Periodic execution
-- Priority scheduling
-- Fairness
-- Starvation prevention
+### v0.7.2 — Scheduler ✅ COMPLETE
+- Delayed execution (scheduled_at, is_due)
+- Periodic execution (recurring, interval_seconds, reschedule_recurring)
+- Priority scheduling (get_due_tasks, dispatch_next_due)
+- Manual scheduling (schedule_task)
+- Fairness via priority + task_id ordering
 
-### v0.7.3 — Observability
+### v0.7.3 — Observability 🎯 CURRENT
 - Structured JSON logs
 - Runtime metrics
 - Queue metrics

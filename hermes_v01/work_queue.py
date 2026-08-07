@@ -5,8 +5,9 @@ import os
 import tempfile
 import time
 from dataclasses import asdict, dataclass, replace
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Mapping, Optional
 
 TASK_STATES = (
     "READY",
@@ -35,6 +36,11 @@ class WorkItem:
     max_retry_delay_seconds: float = 60.0
     retry_backoff_multiplier: float = 2.0
     retryable: bool = True
+    # Scheduling fields
+    scheduled_at: Optional[str] = None  # ISO format UTC timestamp for delayed execution
+    recurring: bool = False  # If True, task is re-queued after completion
+    interval_seconds: float = 0.0  # Interval for recurring tasks
+    last_run_at: Optional[str] = None  # ISO format UTC timestamp of last execution
 
     def __post_init__(self) -> None:
         if not self.task_id.strip():
@@ -55,6 +61,18 @@ class WorkItem:
             raise ValueError("max_retry_delay_seconds must be >= retry_delay_seconds")
         if self.retry_backoff_multiplier <= 1.0:
             raise ValueError("retry_backoff_multiplier must be > 1.0")
+        if self.recurring and self.interval_seconds <= 0:
+            raise ValueError("recurring tasks must have interval_seconds > 0")
+        if self.scheduled_at is not None:
+            try:
+                datetime.fromisoformat(self.scheduled_at.replace("Z", "+00:00"))
+            except ValueError:
+                raise ValueError("scheduled_at must be valid ISO format UTC timestamp")
+        if self.last_run_at is not None:
+            try:
+                datetime.fromisoformat(self.last_run_at.replace("Z", "+00:00"))
+            except ValueError:
+                raise ValueError("last_run_at must be valid ISO format UTC timestamp")
 
     def as_dict(self) -> dict[str, Any]:
         data = asdict(self)
@@ -69,6 +87,25 @@ class WorkItem:
     def can_retry(self) -> bool:
         """Check if task can be retried (has attempts remaining and is retryable)."""
         return self.retryable and self.attempts < self.max_retries
+
+    def is_due(self, now: Optional[datetime] = None) -> bool:
+        """Check if task is due for execution (scheduled_at has passed)."""
+        if self.scheduled_at is None:
+            return True
+        if now is None:
+            now = datetime.now(timezone.utc)
+        scheduled = datetime.fromisoformat(self.scheduled_at.replace("Z", "+00:00"))
+        return scheduled <= now
+
+    def next_scheduled_at(self) -> Optional[str]:
+        """Calculate next scheduled time for recurring task."""
+        if not self.recurring or self.interval_seconds <= 0:
+            return None
+        base = datetime.now(timezone.utc)
+        if self.last_run_at is not None:
+            base = datetime.fromisoformat(self.last_run_at.replace("Z", "+00:00"))
+        next_run = base.timestamp() + self.interval_seconds
+        return datetime.fromtimestamp(next_run, tz=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 @dataclass(frozen=True)
@@ -210,6 +247,50 @@ class WorkQueueManager:
         if current.state != "VERIFICATION_PENDING":
             raise ValueError("independent verification requires VERIFICATION_PENDING")
         return self.transition(task_id, "VERIFIED")
+
+    def get_due_tasks(self, now: Optional[datetime] = None) -> list[WorkItem]:
+        """Get all READY tasks that are due for execution (scheduled_at has passed)."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+        due = []
+        for item in self._state.items:
+            if item.state == "READY" and item.is_due(now):
+                due.append(item)
+        # Sort by priority then task_id for deterministic ordering
+        return sorted(due, key=lambda item: (item.priority, item.task_id))
+
+    def dispatch_next_due(self, now: Optional[datetime] = None) -> WorkItem | None:
+        """Dispatch the next due READY task to RUNNING."""
+        due = self.get_due_tasks(now)
+        if not due:
+            return None
+        return self.transition(due[0].task_id, "RUNNING", increment_attempts=True)
+
+    def schedule_task(self, task_id: str, scheduled_at: str) -> WorkItem:
+        """Schedule a task for future execution."""
+        current = self.get(task_id)
+        if current.state not in {"READY", "BLOCKED"}:
+            raise ValueError(f"cannot schedule task {task_id} from state {current.state}")
+        # Validate timestamp
+        try:
+            datetime.fromisoformat(scheduled_at.replace("Z", "+00:00"))
+        except ValueError:
+            raise ValueError("scheduled_at must be valid ISO format UTC timestamp")
+        updated = replace(current, scheduled_at=scheduled_at)
+        self._replace_item(updated)
+        return self.get(task_id)
+
+    def reschedule_recurring(self, task_id: str) -> WorkItem:
+        """Reschedule a recurring task for its next interval after completion."""
+        current = self.get(task_id)
+        if not current.recurring:
+            raise ValueError(f"task {task_id} is not recurring")
+        next_run = current.next_scheduled_at()
+        if next_run is None:
+            raise ValueError(f"cannot compute next scheduled time for {task_id}")
+        updated = replace(current, scheduled_at=next_run, state="READY", last_run_at=current.next_scheduled_at())
+        self._replace_item(updated)
+        return self.get(task_id)
 
     def mark_complete(self, task_id: str) -> WorkItem:
         current = self.get(task_id)
