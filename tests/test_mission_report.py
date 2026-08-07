@@ -129,10 +129,13 @@ class TestMissionReportExtendedFields:
     def test_new_fields_in_as_dict(self) -> None:
         r = _base_report()
         d = r.as_dict()
-        # Empty defaults should not appear
+        # Zero-valued fields are always present for deterministic output
+        assert "tasks_cancelled" in d
+        assert d["tasks_cancelled"] == 0
+        assert "tasks_aborted" in d
+        assert d["tasks_aborted"] == 0
+        # lifecycle_state omitted when empty string
         assert "lifecycle_state" not in d
-        assert "tasks_cancelled" not in d
-        assert "tasks_aborted" not in d
 
     def test_new_fields_appear_when_set(self) -> None:
         r = MissionReport(

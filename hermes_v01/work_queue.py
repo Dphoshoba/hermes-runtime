@@ -332,6 +332,8 @@ class WorkQueueManager:
 
     def mark_complete(self, task_id: str) -> WorkItem:
         current = self.get(task_id)
+        if current.state == "COMPLETE":
+            return current
         if current.state not in {"VERIFIED", "COMPLETE"}:
             raise ValueError("completion requires independently VERIFIED state")
         return self.transition(task_id, "COMPLETE")
@@ -344,10 +346,10 @@ class WorkQueueManager:
         
         if current.can_retry():
             # Schedule retry: transition back to READY with error recorded
-            # The delay will be handled by the scheduler/executor
             return self.transition(task_id, "READY", last_error=error, increment_attempts=False)
         else:
-            # No retries left or not retryable - record error in current state
+            # No retries left or not retryable — record error, leave state unchanged.
+            # The runner tracks actual success/failure via task_results separately.
             updated = replace(current, last_error=error)
             self._replace_item(updated)
             return self.get(task_id)

@@ -97,13 +97,11 @@ class MissionReport:
             "max_concurrency": self.max_concurrency,
             "peak_concurrent_tasks": self.peak_concurrent_tasks,
         }
-        # v0.9.6 fields — only include when set (deterministic output)
+        # v0.9.6 fields — always include for deterministic output
         if self.lifecycle_state:
             d["lifecycle_state"] = self.lifecycle_state
-        if self.tasks_cancelled:
-            d["tasks_cancelled"] = self.tasks_cancelled
-        if self.tasks_aborted:
-            d["tasks_aborted"] = self.tasks_aborted
+        d["tasks_cancelled"] = self.tasks_cancelled
+        d["tasks_aborted"] = self.tasks_aborted
         if self.retry_summary is not None:
             d["retry_summary"] = self.retry_summary
         if self.scheduler_summary is not None:
@@ -415,9 +413,9 @@ class MissionRunner:
         state_store, _ = self._ensure_lifecycle_stores()
         self._active_mission_id = plan.mission_id
         initial = create_initial_state(plan.mission_id, plan.mission_title, len(plan.tasks))
-        self._current_mission_state = initial
-        self._mission_state_store.save(transition_state(initial, "RUNNING"))
-        self._current_mission_state = transition_state(initial, "RUNNING")
+        running = transition_state(initial, "RUNNING")
+        self._mission_state_store.save(running)
+        self._current_mission_state = running
 
         # Reset lifecycle events for a fresh run
         self._pause_event.set()
@@ -663,19 +661,24 @@ class MissionRunner:
             ready = work_queue.next_ready()
             if ready is None:
                 blocked = summary.get("BLOCKED", [])
+                running = summary.get("RUNNING", [])
                 failed_ids = [tid for tid, state in task_results.items() if state == "FAILED"]
-                blocked_without_failed_deps = []
-                for tid in blocked:
-                    item = work_queue.get(tid)
-                    deps_failed = any(d in failed_ids for d in item.dependencies)
-                    if not deps_failed:
-                        blocked_without_failed_deps.append(tid)
 
-                if not blocked_without_failed_deps and not failed_ids:
+                # True deadlock: no READY, no RUNNING, blocked tasks remain
+                if not running and blocked:
+                    blocked_without_failed_deps = []
+                    for tid in blocked:
+                        item = work_queue.get(tid)
+                        deps_failed = any(d in failed_ids for d in item.dependencies)
+                        if not deps_failed:
+                            blocked_without_failed_deps.append(tid)
+                    if blocked_without_failed_deps:
+                        warnings.append(f"deadlock: tasks {blocked_without_failed_deps} blocked with no ready path")
                     break
-                if blocked_without_failed_deps:
-                    warnings.append(f"deadlock: tasks {blocked_without_failed_deps} blocked with no ready path")
-                break
+
+                # Normal case: tasks still running or waiting on running deps
+                if not running and not blocked:
+                    break
 
             task_cmd = task_command_map.get(ready.task_id)
             if task_cmd is None:
@@ -818,8 +821,8 @@ class MissionRunner:
                         errors.append(f"task {item.task_id} not found in plan")
                         with self._queue_lock:
                             work_queue.mark_failed(item.task_id, "missing from plan")
-                        tasks_failed += 1
-                        task_results[item.task_id] = "FAILED"
+                            tasks_failed += 1
+                            task_results[item.task_id] = "FAILED"
                         continue
                     future = pool.submit(_execute_task, item.task_id, task_cmd)
                     futures[f"{item.task_id}:{item.attempts}"] = future
@@ -832,15 +835,22 @@ class MissionRunner:
                         if len(terminal) >= len(plan.tasks):
                             break
                         blocked = summary.get("BLOCKED", [])
+                        running = summary.get("RUNNING", [])
                         failed_ids = [tid for tid, state in task_results.items() if state == "FAILED"]
-                        blocked_without_failed_deps = [
-                            tid for tid in blocked
-                            if not any(d in failed_ids for d in work_queue.get(tid).dependencies)
-                        ]
-                        if not blocked_without_failed_deps and not failed_ids:
+
+                        # True deadlock: no RUNNING, no READY, blocked tasks remain
+                        if not running and blocked:
+                            blocked_without_failed_deps = [
+                                tid for tid in blocked
+                                if not any(d in failed_ids for d in work_queue.get(tid).dependencies)
+                            ]
+                            if blocked_without_failed_deps:
+                                warnings.append(f"deadlock: tasks {blocked_without_failed_deps} blocked with no ready path")
                             break
-                        if blocked_without_failed_deps:
-                            warnings.append(f"deadlock: tasks {blocked_without_failed_deps} blocked with no ready path")
+
+                        # Normal: tasks still running or waiting on running deps
+                        if not running and not blocked:
+                            break
                     break
 
                 done_futures = []
