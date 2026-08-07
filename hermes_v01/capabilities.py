@@ -301,13 +301,13 @@ class CapabilityManager:
         return registered
 
     def get_executor(self, name: str) -> ExecutorPlugin:
-        if name in self._executors:
-            return self._executors[name]
         state = self._registry.get(name)
         if state.metadata.capability_type != "executor":
             raise ValueError(f"capability {name} is not an executor")
         if not state.metadata.enabled:
             raise ValueError(f"executor {name} is disabled")
+        if name in self._executors:
+            return self._executors[name]
         plugin = self._load_executor(state.metadata.entry_point)
         self._executors[name] = plugin
         return plugin

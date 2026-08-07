@@ -52,9 +52,19 @@
 - `run_pipeline` accepts optional executor/capability_manager params
 - 15 focused tests (test_capabilities.py)
 
-### v0.7.6 — Resilience Testing
-- Chaos tests: runtime interruption, queue corruption, evidence failures, review failures, partial writes, restart recovery
-- Runtime must never corrupt queue state
+### v0.7.6 — Resilience Testing ✅ COMPLETE
+- 93 chaos/resilience tests across 10 failure domains
+- Runtime interruption: interrupted tasks not falsely marked COMPLETE, recoverable
+- Queue corruption: invalid JSON fails clearly, unrecoverable corruption not silently rewritten
+- Partial writes: canonical file survives failed atomic write, temp files don't replace valid state
+- Evidence failures: failing executor not promoted, queue state remains recoverable
+- Review failures: REVIEW_FAILED/REVIEW_INCOMPLETE never result in COMPLETE, retry path available
+- Health failures: malformed inputs degrade safely, no crash
+- Scheduler restart: scheduled work, attempts, retry budgets survive reload
+- Capability failure: disabled executor blocked, broken entry_point reports UNHEALTHY
+- Compaction/maintenance safety: active tasks never removed, integrity valid after maintenance
+- Chaos tests: interrupted running task, restart recovery, corrupted queue, malformed evidence, failed review, partial atomic write, scheduler restart, exhausted retry budget, disabled executor, maintenance during active work, stale persisted state, health degradation
+- Defect fixed: CapabilityManager.get_executor now checks registry enabled status before returning cached executors
 
 ## Quality Standard
 Every milestone must improve: Correctness, Reliability, Maintainability, Observability, Documentation, Test Coverage.
