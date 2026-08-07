@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .supervisor import AtomicJsonStateStore, SupervisorState
+from .work_queue import WorkQueueManager
 
 
 @dataclass(frozen=True)
@@ -72,7 +73,7 @@ def project_runtime_state(
     supervisor: SupervisorState,
     *,
     current_milestone: str | None = None,
-    work_queue: dict[str, list[str]] | None = None,
+    work_queue: WorkQueueManager | None = None,
 ) -> RuntimeState:
     blockers: list[str] = []
 
@@ -99,6 +100,8 @@ def project_runtime_state(
         phase = "UNKNOWN"
         next_action = "Inspect supervisor state."
 
+    work_queue_summary = work_queue.summary() if work_queue is not None else None
+
     return RuntimeState(
         schema_version="1",
         program="PROGRAM_III",
@@ -113,7 +116,7 @@ def project_runtime_state(
         current_milestone=current_milestone,
         next_action=next_action,
         blockers=tuple(blockers),
-        work_queue=work_queue,
+        work_queue=work_queue_summary,
     )
 
 
@@ -121,7 +124,7 @@ def load_projected_state(
     supervisor_state_path: Path,
     *,
     current_milestone: str | None = None,
-    work_queue: dict[str, list[str]] | None = None,
+    work_queue: WorkQueueManager | None = None,
 ) -> RuntimeState:
     supervisor = AtomicJsonStateStore(supervisor_state_path).load()
     if supervisor is None:

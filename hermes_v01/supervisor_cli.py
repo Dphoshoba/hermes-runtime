@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .__main__ import DEFAULT_ARTIFACTS
 from .supervisor import ExecutionSupervisor
+from .work_queue import WorkQueueManager, WorkQueueStateStore
 
 
 def main() -> int:
@@ -16,9 +17,14 @@ def main() -> int:
     parser.add_argument("--max-cycles", type=int)
     parser.add_argument("--state-file")
     parser.add_argument("--stop-file")
+    parser.add_argument("--work-queue", help="Path to work queue state file for remediation task integration")
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir).expanduser().resolve()
+    work_queue = None
+    if args.work_queue:
+        work_queue = WorkQueueManager(state_store=WorkQueueStateStore(Path(args.work_queue)))
+
     supervisor = ExecutionSupervisor(
         repository=Path(args.repo),
         output_dir=output_dir,
@@ -26,6 +32,7 @@ def main() -> int:
         interval_seconds=args.interval,
         state_file=Path(args.state_file) if args.state_file else None,
         stop_file=Path(args.stop_file) if args.stop_file else None,
+        work_queue=work_queue,
     )
     return supervisor.run(max_cycles=args.max_cycles)
 

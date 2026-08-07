@@ -35,6 +35,8 @@ mkdir -p ./hermes-report && touch ./hermes-report/STOP
 
 The supervisor persists `supervisor-state.json` atomically and writes each cycle beneath `hermes-report/cycles/`.
 
+With `--work-queue`, the supervisor enqueues remediation tasks for missing or unverified artifacts.
+
 ## Safety boundary
 
 Hermes never modifies the inspected repository, approves governance, changes lifecycle state, or infers repository facts. Reports and supervisor state are written only beneath the configured output directory.
@@ -52,12 +54,41 @@ python3 -m hermes_v01.status_cli \
 
 The command prints JSON and returns exit code `2` when a concrete blocker is present.
 
-## Work Queue Manager
+With `--work-queue`, the projected state includes the work queue summary.
 
-`hermes_v01.work_queue` provides a deterministic, restart-safe Program III work queue.
-It derives `READY`/`BLOCKED` state from explicit dependencies, prevents duplicate
-or replayed dispatch, persists atomically, and keeps `VERIFIED` behind an explicit
-independent-review method.
+## Work Queue CLI
+
+`hermes-queue` provides a CLI for the deterministic, restart-safe Program III work queue.
+
+```bash
+# Initialize queue with tasks
+python3 -c "
+from hermes_v01.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
+from pathlib import Path
+WorkQueueManager(
+    state_store=WorkQueueStateStore(Path('/tmp/queue.json')),
+    items=(WorkItem('task-1', 'Task 1', priority=10),),
+)
+"
+
+# List all tasks
+hermes-queue --state-file /tmp/queue.json list
+
+# Show next READY task
+hermes-queue --state-file /tmp/queue.json next
+
+# Dispatch next READY task to RUNNING
+hermes-queue --state-file /tmp/queue.json dispatch
+
+# Observe, verify, complete
+hermes-queue --state-file /tmp/queue.json observe task-1
+hermes-queue --state-file /tmp/queue.json verification-pending task-1
+hermes-queue --state-file /tmp/queue.json verify task-1
+hermes-queue --state-file /tmp/queue.json complete task-1
+
+# Summary by state
+hermes-queue --state-file /tmp/queue.json summary
+```
 
 ## Immutable execution evidence
 
@@ -71,6 +102,8 @@ hermes-record \
   --artifact /path/to/generated/artifact.json \
   -- python3 -m pytest -q
 ```
+
+With `--task-id` and `--work-queue`, the recorder advances the task through `RUNNING` → `OBSERVED` → `VERIFICATION_PENDING`.
 
 Each execution is stored beneath its unique execution ID:
 
@@ -94,7 +127,33 @@ hermes-review \
   --output-dir "$HOME/.hermes/runtime/reviews"
 ```
 
-The reviewer validates the evidence schema, execution ID, timestamps, numeric exit code,
-artifact existence, recorded sizes and SHA-256 hashes, execution-record digest, and repository
-revision format when present. It publishes immutable `review.json` and `review.md` artifacts.
-Outcomes are exactly `REVIEW_PASSED`, `REVIEW_FAILED`, or `REVIEW_INCOMPLETE`.
+With `--task-id` and `--work-queue`, a `REVIEW_PASSED` outcome advances the task to `VERIFIED`.
+
+The reviewer validates the evidence schema, execution ID, timestamps, numeric exit code, artifact existence, recorded sizes and SHA-256 hashes, execution-record digest, and repository revision format when present. It publishes immutable `review.json` and `review.md` artifacts. Outcomes are exactly `REVIEW_PASSED`, `REVIEW_FAILED`, or `REVIEW_INCOMPLETE`.
+
+## Queue-driven Runtime Orchestrator
+
+`hermes-runtime` executes the full evidence pipeline (record → review → health) for a queued work item.
+
+```bash
+# Execute specific task
+hermes-runtime \
+  --runtime-root "$HOME/.hermes/runtime" \
+  --repository /path/to/repo \
+  --cwd /path/to/workspace \
+  --task-id task-1 \
+  --work-queue /tmp/queue.json \
+  -- python3 -m pytest -q
+
+# Execute next READY task (respects dependencies)
+hermes-runtime \
+  --runtime-root "$HOME/.hermes/runtime" \
+  --repository /path/to/repo \
+  --cwd /path/to/workspace \
+  --next \
+  --work-queue /tmp/queue.json \
+  -- python3 -m pytest -q
+```
+
+On success, the task advances: `RUNNING` → `OBSERVED` → `VERIFICATION_PENDING` → `VERIFIED` → `COMPLETE`.
+On failure, the task stops at `VERIFIED` (review passed) or `OBSERVED` (record failed), leaving the queue recoverable.

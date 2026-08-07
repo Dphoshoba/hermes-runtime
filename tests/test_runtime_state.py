@@ -11,6 +11,7 @@ from hermes_v01.runtime_state import (
     project_runtime_state,
 )
 from hermes_v01.supervisor import AtomicJsonStateStore, SupervisorState
+from hermes_v01.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
 
 
 def supervisor_state(tmp_path: Path, **overrides: object) -> SupervisorState:
@@ -28,6 +29,10 @@ def supervisor_state(tmp_path: Path, **overrides: object) -> SupervisorState:
     )
     base.update(overrides)
     return SupervisorState(**base)
+
+
+def _make_queue(tmp_path: Path, items: tuple[WorkItem, ...] = ()) -> WorkQueueManager:
+    return WorkQueueManager(state_store=WorkQueueStateStore(tmp_path / "queue.json"), items=items)
 
 
 def test_projection_reports_quiescent_state(tmp_path: Path) -> None:
@@ -88,3 +93,50 @@ def test_load_projected_state_uses_supervisor_state(tmp_path: Path) -> None:
 def test_load_projected_state_requires_supervisor_state(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
         load_projected_state(tmp_path / "missing.json")
+
+
+def test_projection_populates_work_queue_summary(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    queue = _make_queue(tmp_path, items=(
+        WorkItem("task-1", "Task One", priority=10),
+        WorkItem("task-2", "Task Two", priority=20, dependencies=("task-1",)),
+    ))
+    state = project_runtime_state(supervisor_state(tmp_path), work_queue=queue)
+
+    assert state.work_queue is not None
+    assert "READY" in state.work_queue
+    assert state.work_queue["READY"] == ["task-1"]
+    assert state.work_queue["BLOCKED"] == ["task-2"]
+
+
+def test_projection_with_empty_queue(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    queue = _make_queue(tmp_path)
+    state = project_runtime_state(supervisor_state(tmp_path), work_queue=queue)
+
+    assert state.work_queue is not None
+    for status_list in state.work_queue.values():
+        assert status_list == []
+
+
+def test_projection_without_queue_returns_none(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    state = project_runtime_state(supervisor_state(tmp_path), work_queue=None)
+
+    assert state.work_queue is None
+
+
+def test_load_projected_state_with_queue(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    path = tmp_path / "supervisor-state.json"
+    AtomicJsonStateStore(path).save(supervisor_state(tmp_path))
+    queue = _make_queue(tmp_path, items=(WorkItem("task-1", "Task One"),))
+
+    state = load_projected_state(path, work_queue=queue)
+
+    assert state.work_queue is not None
+    assert state.work_queue["READY"] == ["task-1"]

@@ -8,9 +8,10 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
-from .__main__ import DEFAULT_ARTIFACTS, Report, inspect_repository
+from .__main__ import DEFAULT_ARTIFACTS, Finding, Report, inspect_repository
+from .work_queue import WorkItem, WorkQueueManager
 
 
 @dataclass(frozen=True)
@@ -88,6 +89,7 @@ class ExecutionSupervisor:
         stop_file: Path | None = None,
         sleeper: Callable[[float], None] = time.sleep,
         clock: Callable[[], datetime] | None = None,
+        work_queue: Optional[WorkQueueManager] = None,
     ) -> None:
         if interval_seconds < 0:
             raise ValueError("interval_seconds must be >= 0")
@@ -101,6 +103,7 @@ class ExecutionSupervisor:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._state_store = AtomicJsonStateStore(self.state_file)
         self._stop_requested = False
+        self._work_queue = work_queue
 
     def request_stop(self) -> None:
         self._stop_requested = True
@@ -154,6 +157,10 @@ class ExecutionSupervisor:
         json_path.write_text(json.dumps(asdict(report), indent=2) + "\n", encoding="utf-8")
         markdown_path.write_text(render_markdown(report), encoding="utf-8")
 
+        # Enqueue remediation tasks for missing artifacts if work queue is configured
+        if self._work_queue is not None:
+            self._enqueue_remediation_tasks(report.findings, cycle_number)
+
         completed = SupervisorState(
             schema_version="1",
             status="QUIESCENT",
@@ -176,6 +183,31 @@ class ExecutionSupervisor:
             report_json=str(json_path),
             report_markdown=str(markdown_path),
         )
+
+    def _enqueue_remediation_tasks(self, findings: list[Finding], cycle_number: int) -> None:
+        """Enqueue remediation tasks for missing or unverified artifacts."""
+        existing_items = {item.task_id for item in self._work_queue.state.items}
+        for finding in findings:
+            if finding.classification in ("Verified Missing", "Unverified"):
+                task_id = f"remediate-{finding.artifact.replace('/', '-').replace('.', '-')}-c{cycle_number}"
+                if task_id not in existing_items:
+                    remediation_item = WorkItem(
+                        task_id=task_id,
+                        title=f"Remediate {finding.artifact}",
+                        priority=100 + cycle_number,
+                        dependencies=(),
+                        state="READY",
+                    )
+                    # Use transition to add the new item - we need to recreate the state with the new item
+                    current_items = list(self._work_queue.state.items)
+                    current_items.append(remediation_item)
+                    from .work_queue import WorkQueueState
+                    new_state = WorkQueueState(
+                        schema_version=self._work_queue.state.schema_version,
+                        revision=self._work_queue.state.revision + 1,
+                        items=tuple(current_items),
+                    )
+                    self._work_queue._persist(self._work_queue._normalize(new_state))
 
     def run(self, *, max_cycles: int | None = None) -> int:
         if max_cycles is not None and max_cycles < 1:

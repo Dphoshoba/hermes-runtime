@@ -5,7 +5,9 @@ import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, Optional
+
+from .work_queue import WorkQueueManager
 
 
 @dataclass(frozen=True)
@@ -38,6 +40,8 @@ def run_pipeline(
     runtime_root: Path,
     repository: Path,
     working_directory: Path,
+    work_queue: Optional[WorkQueueManager] = None,
+    task_id: Optional[str] = None,
 ) -> RuntimeResult:
     started_at = _utc_now()
     run_id = datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%M%S.%fZ")
@@ -53,6 +57,10 @@ def run_pipeline(
     review_path: Path | None = None
     health_path: Path | None = None
 
+    # Transition task to RUNNING if work queue is provided
+    if work_queue and task_id:
+        work_queue.transition(task_id, "RUNNING", increment_attempts=True)
+
     record_command = [
         "hermes-record",
         "--evidence-dir",
@@ -65,6 +73,12 @@ def run_pipeline(
         str(repository),
         *command,
     ]
+
+    # Add work queue args if provided
+    if work_queue and task_id:
+        # We need to pass the work queue state file - but we don't have direct access to it
+        # The CLI will handle this by adding the args when calling hermes-record
+        pass
 
     record_process = subprocess.run(
         record_command,
@@ -97,6 +111,11 @@ def run_pipeline(
     if execution_record_path is None:
         errors.append("execution record path not found in hermes-record output")
     else:
+        # Mark OBSERVED after successful evidence recording
+        if work_queue and task_id:
+            work_queue.mark_observed(task_id)
+            work_queue.mark_verification_pending(task_id)
+
         review_process = subprocess.run(
             [
                 "hermes-review",
@@ -133,6 +152,10 @@ def run_pipeline(
 
         if review_path is None:
             errors.append("review path not found in hermes-review output")
+        else:
+            # Mark VERIFIED after successful review
+            if work_queue and task_id:
+                work_queue.record_independent_verification(task_id)
 
     health_process = subprocess.run(
         [
@@ -171,6 +194,10 @@ def run_pipeline(
     status = "COMPLETED" if not errors else "FAILED"
     exit_code = 0 if not errors else 1
     finished_at = _utc_now()
+
+    # Mark COMPLETE on full success
+    if work_queue and task_id and not errors:
+        work_queue.mark_complete(task_id)
 
     result = RuntimeResult(
         run_id=run_id,

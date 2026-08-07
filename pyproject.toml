@@ -15,6 +15,7 @@ hermes-record = "hermes_v01.evidence_cli:main"
 hermes-review = "hermes_v01.reviewer_cli:main"
 hermes-health = "hermes_v01.health_cli:main"
 hermes-runtime = "hermes_v01.runtime_cli:main"
+hermes-queue = "hermes_v01.work_queue_cli:main"
 
 [tool.setuptools]
 packages = ["hermes_v01"]
