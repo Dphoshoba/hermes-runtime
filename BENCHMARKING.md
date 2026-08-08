@@ -94,11 +94,11 @@ hermes-benchmark confidence
 ```
 
 **Confidence categories:**
-- Repository Intelligence confidence
-- Engineering Intelligence confidence
-- Governance confidence
-- Recommendations confidence
-- Overall confidence
+- Repository Intelligence confidence: `min(1.0, modules_scanned / files_scanned)`
+- Engineering Intelligence confidence: `min(1.0, findings_per_module / 3.0)`
+- Governance confidence: `approved / total_recs`
+- Recommendations confidence: `min(1.0, missions / approved)`
+- Overall confidence: `0.25*RI + 0.30*EI + 0.25*Gov + 0.20*Rec`
 
 ### `hermes-benchmark report`
 

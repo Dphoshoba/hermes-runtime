@@ -117,11 +117,17 @@ def _generate_traceability(
 
 
 def generate_missions(governance: dict[str, Any]) -> MissionRecommendations:
-    """Main entry point. Consume governance dict, produce mission recommendations."""
+    """Main entry point. Consume governance dict, produce mission recommendations.
+
+    Caps at 50 missions to keep pipeline performant.
+    """
     repository = governance.get("repository", {})
     assessment = governance.get("assessment", {})
     approved_missions = assessment.get("approved_missions", [])
     approval_decisions = assessment.get("approval_decisions", [])
+
+    # Cap at 50 missions for performance
+    approved_missions = approved_missions[:50]
 
     # Build EI findings lookup from governance decisions
     # (governance decisions reference engineering findings)

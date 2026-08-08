@@ -503,7 +503,19 @@ def detect_changes(baseline: Snapshot, current: Snapshot) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def compute_confidence(results: list[BenchmarkResult], snapshots: list[Snapshot] | None = None) -> EngineeringConfidence:
-    """Compute evidence-based engineering confidence scores."""
+    """Compute evidence-based engineering confidence scores.
+
+    Formulas:
+    - RI confidence: min(1.0, modules_scanned / max(files_scanned, 1))
+      Measures coverage of Python files by the scanner.
+    - EI confidence: min(1.0, findings_per_module / 3.0)
+      Measures finding density. 3+ findings per module = high confidence.
+    - Governance confidence: approved / max(total_recs, 1)
+      Measures approval rate after deduplication.
+    - Recommendation confidence: min(1.0, missions / max(approved, 1))
+      Measures conversion of approved recommendations to missions.
+    - Overall: 0.25*RI + 0.30*EI + 0.25*Gov + 0.20*Rec
+    """
     evidence: list[str] = []
 
     if not results:
@@ -516,32 +528,32 @@ def compute_confidence(results: list[BenchmarkResult], snapshots: list[Snapshot]
     successful = [r for r in results if not r.errors]
     n = len(successful)
 
-    # Repo Intel confidence: based on modules scanned vs files scanned
+    # RI confidence: modules discovered as fraction of files scanned
     total_modules = sum(r.modules_scanned for r in successful)
     total_files = sum(r.files_scanned for r in successful)
     ri_confidence = min(1.0, total_modules / max(total_files, 1)) if total_files > 0 else 0.0
-    evidence.append(f"Modules scanned: {total_modules}, files: {total_files}, ratio: {ri_confidence:.2f}")
+    evidence.append(f"RI: {total_modules} modules / {total_files} files = {ri_confidence:.2%}")
 
-    # EI confidence: findings per module
+    # EI confidence: findings per module (3+ = high confidence)
     total_findings = sum(r.findings_generated for r in successful)
     findings_per_module = total_findings / max(total_modules, 1)
-    ei_confidence = min(1.0, findings_per_module / 2.0)  # 2 findings per module = high confidence
-    evidence.append(f"Findings per module: {findings_per_module:.2f}, confidence: {ei_confidence:.2f}")
+    ei_confidence = min(1.0, findings_per_module / 3.0)
+    evidence.append(f"EI: {total_findings} findings / {total_modules} modules = {findings_per_module:.1f}/mod, confidence={ei_confidence:.2%}")
 
     # Governance confidence: approval rate
     total_recs = sum(r.recommendations_generated for r in successful)
     total_approved = sum(r.approved_recommendations for r in successful)
     gov_confidence = total_approved / max(total_recs, 1) if total_recs > 0 else 0.0
-    evidence.append(f"Approval rate: {gov_confidence:.2f} ({total_approved}/{total_recs})")
+    evidence.append(f"Gov: {total_approved} approved / {total_recs} recommendations = {gov_confidence:.2%}")
 
-    # Recommendation confidence: missions per approved recommendation
+    # Recommendation confidence: missions per approval
     total_missions = sum(r.missions_generated for r in successful)
     rec_confidence = min(1.0, total_missions / max(total_approved, 1)) if total_approved > 0 else 0.0
-    evidence.append(f"Missions per approval: {rec_confidence:.2f}")
+    evidence.append(f"Rec: {total_missions} missions / {total_approved} approved = {rec_confidence:.2%}")
 
-    # Overall confidence: weighted average
-    overall = (0.2 * ri_confidence + 0.3 * ei_confidence + 0.25 * gov_confidence + 0.25 * rec_confidence)
-    evidence.append(f"Overall confidence: {overall:.2f}")
+    # Overall: weighted average
+    overall = (0.25 * ri_confidence + 0.30 * ei_confidence + 0.25 * gov_confidence + 0.20 * rec_confidence)
+    evidence.append(f"Overall: {overall:.2%}")
 
     # Determinism evidence
     if len(successful) >= 2:
@@ -549,7 +561,7 @@ def compute_confidence(results: list[BenchmarkResult], snapshots: list[Snapshot]
         avg = sum(durations) / len(durations)
         variance = sum((d - avg) ** 2 for d in durations) / len(durations)
         cv = (variance ** 0.5) / avg if avg > 0 else 0
-        evidence.append(f"Determinism coefficient of variation: {cv:.4f}")
+        evidence.append(f"Determinism CV: {cv:.4f}")
 
     return EngineeringConfidence(
         confidence_repo_intel=ri_confidence,

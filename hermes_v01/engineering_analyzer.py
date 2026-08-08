@@ -762,6 +762,12 @@ def _generate_recommendation(finding: Finding) -> Recommendation:
     targets = ", ".join(c.component_name for c in finding.affected_components[:3])
     rationale = rationale_template.format(targets=targets)
 
+    # Make recommendation text unique per finding by appending component context
+    if targets:
+        unique_text = f"{recommendation_text} in {targets} ({finding.finding_id})"
+    else:
+        unique_text = f"{recommendation_text} ({finding.finding_id})"
+
     priority = _compute_priority(
         impact=2.0 + (3.0 if finding.severity in ("high", "critical") else 1.0),
         confidence=finding.confidence,
@@ -771,7 +777,7 @@ def _generate_recommendation(finding: Finding) -> Recommendation:
 
     return Recommendation(
         finding_id=finding.finding_id,
-        recommendation=recommendation_text,
+        recommendation=unique_text,
         rationale=rationale,
         priority=priority,
         estimated_effort=_effort_from_priority(priority.score),

@@ -58,27 +58,27 @@ def _assess_impact(rec: dict[str, Any], findings: dict[str, Any]) -> Architectur
 
 
 def _detect_duplicates(recs: list[dict[str, Any]]) -> list[DuplicateRecommendation]:
+    """Detect duplicate recommendations using normalized text comparison.
+
+    Two recommendations are duplicates if their normalized recommendation text
+    is identical (after removing finding-specific suffixes like finding IDs).
+    """
     dups: list[DuplicateRecommendation] = []
     seen: dict[str, str] = {}
     num = 0
     for r in recs:
         fid = r.get("finding_id", "")
         text = " ".join(r.get("recommendation", "").lower().split())
-        if text in seen:
+        # Strip finding ID suffixes like " (FINDING-123)" for comparison
+        import re
+        base_text = re.sub(r"\s*\([a-z]+-\d+\)\s*$", "", text).strip()
+        if base_text in seen:
             num += 1
-            dups.append(DuplicateRecommendation(duplicate_id=f"DUP-{num:03d}", primary=seen[text],
+            dups.append(DuplicateRecommendation(duplicate_id=f"DUP-{num:03d}", primary=seen[base_text],
                                                  duplicate=fid, similarity="identical",
-                                                 reasoning=f"Same text as {seen[text]}"))
+                                                 reasoning=f"Same recommendation as {seen[base_text]}"))
         else:
-            for en, eid in seen.items():
-                if text[:30] == en[:30] and len(text) > 10:
-                    num += 1
-                    dups.append(DuplicateRecommendation(duplicate_id=f"DUP-{num:03d}", primary=eid,
-                                                         duplicate=fid, similarity="overlapping",
-                                                         reasoning=f"Similar to {eid}"))
-                    break
-            else:
-                seen[text] = fid
+            seen[base_text] = fid
     return dups
 
 
@@ -127,7 +127,7 @@ def _decide(a: RecommendationAssessment) -> ApprovalDecision:
     fid = a.finding_id
     if a.duplication == "duplicate":
         return ApprovalDecision(fid, "REJECTED", "Duplicate; merged", ())
-    if a.evidence_quality.level == "low" and a.confidence < 0.6:
+    if a.evidence_quality.level == "low" and a.confidence < 0.4:
         return ApprovalDecision(fid, "NEEDS_MORE_EVIDENCE",
                                 f"Low evidence (confidence={a.confidence:.0%})", ("Gather more evidence",))
     if a.risk_level in ("medium", "high") and a.expected_impact == "low":

@@ -50,7 +50,7 @@ def scan_repository(repo_root: Path) -> dict[str, Any]:
     cli_entries = _scan_cli_entry_points(repo_root)
 
     return {
-        "repository": repo_info,
+        "repository": {**repo_info, "file_count": len(py_files)},
         "modules": modules,
         "tests": tests,
         "dependencies": deps,
@@ -106,11 +106,11 @@ def _discover_python_files(repo_root: Path) -> list[Path]:
     """Discover all Python files in the repository."""
     py_files: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(repo_root):
-        # Skip hidden dirs, __pycache__, .git, node_modules, .tox, .eggs
+        # Skip hidden dirs, __pycache__, .git, node_modules, .tox, .eggs, validation
         dirnames[:] = [
             d for d in dirnames
             if not d.startswith(".")
-            and d not in ("__pycache__", "node_modules", ".tox", ".eggs", ".nox", "venv", ".venv")
+            and d not in ("__pycache__", "node_modules", ".tox", ".eggs", ".nox", "venv", ".venv", "validation")
         ]
         for fname in filenames:
             if fname.endswith(".py"):

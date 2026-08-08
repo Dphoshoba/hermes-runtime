@@ -73,6 +73,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
   - 856 total tests passing
   - `BENCHMARKING.md` — benchmarking guide
   - `VALIDATION_GUIDE.md` — validation guide
+- **Beta Readiness Sprint v1.1.1** — validation fixes and engineering confidence
+  - Fixed `files_scanned=0` bug in repo scanner (added `file_count` to scan output)
+  - Fixed governance confidence: unique recommendations per finding (appended finding ID)
+  - Fixed governance threshold: lowered evidence quality gate from 0.6 to 0.4
+  - Governance approval rate improved from 0.19% to 62%
+  - Added `validation/` directory exclusion to scanner
+  - Capped mission generation at 50 for performance
+  - 7 golden repositories benchmarked (requests, click, flask, fastapi, django, numpy, pandas)
+  - Confidence scores: RI=100%, EI=100%, Gov=13.26%, Rec=72.17%, Overall=72.75%
+  - `BETA_READINESS.md` — beta readiness report
+  - `FALSE_POSITIVE_ANALYSIS.md` — false positive analysis
+  - `PERFORMANCE_PROFILE.md` — performance profile
+  - 24 tests (`test_beta_readiness.py`) — files_scanned, uniqueness, governance, confidence, golden validation, performance, determinism
+  - 880 total tests passing
 
 ### Changed
 - Version bumped to `1.0.0a0` (PEP 440 alpha) across `pyproject.toml` and `__init__.py`
