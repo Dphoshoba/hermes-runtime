@@ -256,3 +256,20 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 - ENGINEERING_INTELLIGENCE_SCHEMA.md with scoring formulas and limitations
 - 57 tests covering models, findings, recommendations, missions, rendering, CLI, malformed input, Hermes self-analysis
 - 718 total tests passing
+
+## Engineering Governance v1.0 ✅ COMPLETE
+
+- Validates engineering recommendations before mission planning
+- Consumes Engineering Intelligence JSON — never scans independently
+- Evidence quality evaluation: low/medium/high based on reference count, diversity, consistency
+- Architecture impact assessment: local/package/system
+- Duplicate detection: text normalization with identical/overlapping classification
+- Conflict detection: keyword pattern matching for contradictory recommendations
+- 5 decision types: APPROVED, APPROVED_WITH_NOTES, NEEDS_MORE_EVIDENCE, DEFERRED, REJECTED
+- Every decision includes rationale and conditions
+- ApprovedCandidateMission generated for approved recommendations only
+- `hermes-governance` CLI: scan, show, summary, approved, rejected
+- Deterministic JSON output
+- ENGINEERING_GOVERNANCE_SCHEMA.md documentation
+- 31 tests covering decisions, duplicates, conflicts, evidence, architecture, rendering, CLI, Hermes self-governance
+- 749 total tests passing

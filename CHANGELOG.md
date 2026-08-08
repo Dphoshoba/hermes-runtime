@@ -31,6 +31,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
   - `ENGINEERING_INTELLIGENCE_SCHEMA.md` — complete schema documentation with scoring formulas
   - 57 tests (`test_engineering_intelligence.py`) — models, findings, recommendations, missions, severity, confidence, evidence, rendering, CLI, malformed input, Hermes self-analysis
   - 718 total tests passing
+- **Engineering Governance v1.0** — recommendation validation before mission planning
+  - `hermes_v01/governance_intel_models.py` — 8 frozen dataclasses (GovernanceAssessment, RecommendationAssessment, ApprovalDecision, Conflict, DuplicateRecommendation, EvidenceQuality, ArchitectureImpact, ApprovalSummary)
+  - `hermes_v01/governance_analyzer.py` — evidence quality evaluation, duplicate detection, conflict detection, architecture impact assessment, approval decisions
+  - `hermes_v01/governance_renderer.py` — JSON and Markdown artifact rendering
+  - `hermes_v01/governance_cli.py` — `hermes-governance` CLI with scan/show/summary/approved/rejected subcommands
+  - `ENGINEERING_GOVERNANCE_SCHEMA.md` — complete schema documentation
+  - 31 tests (`test_engineering_governance.py`) — decisions, duplicates, conflicts, evidence, architecture, rendering, CLI, Hermes self-governance
+  - 749 total tests passing
 
 ### Changed
 - Version bumped to `1.0.0a0` (PEP 440 alpha) across `pyproject.toml` and `__init__.py`

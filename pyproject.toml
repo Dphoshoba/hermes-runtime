@@ -39,6 +39,7 @@ hermes-plan = "hermes_v01.plan_cli:main"
 hermes-mission = "hermes_v01.mission_runner_cli:main"
 hermes-repo = "hermes_v01.repo_cli:main"
 hermes-engineering = "hermes_v01.engineering_cli:main"
+hermes-governance = "hermes_v01.governance_cli:main"
 
 [tool.setuptools]
 packages = ["hermes_v01"]
