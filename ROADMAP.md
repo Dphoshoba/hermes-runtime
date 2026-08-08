@@ -240,3 +240,19 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 - REPOSITORY_INTELLIGENCE_SCHEMA.md documentation
 - 68 tests covering scanner, analyzer, renderer, CLI, determinism, and Hermes self-scan
 - 661 total tests passing
+
+## Engineering Intelligence v1.0 ✅ COMPLETE
+
+- Evidence-based engineering recommendation layer
+- Consumes Repository Intelligence JSON — never scans independently
+- 15 finding categories: Architecture, Coupling, Complexity, Documentation, Testing, Packaging, Configuration, Dependencies, CLI, Public API, Performance, Maintainability, Observability, Security Signals, Technical Debt
+- 10 frozen dataclasses: Finding, Recommendation, CandidateMission, RiskAssessment, PriorityScore, ConfidenceScore, AffectedComponent, EvidenceReference, EngineeringSummary, EngineeringIntelligence
+- Priority scoring model: `0.40*impact + 0.20*(confidence*10) + 0.25*severity + 0.15*scope`
+- Health score: 100.0 minus capped deductions per severity level
+- Risk assessment: low/moderate/high/critical with evidence-backed reasoning
+- Mission recommendation engine: groups findings into 8 mission types
+- `hermes-engineering` CLI: scan, show, summary, findings, missions
+- Deterministic JSON output (byte-identical for same RI input)
+- ENGINEERING_INTELLIGENCE_SCHEMA.md with scoring formulas and limitations
+- 57 tests covering models, findings, recommendations, missions, rendering, CLI, malformed input, Hermes self-analysis
+- 718 total tests passing

@@ -23,6 +23,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
   - `REPOSITORY_INTELLIGENCE_SCHEMA.md` — complete schema documentation
   - 68 tests (`test_repo_intelligence.py`) — scanner, analyzer, renderer, CLI, determinism, dogfooding
   - 661 total tests passing
+- **Engineering Intelligence v1.0** — evidence-based engineering recommendations
+  - `hermes_v01/engineering_intel_models.py` — 10 frozen dataclasses (Finding, Recommendation, CandidateMission, RiskAssessment, PriorityScore, ConfidenceScore, AffectedComponent, EvidenceReference, EngineeringSummary, EngineeringIntelligence)
+  - `hermes_v01/engineering_analyzer.py` — analysis engine: 15 finding categories, recommendation engine, mission grouping, priority scoring, risk assessment, health score
+  - `hermes_v01/engineering_renderer.py` — JSON and Markdown artifact rendering
+  - `hermes_v01/engineering_cli.py` — `hermes-engineering` CLI with scan/show/summary/findings/missions subcommands
+  - `ENGINEERING_INTELLIGENCE_SCHEMA.md` — complete schema documentation with scoring formulas
+  - 57 tests (`test_engineering_intelligence.py`) — models, findings, recommendations, missions, severity, confidence, evidence, rendering, CLI, malformed input, Hermes self-analysis
+  - 718 total tests passing
 
 ### Changed
 - Version bumped to `1.0.0a0` (PEP 440 alpha) across `pyproject.toml` and `__init__.py`
