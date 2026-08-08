@@ -10,6 +10,14 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+# Shared configuration file names recognized across all languages.
+# Language-specific scanners extend this with their own config files.
+COMMON_CONFIG_NAMES: set[str] = {
+    ".gitignore",
+    ".editorconfig",
+    "Makefile",
+}
+
 
 class RepositoryScanner(ABC):
     """Abstract base class for language-specific repository scanners."""

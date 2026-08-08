@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .scanner_registry import RepositoryScanner
+from .scanner_registry import COMMON_CONFIG_NAMES, RepositoryScanner
 
 # File extensions this scanner handles
 _JS_EXTENSIONS = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"}
@@ -324,7 +324,7 @@ class JavaScriptScanner(RepositoryScanner):
     def _scan_configuration(self, repo_root: Path) -> list[dict[str, Any]]:
         """Scan for configuration files."""
         config_files = []
-        config_names = {
+        config_names = COMMON_CONFIG_NAMES | {
             "package.json", "tsconfig.json", ".eslintrc", ".eslintrc.js",
             ".eslintrc.json", ".prettierrc", ".prettierrc.json",
             "vite.config.js", "vite.config.ts", "webpack.config.js",
@@ -351,7 +351,10 @@ class JavaScriptScanner(RepositoryScanner):
             if loc > 300:
                 signals.append({
                     "type": "large_module",
+                    "signal_type": "large_module",
                     "file": mod["name"],
+                    "target": mod["name"],
+                    "message": f"Module {mod['name']} is {loc} lines (threshold: 300)",
                     "value": loc,
                     "threshold": 300,
                     "severity": "high" if loc > 500 else "medium",
@@ -362,7 +365,10 @@ class JavaScriptScanner(RepositoryScanner):
             if hook_count > 5:
                 signals.append({
                     "type": "high_hook_concentration",
+                    "signal_type": "high_hook_concentration",
                     "file": comp["file"],
+                    "target": comp["file"],
+                    "message": f"Component {comp['name']} uses {hook_count} hooks (threshold: 5)",
                     "component": comp["name"],
                     "value": hook_count,
                     "threshold": 5,
@@ -377,7 +383,10 @@ class JavaScriptScanner(RepositoryScanner):
             if count > 3:
                 signals.append({
                     "type": "api_concentration",
+                    "signal_type": "api_concentration",
                     "file": fpath,
+                    "target": fpath,
+                    "message": f"File {fpath} has {count} fetch/API calls (threshold: 3)",
                     "value": count,
                     "threshold": 3,
                     "severity": "medium",

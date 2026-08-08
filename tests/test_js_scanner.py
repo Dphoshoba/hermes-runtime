@@ -483,3 +483,177 @@ class TestZeroPythonFindings:
             assert finding.category in valid_categories, (
                 f"Unexpected category: {finding.category}"
             )
+
+
+# ---------------------------------------------------------------------------
+# DEFECT 1 Regression: .gitignore detection in JS/TS repos
+# ---------------------------------------------------------------------------
+
+class TestGitignoreDetection:
+    """Verify .gitignore is detected by JS scanner and no false positive."""
+
+    def test_js_repo_detects_gitignore(self, js_scanner):
+        result = js_scanner.scan(JS_REPO)
+        config_kinds = {c["kind"] for c in result.get("configuration", [])}
+        assert ".gitignore" in config_kinds, (
+            f"JS scanner should detect .gitignore, got config: {config_kinds}"
+        )
+
+    def test_ts_repo_detects_gitignore(self, js_scanner):
+        result = js_scanner.scan(TS_REPO)
+        config_kinds = {c["kind"] for c in result.get("configuration", [])}
+        assert ".gitignore" in config_kinds, (
+            f"TS scanner should detect .gitignore, got config: {config_kinds}"
+        )
+
+    def test_no_false_missing_gitignore_when_present(self):
+        """Engineering Intelligence should not flag .gitignore when it exists."""
+        from hermes_v01.engineering_analyzer import analyze_engineering
+        scan = scan_repository(JS_REPO)
+        ei = analyze_engineering(scan)
+        gitignore_findings = [
+            f for f in ei.findings
+            if f.category == "Configuration" and ".gitignore" in f.title
+        ]
+        assert len(gitignore_findings) == 0, (
+            f"Should not have missing .gitignore finding when file exists, "
+            f"got: {[f.title for f in gitignore_findings]}"
+        )
+
+    def test_missing_gitignore_generates_finding(self, tmp_path):
+        """When .gitignore is absent, a finding should be generated."""
+        from hermes_v01.engineering_analyzer import analyze_engineering
+        repo = tmp_path / "no-gitignore-repo"
+        repo.mkdir()
+        (repo / "package.json").write_text('{"name": "test"}')
+        (repo / "src").mkdir()
+        (repo / "src" / "index.js").write_text("console.log('hello');")
+        scan = scan_repository(repo)
+        ei = analyze_engineering(scan)
+        gitignore_findings = [
+            f for f in ei.findings
+            if f.category == "Configuration" and ".gitignore" in f.title
+        ]
+        assert len(gitignore_findings) == 1, (
+            f"Should have exactly one missing .gitignore finding, "
+            f"got: {[f.title for f in gitignore_findings]}"
+        )
+
+    def test_python_scanner_still_detects_gitignore(self):
+        """Python scanner behavior unchanged — still detects .gitignore."""
+        from hermes_v01.repo_scanner import _scan_configuration
+        from pathlib import Path
+        # Use a temp dir with .gitignore
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            (p / ".gitignore").write_text("*.pyc\n")
+            config = _scan_configuration(p)
+            kinds = {c["kind"] for c in config}
+            assert ".gitignore" in kinds
+
+
+# ---------------------------------------------------------------------------
+# DEFECT 2 Regression: Frontend complexity evidence references
+# ---------------------------------------------------------------------------
+
+class TestFrontendEvidenceReferences:
+    """Verify complexity findings have non-empty evidence references."""
+
+    def test_complexity_findings_have_evidence(self):
+        from hermes_v01.engineering_analyzer import analyze_engineering
+        scan = scan_repository(JS_REPO)
+        ei = analyze_engineering(scan)
+        complexity_findings = [f for f in ei.findings if f.category == "Complexity"]
+        for finding in complexity_findings:
+            assert len(finding.evidence_references) > 0, (
+                f"Complexity finding '{finding.title}' has no evidence references"
+            )
+            for ref in finding.evidence_references:
+                assert ref.reference_path, (
+                    f"Evidence reference missing reference_path in '{finding.title}'"
+                )
+                assert ref.detail, (
+                    f"Evidence reference missing detail in '{finding.title}'"
+                )
+
+    def test_hook_concentration_evidence_has_component(self):
+        """high_hook_concentration evidence should mention component name."""
+        from hermes_v01.engineering_analyzer import analyze_engineering
+        scan = scan_repository(JS_REPO)
+        ei = analyze_engineering(scan)
+        hook_findings = [
+            f for f in ei.findings
+            if f.category == "Complexity" and "hook" in f.title.lower()
+        ]
+        for finding in hook_findings:
+            details = [ref.detail for ref in finding.evidence_references]
+            assert any("hook" in d.lower() for d in details), (
+                f"Hook concentration evidence should mention hooks, got: {details}"
+            )
+
+    def test_api_concentration_evidence_has_fetch_count(self):
+        """api_concentration evidence should mention fetch/API call count."""
+        from hermes_v01.engineering_analyzer import analyze_engineering
+        scan = scan_repository(JS_REPO)
+        ei = analyze_engineering(scan)
+        api_findings = [
+            f for f in ei.findings
+            if f.category == "Complexity" and "api" in f.title.lower()
+        ]
+        for finding in api_findings:
+            details = [ref.detail for ref in finding.evidence_references]
+            assert any(
+                "fetch" in d.lower() or "api" in d.lower() or "call" in d.lower()
+                for d in details
+            ), f"API concentration evidence should mention API calls, got: {details}"
+
+    def test_js_scanner_signals_include_required_fields(self, js_scanner):
+        """JS scanner complexity signals must include target, message, signal_type."""
+        result = js_scanner.scan(JS_REPO)
+        for sig in result.get("complexity_signals", []):
+            assert "target" in sig, f"Signal missing 'target': {sig}"
+            assert "message" in sig, f"Signal missing 'message': {sig}"
+            assert "signal_type" in sig, f"Signal missing 'signal_type': {sig}"
+            assert sig["target"], f"Signal 'target' is empty: {sig}"
+            assert sig["message"], f"Signal 'message' is empty: {sig}"
+
+
+# ---------------------------------------------------------------------------
+# DEFECT 3 Regression: Governance traceability
+# ---------------------------------------------------------------------------
+
+class TestGovernanceTraceability:
+    """Verify governance preserves evidence quality for frontend findings."""
+
+    def test_governance_receives_evidence_quality(self):
+        from hermes_v01.engineering_analyzer import analyze_engineering
+        from hermes_v01.governance_analyzer import govern_engineering
+        scan = scan_repository(JS_REPO)
+        ei = analyze_engineering(scan)
+        gov = govern_engineering(ei.as_dict())
+        for assessment in gov.assessment.recommendation_assessments:
+            eq = assessment.evidence_quality
+            assert eq.level in ("low", "medium", "high"), (
+                f"Invalid evidence level: {eq.level}"
+            )
+            assert eq.reference_count >= 0, (
+                f"Invalid reference count: {eq.reference_count}"
+            )
+
+    def test_approved_findings_have_evidence(self):
+        """Every APPROVED frontend recommendation must have non-empty evidence."""
+        from hermes_v01.engineering_analyzer import analyze_engineering
+        from hermes_v01.governance_analyzer import govern_engineering
+        scan = scan_repository(JS_REPO)
+        ei = analyze_engineering(scan)
+        gov = govern_engineering(ei.as_dict())
+        findings_by_id = {f.finding_id: f for f in ei.findings}
+        for decision in gov.assessment.approval_decisions:
+            if decision.decision in ("APPROVED", "APPROVED_WITH_NOTES"):
+                finding = findings_by_id.get(decision.finding_id)
+                if finding and finding.category == "Complexity":
+                    assert len(finding.evidence_references) > 0, (
+                        f"Approved complexity finding '{finding.title}' "
+                        f"has no evidence references"
+                    )

@@ -28,10 +28,12 @@ from .repo_intel_models import (
     TestModuleInfo,
 )
 
-# Configuration files we recognize
-_CONFIG_NAMES = {
+from .scanner_registry import COMMON_CONFIG_NAMES
+
+# Python-specific configuration files (superset of COMMON_CONFIG_NAMES)
+_CONFIG_NAMES = COMMON_CONFIG_NAMES | {
     "pyproject.toml", "setup.cfg", "setup.py", "tox.ini",
-    "Makefile", ".gitignore", ".editorconfig", ".flake8",
+    ".flake8",
     "pytest.ini", "conftest.py", ".pre-commit-config.yaml",
     "mypy.ini", ".mypy.ini", "ruff.toml", ".ruff.toml",
     "requirements.txt", "requirements-dev.txt", "requirements-test.txt",

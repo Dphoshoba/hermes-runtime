@@ -226,13 +226,25 @@ def _findings_from_complexity(ri: dict[str, Any]) -> list[Finding]:
     mod_count = len(modules)
 
     for i, sig in enumerate(signals):
-        target = sig.get("target", "")
-        severity = "medium" if sig.get("severity") == "warning" else "low"
+        target = sig.get("target", sig.get("file", ""))
+        sev_raw = sig.get("severity", "low")
+        severity = "medium" if sev_raw in ("warning", "medium") else "low"
+        ref_path = target or sig.get("reference_path", "")
+        detail = sig.get("message", sig.get("detail", ""))
+        if not detail:
+            # Build detail from available fields
+            sig_type = sig.get("signal_type", sig.get("type", "complexity"))
+            value = sig.get("value", "")
+            threshold = sig.get("threshold", "")
+            if value and threshold:
+                detail = f"{sig_type}: {value} (threshold: {threshold})"
+            else:
+                detail = f"Complexity signal: {sig_type}"
         evidence = [
             EvidenceReference(
                 source="complexity_signals",
-                reference_path=target,
-                detail=sig.get("message", ""),
+                reference_path=ref_path,
+                detail=detail,
             )
         ]
         affected = [
