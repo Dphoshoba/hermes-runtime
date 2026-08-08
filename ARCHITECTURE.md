@@ -12,6 +12,11 @@ hermes_v01/
   __main__.py          # Read-only repository inspection (hermes-validate)
   utils.py             # Shared utilities (sha256, format_utc, fsync)
 
+  # Safety & Readiness
+  readiness.py         # Repository Readiness Assessment (pre-pipeline gate)
+  readiness_cli.py     # hermes-ready CLI (JSON + Markdown output)
+  safety.py            # Worktree isolation, diff scope validation
+
   # Core Pipeline
   evidence.py          # Immutable evidence recording and integrity
   reviewer.py          # Independent review of execution records

@@ -7,6 +7,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ## [1.0.0-beta] - 2026-08-09
 
 ### Added
+- **Repository Readiness Assessment** — mandatory pre-pipeline safety gate
+  - `RepositoryReadiness` canonical model with 20+ fields
+  - `assess_readiness()` function for version control, working tree, baseline integrity, analysis confidence, and mission safety checks
+  - `assert_ready()` pipeline guard that raises `ReadinessBlocked` when execution is not allowed
+  - `hermes-ready` CLI command with JSON and Markdown output
+  - Protected untracked file tracking to prevent worktree contamination
+  - Worktree recommendation when user work is present
+- **Safety module** — worktree isolation and diff scope validation
+  - `check_worktree_isolation()` detects unauthorized file contamination
+  - `check_diff_scope()` validates commit diff matches declared mission scope
+  - New file detection, insertion limits, scope boundary enforcement
 - **Multi-language scanning** — JavaScript and TypeScript support via `JavaScriptScanner`
   - `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx` file extensions
   - `package.json` and `tsconfig.json` manifest detection

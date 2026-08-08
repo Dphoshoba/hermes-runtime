@@ -42,6 +42,7 @@ hermes-engineering = "hermes_v01.engineering_cli:main"
 hermes-governance = "hermes_v01.governance_cli:main"
 hermes-recommend = "hermes_v01.mission_recommendation_cli:main"
 hermes-benchmark = "hermes_v01.benchmark_cli:main"
+hermes-ready = "hermes_v01.readiness_cli:main"
 
 [tool.setuptools]
 packages = ["hermes_v01"]

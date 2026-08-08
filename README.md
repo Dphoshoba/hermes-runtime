@@ -16,6 +16,7 @@ Requires Python >= 3.10.
 
 | Command | Description |
 |---------|-------------|
+| `hermes-ready` | Repository readiness assessment (pre-pipeline gate) |
 | `hermes-validate` | Read-only repository inspection |
 | `hermes-supervise` | Persistent execution supervisor |
 | `hermes-status` | Canonical runtime state projection |

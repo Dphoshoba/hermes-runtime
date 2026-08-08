@@ -6,6 +6,8 @@
 - Scanner registry with pluggable language scanners ✅
 - Language detection and framework identification ✅
 - Critical bug fixes (circular recursion, schema mismatches) ✅
+- Repository Readiness Assessment (pre-pipeline safety gate) ✅
+- Safety module (worktree isolation, diff scope validation) ✅
 - **Next:** External validation with real-world JavaScript/TypeScript repositories
 
 ## v1.0.1 — Bug Fixes from Pilot Users
