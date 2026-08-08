@@ -13,6 +13,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
   - `assert_ready()` pipeline guard that raises `ReadinessBlocked` when execution is not allowed
   - `hermes-ready` CLI command with JSON and Markdown output
   - Protected untracked file tracking to prevent worktree contamination
+- **Operational maturity** — roadmap transition from feature-driven to evidence-driven development
+  - Evidence-Driven Evolution policy documented in ROADMAP.md and ENGINEERING_MANIFEST.md
+  - Feature Acceptance Policy requiring problem statement, evidence, and rollback strategy
+  - Operational roadmap: v1.0.0-beta → v1.0.1 (bug fixes) → v1.0.2 (performance) → v1.1.0 (evidence-justified features)
   - Worktree recommendation when user work is present
 - **Safety module** — worktree isolation and diff scope validation
   - `check_worktree_isolation()` detects unauthorized file contamination

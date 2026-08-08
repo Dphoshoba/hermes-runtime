@@ -1,5 +1,49 @@
 # Hermes Runtime Roadmap
 
+## Evidence-Driven Evolution
+
+Hermes evolves only when operational evidence demonstrates a need.
+
+New capabilities require one or more of:
+
+- Repeated pilot failures
+- Repeated operator requests
+- Benchmark deficiencies
+- Measurable performance bottlenecks
+- Verified engineering defects
+
+Ideas alone are insufficient.
+
+### Feature Acceptance Policy
+
+Every future feature proposal must include:
+
+1. **Problem Statement** — What is the observed problem?
+2. **Observed Evidence** — What data demonstrates the problem?
+3. **Repositories Affected** — Which repositories exhibit this problem?
+4. **Pilot References** — Which pilots encountered this issue?
+5. **Benchmark References** — What benchmark data supports this?
+6. **Alternatives Considered** — What other approaches were evaluated?
+7. **Why Existing Capabilities Are Insufficient** — Why can't Hermes solve this today?
+8. **Expected Benefit** — What measurable improvement is expected?
+9. **Success Criteria** — How will we know the fix works?
+10. **Rollback Strategy** — How do we revert if the fix causes problems?
+
+If these sections are absent, the proposal should not be accepted.
+
+---
+
+## Operational Roadmap
+
+| Version | Focus |
+|---------|-------|
+| v1.0.0-beta | External validation |
+| v1.0.1 | Bug fixes from pilot users |
+| v1.0.2 | Performance improvements |
+| v1.1.0 | Features justified by operational evidence |
+
+---
+
 ## v1.0.0-beta — External Validation 🔄 IN PROGRESS
 
 - Multi-language scanning (Python + JavaScript/TypeScript) ✅
@@ -11,20 +55,13 @@
 - **Next:** External validation with real-world JavaScript/TypeScript repositories
 
 ## v1.0.1 — Bug Fixes from Pilot Users
-- Fix issues reported by external beta testers
-- Improve governance confidence (currently 13.26%)
-- Add missing test coverage for multi-language scanning
+- Awaiting operational evidence from external pilots
 
 ## v1.0.2 — Performance Improvements
-- Optimize large repository scanning (currently 61s for pandas)
-- Parallelize mission generation for large repos
-- Improve memory usage for deep repository walks
+- Awaiting benchmark evidence from real-world usage
 
-## v1.1.0 — Features Justified by Real-World Usage
-- Features based on actual pilot user feedback
-- Per-mission queue isolation (DF-002)
-- Prerequisite task support (DF-001)
-- Mission vs execution status separation (DF-003)
+## v1.1.0 — Features Justified by Operational Evidence
+- Awaiting measured needs from production deployments
 
 ---
 

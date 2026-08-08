@@ -4,6 +4,8 @@ Autonomous engineering runtime for deterministic mission execution with full aud
 
 **Version: 1.0.0-beta**
 
+> **Operational Maturity:** Hermes is now in an operational maturity phase. Future development is driven by real engineering experience — pilot results, benchmark evidence, and verified defects. See [ROADMAP.md](ROADMAP.md) for the evidence-driven evolution policy.
+
 ## Installation
 
 ```bash

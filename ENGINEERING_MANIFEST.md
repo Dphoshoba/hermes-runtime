@@ -98,6 +98,37 @@ Hermes Runtime is an autonomous engineering runtime that executes missions throu
 - **Single coherent commit.** Each release is one commit with all changes.
 - **Changelog-driven.** Every user-visible change is documented in CHANGELOG.md.
 
+## Evidence-Driven Evolution
+
+Hermes evolves only when operational evidence demonstrates a need.
+
+New capabilities require one or more of:
+
+- Repeated pilot failures
+- Repeated operator requests
+- Benchmark deficiencies
+- Measurable performance bottlenecks
+- Verified engineering defects
+
+Ideas alone are insufficient.
+
+### Feature Acceptance Policy
+
+Every future feature proposal must include:
+
+1. **Problem Statement** — What is the observed problem?
+2. **Observed Evidence** — What data demonstrates the problem?
+3. **Repositories Affected** — Which repositories exhibit this problem?
+4. **Pilot References** — Which pilots encountered this issue?
+5. **Benchmark References** — What benchmark data supports this?
+6. **Alternatives Considered** — What other approaches were evaluated?
+7. **Why Existing Capabilities Are Insufficient** — Why can't Hermes solve this today?
+8. **Expected Benefit** — What measurable improvement is expected?
+9. **Success Criteria** — How will we know the fix works?
+10. **Rollback Strategy** — How do we revert if the fix causes problems?
+
+If these sections are absent, the proposal should not be accepted.
+
 ## Coding Standards
 
 - **Type annotations.** All public functions and CLI handlers have type annotations. `argparse.Namespace` for CLI args.
