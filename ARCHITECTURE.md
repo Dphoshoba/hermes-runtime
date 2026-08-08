@@ -28,6 +28,13 @@ hermes_v01/
   mission_control.py   # Cross-process lifecycle control (mission_control.json)
   mission_report.py    # Mission report generation, Markdown rendering, persistence
 
+  # Mission Recommendation Integration
+  mission_recommendation_models.py  # DraftMission, GeneratedTask, TraceabilityLink
+  mission_generator.py             # ApprovedCandidateMission → DraftMission
+  draft_mission_translator.py      # APPROVED DraftMission → Mission translation
+  mission_recommendation_cli.py    # hermes-recommend CLI (generate/approve/reject/status)
+  mission_recommendation_renderer.py # JSON, Markdown, per-mission export
+
   # Queue & Scheduling
   work_queue.py        # Deterministic, restart-safe work queue
   supervisor.py        # Autonomous execution supervisor
@@ -145,6 +152,63 @@ MissionReport (dataclass)
 - JSON keys sorted alphabetically (`sort_keys=True`)
 - Optional fields only included when non-default
 - Same persisted outcome → same logical report
+
+## Mission Recommendation Integration
+
+### Approval Boundary
+
+Generated missions are inert until explicitly approved by a human operator.
+
+```
+Governance-approved recommendations
+    |
+    v
+hermes-recommend generate → DraftMission (state=DRAFT)
+    |
+    v
+Human reviews mission
+    |
+    +-- hermes-recommend approve → state=APPROVED (persisted)
+    |                              → DraftMission → Mission translation
+    |                              → MissionPlanner.validate_recommendation()
+    |                              → MissionPlanner.build() → Plan
+    |
+    +-- hermes-recommend reject  → state=REJECTED (persisted)
+                                   → Mission cannot enter planner
+```
+
+### State Transitions
+
+- DRAFT → APPROVED: `approve(by=operator)`
+- DRAFT → REJECTED: `reject(reason=string)`
+- No transition from APPROVED or REJECTED (state is terminal)
+- Duplicate approval/rejection is rejected with error
+
+### Traceability Preservation
+
+Every approved mission retains references to its origin:
+- `traceability.governance_finding_id` — governance decision reference
+- `traceability.engineering_finding_id` — engineering finding reference
+- `traceability.repository_intelligence_source` — repository module/component
+- `governance_approval_reference` — governance approval record
+- `originating_finding_id` — originating engineering finding
+- `originating_recommendation` — original recommendation text
+
+### Planner Validation
+
+`MissionPlanner.validate_recommendation()` checks:
+- Mission must have `recommendation_generated` metadata
+- Mission must have `traceability` in metadata
+- Mission must have `governance_approval_reference`
+- Mission state must not be DRAFT or REJECTED
+
+### What the System Does NOT Do
+
+- Never auto-approves missions
+- Never auto-enqueues missions
+- Never auto-executes missions
+- Never bypasses human approval
+- Never allows REJECTED missions to be re-approved (without explicit policy)
 
 ## Evidence Integrity
 

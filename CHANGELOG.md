@@ -48,6 +48,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
   - All missions in DRAFT state — never enqueued automatically
   - 31 tests (`test_mission_recommendations.py`) — generation, schema, traceability, determinism, CLI, pipeline dogfood
   - 780 total tests passing
+- **Mission Recommendation → Planner Integration v1.0** — approval workflow + planner consumption
+  - `hermes_v01/mission_recommendation_models.py` — extended DraftMission with DRAFT/APPROVED/REJECTED states, approve()/reject() transitions
+  - `hermes_v01/draft_mission_translator.py` — APPROVED DraftMission → Mission translation with traceability preservation
+  - `hermes_v01/mission_recommendation_cli.py` — extended with approve/reject/status commands
+  - `hermes_v01/mission.py` — MissionPlanner.validate_recommendation() rejects DRAFT/REJECTED recommendation artifacts
+  - Only APPROVED missions accepted by planner; DRAFT and REJECTED rejected
+  - Traceability preserved: governance, engineering, repository intelligence sources
+  - All missions remain in DRAFT state by default — never auto-approved or auto-enqueued
+  - 44 tests (`test_planner_integration.py`) — approve, reject, status, duplicate idempotency, planner rejection, traceability, CLI, backward compatibility
+  - 824 total tests passing
 
 ### Changed
 - Version bumped to `1.0.0a0` (PEP 440 alpha) across `pyproject.toml` and `__init__.py`

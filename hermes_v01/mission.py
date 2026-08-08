@@ -287,6 +287,40 @@ class MissionPlanner:
 
         return errors, warnings
 
+    def validate_recommendation(
+        self,
+        mission: Mission,
+    ) -> tuple[list[str], list[str]]:
+        """Validate that a mission is eligible for planning as a recommendation.
+
+        Checks:
+        - Mission metadata must indicate recommendation_generated
+        - Mission metadata must have traceability
+        - Mission metadata must have governance_approval_reference
+        - Mission state must not be DRAFT or REJECTED
+        """
+        errors: list[str] = []
+        warnings: list[str] = []
+        meta = mission.metadata
+
+        if not meta.get("recommendation_generated"):
+            errors.append(f"Mission {mission.mission_id} is not a recommendation artifact")
+            return errors, warnings
+
+        if not meta.get("traceability"):
+            errors.append(f"Mission {mission.mission_id} is missing governance traceability")
+
+        if not meta.get("governance_approval_reference"):
+            errors.append(f"Mission {mission.mission_id} is missing governance approval reference")
+
+        state = meta.get("recommendation_state", "")
+        if state == "DRAFT":
+            errors.append(f"Mission {mission.mission_id} is in DRAFT state; must be APPROVED")
+        elif state == "REJECTED":
+            errors.append(f"Mission {mission.mission_id} is in REJECTED state; cannot plan")
+
+        return errors, warnings
+
     def build(
         self,
         mission: Mission,
@@ -299,6 +333,13 @@ class MissionPlanner:
         Validates constraints if constraint_context provided or mission has constraints.
         """
         errors, warnings = self.validate(mission)
+
+        # If this is a recommendation artifact, validate eligibility
+        if mission.metadata.get("recommendation_generated"):
+            rec_errors, rec_warnings = self.validate_recommendation(mission)
+            errors.extend(rec_errors)
+            warnings.extend(rec_warnings)
+
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         # Check capabilities

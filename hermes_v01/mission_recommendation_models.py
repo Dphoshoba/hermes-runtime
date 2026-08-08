@@ -1,13 +1,19 @@
 """Mission Recommendation Integration — data models.
 
 Frozen dataclasses for converting governance-approved recommendations
-into Hermes Mission artifacts. All missions remain in DRAFT state.
+into Hermes Mission artifacts. Supports DRAFT → APPROVED/REJECTED state.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any
+
+# Approved states that allow planner integration
+_APPROVED_STATES = frozenset({"APPROVED"})
+_REJECTED_STATES = frozenset({"REJECTED"})
+_VALID_STATES = frozenset({"DRAFT", "APPROVED", "REJECTED"})
 
 
 @dataclass(frozen=True)
@@ -58,10 +64,10 @@ class GeneratedTask:
 
 @dataclass(frozen=True)
 class DraftMission:
-    """A generated mission in DRAFT state, ready for human approval.
+    """A generated mission, starting in DRAFT state.
 
-    Conforms to the Hermes Mission schema.
-    Never enqueued automatically.
+    Supports DRAFT → APPROVED or DRAFT → REJECTED transitions.
+    Only APPROVED missions may enter MissionPlanner.
     """
 
     mission_id: str
@@ -82,6 +88,9 @@ class DraftMission:
     estimated_effort: str = ""
     priority_score: float = 0.0
     mission_type: str = ""
+    approved_at: str = ""
+    approved_by: str = ""
+    rejection_reason: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
@@ -105,12 +114,65 @@ class DraftMission:
                 "estimated_effort": self.estimated_effort,
                 "priority_score": round(self.priority_score, 2),
                 "mission_type": self.mission_type,
+                "approved_at": self.approved_at,
+                "approved_by": self.approved_by,
+                "rejection_reason": self.rejection_reason,
                 **self.metadata,
             },
         }
         if self.traceability is not None:
             d["metadata"]["traceability"] = self.traceability.as_dict()
         return d
+
+    @property
+    def is_approved(self) -> bool:
+        return self.state in _APPROVED_STATES
+
+    @property
+    def is_rejected(self) -> bool:
+        return self.state in _REJECTED_STATES
+
+    @property
+    def is_draft(self) -> bool:
+        return self.state == "DRAFT"
+
+    def approve(self, by: str = "human", reason: str = "") -> DraftMission:
+        """Return a new DraftMission with state=APPROVED."""
+        if self.state != "DRAFT":
+            raise ValueError(f"Cannot approve mission in state {self.state}; must be DRAFT")
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        return DraftMission(
+            mission_id=self.mission_id, title=self.title, description=self.description,
+            objective=self.objective, tasks=self.tasks, goals=self.goals,
+            constraints=self.constraints, required_capabilities=self.required_capabilities,
+            working_directory=self.working_directory, repository=self.repository,
+            state="APPROVED", traceability=self.traceability,
+            originating_finding_id=self.originating_finding_id,
+            originating_recommendation=self.originating_recommendation,
+            governance_approval_reference=self.governance_approval_reference,
+            estimated_effort=self.estimated_effort, priority_score=self.priority_score,
+            mission_type=self.mission_type, approved_at=now, approved_by=by,
+            rejection_reason="", metadata=dict(self.metadata),
+        )
+
+    def reject(self, reason: str = "rejected by operator", by: str = "human") -> DraftMission:
+        """Return a new DraftMission with state=REJECTED."""
+        if self.state != "DRAFT":
+            raise ValueError(f"Cannot reject mission in state {self.state}; must be DRAFT")
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        return DraftMission(
+            mission_id=self.mission_id, title=self.title, description=self.description,
+            objective=self.objective, tasks=self.tasks, goals=self.goals,
+            constraints=self.constraints, required_capabilities=self.required_capabilities,
+            working_directory=self.working_directory, repository=self.repository,
+            state="REJECTED", traceability=self.traceability,
+            originating_finding_id=self.originating_finding_id,
+            originating_recommendation=self.originating_recommendation,
+            governance_approval_reference=self.governance_approval_reference,
+            estimated_effort=self.estimated_effort, priority_score=self.priority_score,
+            mission_type=self.mission_type, approved_at="", approved_by="",
+            rejection_reason=reason, metadata=dict(self.metadata),
+        )
 
 
 @dataclass(frozen=True)

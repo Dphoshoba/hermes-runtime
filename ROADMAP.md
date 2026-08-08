@@ -273,3 +273,31 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 - ENGINEERING_GOVERNANCE_SCHEMA.md documentation
 - 31 tests covering decisions, duplicates, conflicts, evidence, architecture, rendering, CLI, Hermes self-governance
 - 749 total tests passing
+
+## Mission Recommendation Integration v1.0 ✅ COMPLETE
+
+- Governance-approved recommendations → draft Hermes Mission artifacts
+- DraftMission supports DRAFT/APPROVED/REJECTED states with explicit transitions
+- approve()/reject() methods with timestamp and operator tracking
+- Only APPROVED missions accepted by MissionPlanner
+- DRAFT and REJECTED missions rejected by planner validation
+- Traceability preserved through planning: governance, engineering, repository intelligence
+- `hermes-recommend` CLI: generate, show, summary, export, approve, reject, status
+- DraftMission → Mission translation preserves tasks, constraints, capabilities
+- 31 tests covering generation, schema, traceability, determinism, CLI, pipeline dogfood
+- 780 total tests passing
+
+## Mission Recommendation → Planner Integration v1.0 ✅ COMPLETE
+
+- Approval workflow for generated draft missions
+- DraftMission extended with approve()/reject() state transitions
+- DRAFT → APPROVED and DRAFT → REJECTED only (no reset without explicit policy)
+- Duplicate approval is idempotent-safe (rejected)
+- `hermes-recommend approve/reject/status` CLI commands with persistence
+- MissionPlanner.validate_recommendation() rejects DRAFT and REJECTED recommendation artifacts
+- APPROVED DraftMission translated to Mission via draft_mission_translator
+- Traceability preserved through full pipeline: RI → EI → Gov → Rec → Plan
+- `hermes-recommend generate → approve → hermes-plan build` validated end-to-end
+- All missions remain DRAFT by default — never auto-approved or auto-enqueued
+- 44 tests covering approve, reject, status, idempotency, planner rejection, traceability, CLI, backward compat
+- 824 total tests passing
