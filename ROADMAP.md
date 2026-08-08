@@ -1,6 +1,34 @@
 # Hermes Runtime Roadmap
 
-## Program III v0.6 — Integrated Runtime ✅ COMPLETE
+## v1.0.0-beta — External Validation 🔄 IN PROGRESS
+
+- Multi-language scanning (Python + JavaScript/TypeScript) ✅
+- Scanner registry with pluggable language scanners ✅
+- Language detection and framework identification ✅
+- Critical bug fixes (circular recursion, schema mismatches) ✅
+- **Next:** External validation with real-world JavaScript/TypeScript repositories
+
+## v1.0.1 — Bug Fixes from Pilot Users
+- Fix issues reported by external beta testers
+- Improve governance confidence (currently 13.26%)
+- Add missing test coverage for multi-language scanning
+
+## v1.0.2 — Performance Improvements
+- Optimize large repository scanning (currently 61s for pandas)
+- Parallelize mission generation for large repos
+- Improve memory usage for deep repository walks
+
+## v1.1.0 — Features Justified by Real-World Usage
+- Features based on actual pilot user feedback
+- Per-mission queue isolation (DF-002)
+- Prerequisite task support (DF-001)
+- Mission vs execution status separation (DF-003)
+
+---
+
+## Completed Development History
+
+The following milestones have been completed and are preserved for reference.
 - Work Queue CLI (`hermes-queue`)
 - Supervisor → Queue integration (remediation tasks)
 - Evidence → Queue integration (`--task-id --work-queue`)

@@ -40,7 +40,29 @@ _CONFIG_NAMES = {
 
 
 def scan_repository(repo_root: Path) -> dict[str, Any]:
-    """Top-level scanner entry point. Returns raw scan results."""
+    """Top-level scanner entry point. Returns raw scan results.
+
+    Supports multi-language scanning via the scanner registry.
+    Falls back to Python-only scanning if registry unavailable.
+    """
+    try:
+        from .scanner_registry import get_registry
+        registry = get_registry()
+        detections = registry.detect(repo_root)
+        detected = [d for d in detections if d.get("detected", False)]
+
+        if detected:
+            # Use registry for multi-language scanning
+            result = registry.scan(repo_root)
+            repo_info = _scan_repository_metadata(repo_root)
+            repo_info["file_count"] = result.get("_total_files", 0)
+            result["repository"] = repo_info
+            result["schema_version"] = "2"
+            return result
+    except ImportError:
+        pass
+
+    # Fallback: Python-only scanning
     repo_info = _scan_repository_metadata(repo_root)
     py_files = _discover_python_files(repo_root)
     modules = _scan_modules(repo_root, py_files)
@@ -51,11 +73,14 @@ def scan_repository(repo_root: Path) -> dict[str, Any]:
 
     return {
         "repository": {**repo_info, "file_count": len(py_files)},
+        "repository_languages": ["python"],
+        "frameworks": [],
         "modules": modules,
         "tests": tests,
         "dependencies": deps,
         "configuration": config,
         "cli_entry_points": cli_entries,
+        "schema_version": "1",
     }
 
 

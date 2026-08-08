@@ -2,7 +2,7 @@
 
 Autonomous engineering runtime for deterministic mission execution with full audit trails.
 
-**Version: 1.0.0-alpha**
+**Version: 1.0.0-beta**
 
 ## Installation
 

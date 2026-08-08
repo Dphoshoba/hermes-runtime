@@ -29,13 +29,31 @@ from .repo_intel_models import (
 
 
 def analyze_repository(scan: dict[str, Any]) -> RepositoryIntelligence:
-    """Analyze scan results and produce complete intelligence model."""
+    """Analyze scan results and produce complete intelligence model.
+
+    Supports both Python-only (v1) and multi-language (v2) scan results.
+    """
     repository = scan.get("repository", {})
     raw_modules = scan.get("modules", [])
     raw_tests = scan.get("tests", {})
     raw_deps = scan.get("dependencies", {})
     raw_config = scan.get("configuration", [])
     raw_cli = scan.get("cli_entry_points", [])
+    schema_version = scan.get("schema_version", "1")
+
+    # Multi-language fields (v2)
+    repository_languages = scan.get("repository_languages", [])
+    frameworks = scan.get("frameworks", [])
+    source_files = scan.get("source_files", [])
+    components = scan.get("components", [])
+    hooks = scan.get("hooks", [])
+    fetch_calls = scan.get("fetch_calls", [])
+    routes = scan.get("routes", [])
+
+    # Normalize module keys: support both 'path' and 'file_path'
+    for m in raw_modules:
+        if "path" not in m and "file_path" in m:
+            m["path"] = m["file_path"]
 
     # Build module graph
     graph = _build_module_graph(raw_modules)
@@ -45,16 +63,25 @@ def analyze_repository(scan: dict[str, Any]) -> RepositoryIntelligence:
 
     # Build test intelligence
     from .repo_intel_models import TestIntelligence, TestModuleInfo
+
+    test_modules_raw = raw_tests.get("test_modules", [])
+    if not test_modules_raw and raw_tests.get("test_files"):
+        # Convert test_files to test_modules format
+        test_modules_raw = [
+            {"path": tf, "name": Path(tf).stem, "imported_modules": [], "test_functions": [], "test_classes": [], "likely_targets": []}
+            for tf in raw_tests["test_files"]
+        ]
+
     test_modules = tuple(
         TestModuleInfo(
-            path=t["path"],
-            name=t["name"],
+            path=t.get("path", ""),
+            name=t.get("name", ""),
             imported_modules=tuple(t.get("imported_modules", ())),
             test_functions=tuple(t.get("test_functions", ())),
             test_classes=tuple(t.get("test_classes", ())),
             likely_targets=tuple(t.get("likely_targets", ())),
         )
-        for t in raw_tests.get("test_modules", [])
+        for t in test_modules_raw
     )
     tests = TestIntelligence(
         test_modules=test_modules,
@@ -66,14 +93,27 @@ def analyze_repository(scan: dict[str, Any]) -> RepositoryIntelligence:
 
     # Build dependencies
     from .repo_intel_models import DependencyInfo, DependencyIntelligence
-    deps = DependencyIntelligence(
-        runtime=tuple(DependencyInfo(**d) for d in raw_deps.get("runtime", [])),
-        optional=tuple(DependencyInfo(**d) for d in raw_deps.get("optional", [])),
-        test=tuple(DependencyInfo(**d) for d in raw_deps.get("test", [])),
-        dev=tuple(DependencyInfo(**d) for d in raw_deps.get("dev", [])),
-        python_version=raw_deps.get("python_version"),
-        build_backend=raw_deps.get("build_backend"),
-    )
+
+    deps_data = raw_deps
+    if "production" in deps_data or "development" in deps_data:
+        # JS-style deps - convert to Python-style for compatibility
+        deps = DependencyIntelligence(
+            runtime=tuple(DependencyInfo(name=n, version="*", type="runtime") for n in deps_data.get("production", [])),
+            optional=(),
+            test=(),
+            dev=tuple(DependencyInfo(name=n, version="*", type="dev") for n in deps_data.get("development", [])),
+            python_version=deps_data.get("python_version"),
+            build_backend=deps_data.get("build_backend"),
+        )
+    else:
+        deps = DependencyIntelligence(
+            runtime=tuple(DependencyInfo(**d) for d in deps_data.get("runtime", [])),
+            optional=tuple(DependencyInfo(**d) for d in deps_data.get("optional", [])),
+            test=tuple(DependencyInfo(**d) for d in deps_data.get("test", [])),
+            dev=tuple(DependencyInfo(**d) for d in deps_data.get("dev", [])),
+            python_version=deps_data.get("python_version"),
+            build_backend=deps_data.get("build_backend"),
+        )
 
     # Build configuration
     from .repo_intel_models import ConfigurationFile
@@ -89,10 +129,35 @@ def analyze_repository(scan: dict[str, Any]) -> RepositoryIntelligence:
     # Debt signals
     debt = _detect_debt(modules, tests, deps, raw_cli, graph)
 
-    # Architecture summary
-    arch = _build_architecture_summary(repository, modules, tests, deps, raw_cli, complexity, debt)
+    # Merge scanner-provided signals
+    scanner_complexity = scan.get("complexity_signals", [])
+    scanner_debt = scan.get("debt_signals", [])
 
-    return RepositoryIntelligence(
+    # Convert scanner signals to model format
+    all_complexity = list(complexity)
+    for sc in scanner_complexity:
+        all_complexity.append(ComplexitySignal(
+            signal_type=sc.get("type", "unknown"),
+            target=sc.get("file", ""),
+            message=f"{sc.get('type', 'signal')}: {sc.get('value', '')}",
+            severity=sc.get("severity", "low"),
+        ))
+
+    all_debt = list(debt)
+    for sd in scanner_debt:
+        all_debt.append(DebtSignal(
+            signal_type=sd.get("type", "unknown"),
+            target=sd.get("file", ""),
+            message=sd.get("evidence", sd.get("type", "debt signal")),
+            evidence=sd.get("evidence", ""),
+            severity=sd.get("severity", "low"),
+        ))
+
+    # Architecture summary
+    arch = _build_architecture_summary(repository, modules, tests, deps, raw_cli, all_complexity, all_debt)
+
+    # Create RI with extended fields
+    ri = RepositoryIntelligence(
         repository=repository,
         modules=modules,
         public_api=public_api,
@@ -100,10 +165,24 @@ def analyze_repository(scan: dict[str, Any]) -> RepositoryIntelligence:
         tests=tests,
         dependencies=deps,
         configuration=configuration,
-        complexity_signals=complexity,
-        technical_debt_signals=debt,
+        complexity_signals=tuple(all_complexity),
+        technical_debt_signals=tuple(all_debt),
         architecture_summary=arch,
     )
+
+    # Add multi-language fields as metadata
+    ri_dict = ri.as_dict()
+    ri_dict["repository_languages"] = repository_languages
+    ri_dict["frameworks"] = frameworks
+    ri_dict["source_files"] = source_files
+    ri_dict["components"] = components
+    ri_dict["hooks"] = hooks
+    ri_dict["fetch_calls"] = fetch_calls
+    ri_dict["routes"] = routes
+
+    # Reconstruct RI with extended dict
+    ri_dict["schema_version"] = scan.get("schema_version", "1")
+    return ri
 
 
 def _raw_to_module(raw: dict[str, Any]) -> ModuleInfo:
@@ -112,7 +191,7 @@ def _raw_to_module(raw: dict[str, Any]) -> ModuleInfo:
 
     imports = tuple(
         ImportInfo(
-            module=i["module"],
+            module=i.get("module") or i.get("source", ""),
             names=tuple(i.get("names", ())),
             level=i.get("level", 0),
             is_from_import=i.get("is_from_import", False),
@@ -198,7 +277,10 @@ def _build_module_graph(raw_modules: list[dict[str, Any]]) -> ModuleGraph:
     for m in raw_modules:
         src = m["path"]
         for imp in m.get("imports", []):
-            mod_name = imp["module"]
+            # Support both Python ('module') and JS/TS ('source') import keys
+            mod_name = imp.get("module") or imp.get("source", "")
+            if not mod_name:
+                continue
             # Try to resolve to a local module
             target = _resolve_module(mod_name, name_to_path, all_paths)
             if target and target != src:

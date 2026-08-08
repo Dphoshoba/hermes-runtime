@@ -47,6 +47,28 @@ hermes_v01/
   capabilities.py      # Pluggable executor system
   metrics.py           # Runtime and queue metrics
 
+  # Multi-Language Scanning
+  scanner_registry.py  # ScannerRegistry, RepositoryScanner ABC
+  python_scanner.py    # Python language scanner
+  js_scanner.py        # JavaScript/TypeScript language scanner
+  language_detector.py # Language and framework detection
+
+  # Repository Intelligence
+  repo_scanner.py      # Static repository scanner (orchestrates language scanners)
+  repo_analyzer.py     # Repository analysis engine
+  repo_intel_models.py # Repository intelligence data models
+  repo_renderer.py     # JSON/Markdown rendering
+
+  # Engineering Intelligence
+  engineering_analyzer.py    # Engineering analysis engine
+  engineering_intel_models.py # Engineering intelligence data models
+  engineering_renderer.py    # JSON/Markdown rendering
+
+  # Engineering Governance
+  governance_analyzer.py     # Recommendation validation
+  governance_intel_models.py # Governance data models
+  governance_renderer.py     # JSON/Markdown rendering
+
   # CLI Entry Points
   *_cli.py             # CLI handlers for each subsystem
 ```

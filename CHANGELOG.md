@@ -4,6 +4,40 @@ All notable changes to the Hermes Runtime are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.0.0-beta] - 2026-08-09
+
+### Added
+- **Multi-language scanning** — JavaScript and TypeScript support via `JavaScriptScanner`
+  - `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx` file extensions
+  - `package.json` and `tsconfig.json` manifest detection
+  - React component detection (function components, hooks, memo, forwardRef)
+  - Import/export parsing (ESM and CommonJS)
+  - Dependency extraction from `package.json`
+  - Configuration file detection (eslint, prettier, vite, webpack, etc.)
+  - Complexity signals (large modules, high hook concentration, API concentration)
+  - Debt signals (hardcoded credentials, missing tests, large components)
+- **Scanner registry** — `ScannerRegistry` abstraction for pluggable language scanners
+  - `RepositoryScanner` ABC with `detect()` and `scan()` interface
+  - Auto-detection of repository languages
+  - Multi-scanner result merging
+- **Language detector** — `detect_languages()` and `detect_project_type()` functions
+  - File extension mapping for 13 languages
+  - Framework detection (React, Vue, Angular, Svelte, Next, Nuxt, Express, Fastify, Django, Flask, FastAPI)
+  - Confidence scoring based on file counts and manifest presence
+
+### Fixed
+- **Critical: PythonScanner.scan() circular recursion** — `PythonScanner.scan()` called `scan_repository()`, which called `registry.scan()`, which called `PythonScanner.scan()` again, creating infinite recursion. The `scanner_registry.scan()` caught the resulting `RecursionError` silently (via broad `except Exception: continue`), causing 0 modules to be returned. Fixed by having `PythonScanner.scan()` call internal scanning functions directly.
+- **Analyzer schema mismatch** — `repo_analyzer.py` assumed all modules have `path` key, but JavaScript scanner produces modules with `file_path` key. Added normalization in `analyze_repository()` to handle both formats.
+- **Import key mismatch** — `repo_analyzer.py` assumed all imports have `module` key, but JavaScript scanner produces imports with `source` key. Updated `_build_module_graph()` and `_raw_to_module()` to handle both formats.
+- **ComplexitySignal/DebtSignal field mismatch** — Scanner-produced signals used `file` and `evidence` keys, but the analyzer passed `file_path` and `description` to model constructors. Fixed to use correct field names (`target`, `message`, `evidence`).
+- **JS scanner validation exclusion** — JavaScript scanner did not exclude `validation/` directory, causing it to scan golden repository files. Added exclusion to match Python scanner behavior.
+- **Test data merging** — `ScannerRegistry.scan()` did not merge `test_modules`, `modules_with_tests`, or `modules_without_tests` fields from Python scanner, causing `KeyError` in tests expecting these fields.
+
+### Changed
+- Version bumped to `1.0.0b0` (PEP 440 beta) across `pyproject.toml` and `__init__.py`
+- Development Status classifier updated from `3 - Alpha` to `4 - Beta`
+- `pyproject.toml` now includes `py.typed` marker
+
 ## [1.0.0-alpha] - 2026-08-08
 
 ### Added

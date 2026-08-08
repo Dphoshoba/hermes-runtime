@@ -397,8 +397,11 @@ def _findings_from_dependencies(ri: dict[str, Any]) -> list[Finding]:
             ),
         ))
 
-    # Check for missing python version
-    if not python_version:
+    # Check for missing python version - only for Python projects
+    languages = set(ri.get("repository_languages", []))
+    is_python = "python" in languages or bool(python_version) or bool(build_backend)
+
+    if is_python and not python_version:
         evidence = [
             EvidenceReference(
                 source="dependencies",
@@ -419,8 +422,8 @@ def _findings_from_dependencies(ri: dict[str, Any]) -> list[Finding]:
             ),
         ))
 
-    # Check for missing build backend
-    if not build_backend:
+    # Check for missing build backend - only for Python projects
+    if is_python and not build_backend:
         evidence = [
             EvidenceReference(
                 source="dependencies",
@@ -452,12 +455,28 @@ def _findings_from_config(ri: dict[str, Any]) -> list[Finding]:
     modules = ri.get("modules", [])
     mod_count = len(modules)
 
-    # Check for essential configs
-    essential = {
-        "pyproject.toml": "Python project configuration",
-        ".gitignore": "Git ignore rules",
-    }
-    for kind, desc in essential.items():
+    # Determine languages from RI
+    languages = set(ri.get("repository_languages", []))
+    if not languages and modules:
+        # Infer from module paths
+        for m in modules[:10]:
+            fp = m.get("file_path", "")
+            if fp.endswith(".py"):
+                languages.add("python")
+            elif fp.endswith((".js", ".jsx", ".ts", ".tsx")):
+                languages.add("javascript")
+                languages.add("typescript")
+
+    # Check for essential configs based on detected languages
+    essential: dict[str, tuple[str, str]] = {}
+    if "python" in languages:
+        essential["pyproject.toml"] = ("Python project configuration", "medium")
+    if "javascript" in languages or "typescript" in languages:
+        essential["package.json"] = ("Node.js package manifest", "medium")
+    # Universal
+    essential[".gitignore"] = ("Git ignore rules", "low")
+
+    for kind, (desc, severity) in essential.items():
         if kind not in config_kinds:
             evidence = [
                 EvidenceReference(
@@ -469,7 +488,7 @@ def _findings_from_config(ri: dict[str, Any]) -> list[Finding]:
             findings.append(Finding(
                 finding_id=f"FINDING-{len(findings) + 1:03d}",
                 category="Configuration",
-                severity="low" if kind != "pyproject.toml" else "medium",
+                severity=severity,
                 confidence=0.8,
                 title=f"Missing configuration: {kind}",
                 explanation=f"Essential configuration file {kind} ({desc}) not found in repository.",
