@@ -1,0 +1,8 @@
+{
+  "name": "test-mixed-repo",
+  "version": "1.0.0",
+  "description": "Test mixed Python/JS repository",
+  "dependencies": {
+    "react": "^18.2.0"
+  }
+}

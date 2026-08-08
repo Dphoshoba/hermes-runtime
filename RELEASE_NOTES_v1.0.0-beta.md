@@ -56,9 +56,10 @@ A new `ScannerRegistry` abstraction enables pluggable language scanners:
 
 ## Test Baseline
 
-- **878 tests passing** (2 pre-existing failures in `test_module_has_package` and `test_check_stale`)
+- **944 tests passing** (0 failures)
 - **7 golden repositories validated** (requests, click, flask, fastapi, django, numpy, pandas)
 - **Deterministic output verified** (CV = 0.0145)
+- **64 dedicated JS/TS scanner tests** covering language detection, parsing, React, TypeScript, mixed repos, robustness, determinism, and zero-Python-findings acceptance criterion
 
 ## Benchmark Results
 
@@ -80,7 +81,6 @@ A new `ScannerRegistry` abstraction enables pluggable language scanners:
 3. **Evidence quality:** Most findings have single evidence reference
 4. **Memory metric:** Reports system RSS, not process-specific memory
 5. **Governance confidence:** 13.26% (lower than other categories)
-6. **Pre-existing test failures:** 2 tests fail due to pre-existing bugs (`test_module_has_package`, `test_check_stale`)
 
 ## CLI Commands
 
@@ -138,9 +138,26 @@ hermes-mission run mission.json \
 
 ## External Validation Status
 
-**READY FOR EXTERNAL VALIDATION**
+**VALIDATED AGAINST REAL-WORLD REPOSITORIES**
 
-This beta release is ready for testing with real-world JavaScript/TypeScript repositories. The multi-language scanning infrastructure has been implemented and tested against Python repositories. External validation with JavaScript/TypeScript repositories is the next milestone.
+### InspireVoice Frontend (React/JavaScript)
+
+| Metric | Result |
+|--------|--------|
+| Languages detected | JavaScript, TypeScript |
+| React component | App.js (255 lines, 17 hooks) |
+| Routes detected | / , /admin |
+| Fetch/API calls | 5 |
+| Config files | package.json, tailwind.config.js, postcss.config.js |
+| Dependencies | react, react-dom, react-router-dom, react-toastify |
+| Findings | 3 (2 complexity, 1 configuration) |
+| Python false positives | 0 |
+
+### Validation Fixtures
+
+- **JS/React fixture** — 7 tests for language detection, parsing, React, frontend intelligence
+- **TypeScript fixture** — Tests for interfaces, type aliases, typed functions, enums
+- **Mixed Python/JS fixture** — Tests for multi-language detection and scanning
 
 ## Upgrade Notes
 

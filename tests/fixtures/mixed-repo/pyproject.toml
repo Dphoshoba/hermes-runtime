@@ -1,0 +1,5 @@
+[project]
+name = "test-mixed-repo"
+version = "0.1.0"
+description = "Test mixed Python/JS repository"
+requires-python = ">=3.10"

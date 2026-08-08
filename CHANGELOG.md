@@ -32,6 +32,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - **ComplexitySignal/DebtSignal field mismatch** — Scanner-produced signals used `file` and `evidence` keys, but the analyzer passed `file_path` and `description` to model constructors. Fixed to use correct field names (`target`, `message`, `evidence`).
 - **JS scanner validation exclusion** — JavaScript scanner did not exclude `validation/` directory, causing it to scan golden repository files. Added exclusion to match Python scanner behavior.
 - **Test data merging** — `ScannerRegistry.scan()` did not merge `test_modules`, `modules_with_tests`, or `modules_without_tests` fields from Python scanner, causing `KeyError` in tests expecting these fields.
+- **DependencyInfo field mismatch** — `repo_analyzer.py` passed `version` and `type` kwargs to `DependencyInfo`, but the model uses `version_spec` and `category`. Fixed to use correct field names.
+- **Missing Path import** — `repo_analyzer.py` used `Path` without importing it from `pathlib`. Added the import.
+- **Custom hook detection** — `js_scanner.py` had `hook_name[3:0].isupper()` (empty slice) instead of `hook_name[3].isupper()`. Fixed to correctly detect custom hooks.
+- **Export default detection** — `js_scanner.py` did not detect `export default identifier` on its own line. Added pattern for standalone default exports.
+- **Scanner registry JS/TS field merging** — `ScannerRegistry.scan()` did not merge `components`, `hooks`, `routes`, or `fetch_calls` from JavaScript scanner. Added these fields to the merge logic.
+- **test_check_stale cleanup** — Test left ephemeral files behind if assertion failed before cleanup. Added `try/finally` block.
+- **test_module_has_package** — Test asserted all modules have `package` key, but root-level modules don't. Fixed to only check modules in subdirectories.
 
 ### Changed
 - Version bumped to `1.0.0b0` (PEP 440 beta) across `pyproject.toml` and `__init__.py`

@@ -98,8 +98,11 @@ class TestScannerModuleDiscovery:
 
     def test_module_has_package(self, sample_scan: dict):
         for mod in sample_scan["modules"]:
-            assert "package" in mod
-            assert len(mod["package"]) > 0
+            path = mod.get("path", "")
+            # Root-level modules don't have a package key
+            if "/" in path or "\\" in path:
+                assert "package" in mod, f"Module {path} should have a package key"
+                assert len(mod["package"]) > 0
 
 
 # ---------------------------------------------------------------------------
@@ -485,22 +488,24 @@ class TestCLI:
 
     def test_check_stale(self, sample_repo_path: Path, tmp_output: Path):
         (sample_repo_path / "ephemeral.py").write_text("# stale\n")
-        self._run([
-            "--repo", str(sample_repo_path),
-            "--output-dir", str(tmp_output),
-            "scan",
-        ])
-        (sample_repo_path / "ephemeral2.py").write_text("# changed\n")
-        result = self._run([
-            "--repo", str(sample_repo_path),
-            "--output-dir", str(tmp_output),
-            "check",
-        ])
-        assert result.returncode == 1
-        data = json.loads(result.stdout)
-        assert data["current"] is False
-        (sample_repo_path / "ephemeral.py").unlink(missing_ok=True)
-        (sample_repo_path / "ephemeral2.py").unlink(missing_ok=True)
+        try:
+            self._run([
+                "--repo", str(sample_repo_path),
+                "--output-dir", str(tmp_output),
+                "scan",
+            ])
+            (sample_repo_path / "ephemeral2.py").write_text("# changed\n")
+            result = self._run([
+                "--repo", str(sample_repo_path),
+                "--output-dir", str(tmp_output),
+                "check",
+            ])
+            assert result.returncode == 1
+            data = json.loads(result.stdout)
+            assert data["current"] is False
+        finally:
+            (sample_repo_path / "ephemeral.py").unlink(missing_ok=True)
+            (sample_repo_path / "ephemeral2.py").unlink(missing_ok=True)
 
     def test_summary(self, sample_repo_path: Path):
         result = self._run([

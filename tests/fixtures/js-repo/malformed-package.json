@@ -1,0 +1,7 @@
+{
+  "name": "broken",
+  "dependencies": {
+    "react": "^18.0.0",
+  },  // trailing comma makes this invalid JSON
+  "invalid": true,
+}

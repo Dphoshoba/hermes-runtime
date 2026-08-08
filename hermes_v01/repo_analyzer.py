@@ -11,6 +11,7 @@ Takes raw scan results and produces:
 from __future__ import annotations
 
 from collections import defaultdict
+from pathlib import Path
 from typing import Any
 
 from .repo_intel_models import (
@@ -98,10 +99,10 @@ def analyze_repository(scan: dict[str, Any]) -> RepositoryIntelligence:
     if "production" in deps_data or "development" in deps_data:
         # JS-style deps - convert to Python-style for compatibility
         deps = DependencyIntelligence(
-            runtime=tuple(DependencyInfo(name=n, version="*", type="runtime") for n in deps_data.get("production", [])),
+            runtime=tuple(DependencyInfo(name=n, category="runtime") for n in deps_data.get("production", [])),
             optional=(),
             test=(),
-            dev=tuple(DependencyInfo(name=n, version="*", type="dev") for n in deps_data.get("development", [])),
+            dev=tuple(DependencyInfo(name=n, category="dev") for n in deps_data.get("development", [])),
             python_version=deps_data.get("python_version"),
             build_backend=deps_data.get("build_backend"),
         )

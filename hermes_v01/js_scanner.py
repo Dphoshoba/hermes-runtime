@@ -33,6 +33,7 @@ _IMPORT_PATTERNS = [
 # Export patterns
 _EXPORT_PATTERNS = [
     re.compile(r"export\s+(?:default\s+)?(?:function|class|const|let|var|async)\s+(\w+)"),
+    re.compile(r"export\s+default\s+(\w+)"),
     re.compile(r"export\s+\{([^}]+)\}"),
     re.compile(r"module\.exports\s*=\s*(\w+)"),
 ]
@@ -206,7 +207,7 @@ class JavaScriptScanner(RepositoryScanner):
 
                 # Detect React components
                 is_component = False
-                for pattern in _COMPONENT_PATTERNS:
+                for idx, pattern in enumerate(_COMPONENT_PATTERNS):
                     for match in pattern.finditer(content):
                         comp_name = match.group(1)
                         hook_count = len(_HOOK_PATTERN.findall(content))
@@ -217,15 +218,23 @@ class JavaScriptScanner(RepositoryScanner):
                             "type": "function",
                             "hook_count": hook_count,
                             "line_count": len(content.splitlines()),
+                            "is_memo": idx == 2,  # Pattern index 2 is React.memo
+                            "is_forward_ref": idx == 3,  # Pattern index 3 is forwardRef
                         })
 
                 # Detect hooks
                 for match in _HOOK_PATTERN.finditer(content):
                     hook_name = match.group(1)
+                    # Custom hooks start with "use" followed by an uppercase letter
+                    is_custom = (
+                        hook_name.startswith("use")
+                        and len(hook_name) > 3
+                        and hook_name[3].isupper()
+                    )
                     hooks.append({
                         "name": hook_name,
                         "file": rel_path,
-                        "is_custom": hook_name.startswith("use") and hook_name[3:0].isupper(),
+                        "is_custom": is_custom,
                     })
 
                 # Detect fetch/API calls

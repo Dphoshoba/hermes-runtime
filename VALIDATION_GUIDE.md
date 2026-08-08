@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to validate Hermes against real-world repositories using the benchmark engine and golden validation datasets.
+This guide explains how to validate Hermes against real-world repositories using the benchmark engine and golden validation datasets. Hermes now supports both Python and JavaScript/TypeScript repositories.
 
 ## Validation Process
 
@@ -44,6 +44,32 @@ Hermes validates:
 - Minimum findings generated
 - Pipeline completes without errors
 - Output is deterministic
+
+### 4. Multi-Language Validation
+
+Hermes now supports JavaScript and TypeScript repositories. To validate:
+
+```bash
+# Scan a JavaScript/TypeScript repository
+hermes-repo scan --repo /path/to/js-repo
+
+# Run full pipeline
+hermes-engineering scan --repo /path/to/js-repo
+hermes-governance scan --repo /path/to/js-repo
+```
+
+Hermes detects:
+- JavaScript/TypeScript files (.js, .jsx, .mjs, .cjs, .ts, .tsx)
+- Package manifests (package.json, tsconfig.json)
+- React components, hooks, routes, fetch/API calls
+- Configuration files (eslint, prettier, vite, webpack, etc.)
+
+### 5. Test Fixtures
+
+Test fixtures are available in `tests/fixtures/`:
+- `js-repo/` — JavaScript repository with React components
+- `ts-repo/` — TypeScript repository with Express
+- `mixed-repo/` — Mixed Python/JavaScript repository
 
 ### 4. Compare Results
 

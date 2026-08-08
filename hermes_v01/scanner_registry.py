@@ -120,6 +120,10 @@ class ScannerRegistry:
         all_cli: list[dict[str, Any]] = []
         all_complexity: list[dict[str, Any]] = []
         all_debt: list[dict[str, Any]] = []
+        all_components: list[dict[str, Any]] = []
+        all_hooks: list[dict[str, Any]] = []
+        all_routes: list[dict[str, Any]] = []
+        all_fetch_calls: list[dict[str, Any]] = []
         languages_detected: list[str] = []
         frameworks_detected: list[str] = []
         total_files = 0
@@ -156,6 +160,12 @@ class ScannerRegistry:
                 all_complexity.extend(result.get("complexity_signals", []))
                 all_debt.extend(result.get("debt_signals", []))
 
+                # Merge JS/TS-specific fields
+                all_components.extend(result.get("components", []))
+                all_hooks.extend(result.get("hooks", []))
+                all_routes.extend(result.get("routes", []))
+                all_fetch_calls.extend(result.get("fetch_calls", []))
+
                 languages_detected.extend(result.get("repository_languages", []))
                 frameworks_detected.extend(result.get("frameworks", []))
                 total_files += result.get("repository", {}).get("file_count", 0)
@@ -175,6 +185,10 @@ class ScannerRegistry:
             "cli_entry_points": all_cli,
             "complexity_signals": all_complexity,
             "debt_signals": all_debt,
+            "components": all_components,
+            "hooks": all_hooks,
+            "routes": all_routes,
+            "fetch_calls": all_fetch_calls,
             "_total_files": total_files,
         }
 

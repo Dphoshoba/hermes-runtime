@@ -15,7 +15,8 @@
 | Planner Integration | COMPLETE | 44 |
 | Validation Program | COMPLETE | 32 |
 | Beta Readiness | COMPLETE | 24 |
-| **Total** | | **880** |
+| JS/TS Scanner | COMPLETE | 64 |
+| **Total** | | **944** |
 
 ## Issues Investigated & Resolved
 
