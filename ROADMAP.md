@@ -206,3 +206,21 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 - README.md genericized (no hardcoded user paths)
 - Stale egg-info cleaned up
 - 593 tests passing
+
+### v1.0.0-alpha — Real-World Validation & Dogfooding ✅ COMPLETE
+- Dogfooding framework: DOGFOODING.md, examples/missions/, validation/sample-repo/
+- 5 representative mission definitions (repo-maintenance, doc-refresh, ci-verify, dep-review, release-readiness)
+- 3 end-to-end missions executed against validation/sample-repo
+- 8 friction findings documented in DOGFOOD_FINDINGS.md
+- All failures attributable to target repository (not Hermes defects)
+- Evidence, reviews, and mission reports verified
+- 593 tests still passing
+
+## Candidate v1.1 Improvements (from dogfooding evidence)
+
+1. **Per-mission queue isolation** — prevent task ID collision between missions (DF-002)
+2. **Prerequisite task support** — install dependencies before dependent tasks (DF-001)
+3. **Mission vs execution status separation** — distinguish infrastructure health from task outcomes (DF-003)
+4. **Python version compatibility validation** — check command compatibility with min Python (DF-005)
+5. **Built-in task helpers** — common operations without inline Python (DF-004)
+6. **Per-task environment control** — env vars and working directory overrides (DF-006)

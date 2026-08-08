@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - `LICENSE` file (MIT)
 - `ENGINEERING_SCORE.md` — objective quality measurements
 - `ARCHITECTURE_SNAPSHOT.md` — module structure and data flow
+- `DOGFOODING.md` — real-world validation framework
+- `DOGFOOD_FINDINGS.md` — 8 friction findings from dogfooding
+- `examples/missions/` — 5 representative mission definitions
+- `validation/sample-repo/` — isolated test repository for dogfooding
 
 ### Changed
 - Version bumped to `1.0.0a0` (PEP 440 alpha) across `pyproject.toml` and `__init__.py`

@@ -1,0 +1,45 @@
+{
+  "schema_version": "1",
+  "mission_id": "dogfood-doc-refresh-002",
+  "title": "Documentation Refresh — Validate and Update",
+  "description": "Identify documentation drift, validate code examples, and check documentation completeness.",
+  "goals": [
+    "Verify README matches actual API",
+    "Check documentation covers all public functions",
+    "Validate code examples are runnable"
+  ],
+  "tasks": [
+    {
+      "task_id": "list-public-api",
+      "title": "List all public functions",
+      "command": ["python3", "-c", "import inspect, sample_app; funcs=[name for name,obj in inspect.getmembers(sample_app) if inspect.isfunction(obj) and not name.startswith('_')]; print('\\n'.join(sorted(funcs)))"],
+      "priority": 10
+    },
+    {
+      "task_id": "check-readme",
+      "title": "Check README documents all functions",
+      "command": ["python3", "-c", "readme=open('README.md').read(); funcs=['add','multiply','divide','fibonacci','is_prime']; missing=[f for f in funcs if f not in readme]; print(f'Missing from README: {missing}' if missing else 'All functions documented in README')"],
+      "priority": 20,
+      "dependencies": ["list-public-api"]
+    },
+    {
+      "task_id": "validate-examples",
+      "title": "Validate README code examples",
+      "command": ["python3", "-c", "from sample_app import add, multiply; assert add(1,2)==3; assert multiply(3,4)==12; print('README examples validated successfully')"],
+      "priority": 30,
+      "dependencies": ["check-readme"]
+    },
+    {
+      "task_id": "check-api-docs",
+      "title": "Check API reference completeness",
+      "command": ["python3", "-c", "docs=open('docs/api.md').read(); funcs=['add','multiply','divide','fibonacci','is_prime']; missing=[f for f in funcs if f not in docs]; print(f'Missing from API docs: {missing}' if missing else 'API docs complete')"],
+      "priority": 40,
+      "dependencies": ["list-public-api"]
+    }
+  ],
+  "working_directory": ".",
+  "metadata": {
+    "type": "documentation-refresh",
+    "dogfood": true
+  }
+}

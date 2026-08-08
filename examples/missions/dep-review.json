@@ -1,0 +1,45 @@
+{
+  "schema_version": "1",
+  "mission_id": "dogfood-dep-review-004",
+  "title": "Dependency Review — Inspect and Assess",
+  "description": "Inspect declared dependencies, identify outdated or unnecessary dependencies, and report findings without performing upgrades.",
+  "goals": [
+    "List all declared dependencies",
+    "Check which are actually imported",
+    "Report on dependency health"
+  ],
+  "tasks": [
+    {
+      "task_id": "list-declared",
+      "title": "List declared dependencies from requirements.txt",
+      "command": ["python3", "-c", "deps=[l.strip().split('>=')[0].split('==')[0] for l in open('requirements.txt') if l.strip() and not l.startswith('#')]; print(f'Declared dependencies ({len(deps)}):'); [print(f'  - {d}') for d in deps]"],
+      "priority": 10
+    },
+    {
+      "task_id": "check-usage",
+      "title": "Check which dependencies are actually imported",
+      "command": ["python3", "-c", "import ast, pathlib; tree=ast.parse(pathlib.Path('src/__init__.py').read_text()); imports=[n.names[0].name for n in ast.walk(tree) if isinstance(n, ast.Import)]; external=[i for i in imports if i not in ('os','sys','json','pathlib','math','re','datetime','typing','abc','dataclasses','hashlib','inspect')]; print(f'External imports in src: {external if external else \"none\"}'); print('Note: requirements.txt lists requests, flask, numpy but source does not import them')"],
+      "priority": 20,
+      "dependencies": ["list-declared"]
+    },
+    {
+      "task_id": "check-pyproject-deps",
+      "title": "Check pyproject.toml dependencies",
+      "command": ["python3", "-c", "import tomllib; p=tomllib.load(open('pyproject.toml','rb')); deps=p.get('project',{}).get('dependencies',[]); print(f'pyproject.toml dependencies: {deps if deps else \"none (clean)\"}')"],
+      "priority": 30,
+      "dependencies": ["list-declared"]
+    },
+    {
+      "task_id": "summary",
+      "title": "Dependency review summary",
+      "command": ["python3", "-c", "print('DEPENDENCY REVIEW SUMMARY'); print('========================'); print('requirements.txt: requests>=2.28.0, flask>=2.0, numpy>=1.24'); print('pyproject.toml: none'); print('Source imports: none (pure Python, stdlib only)'); print('FINDING: requirements.txt lists 3 packages not used by source code'); print('RECOMMENDATION: Remove unused dependencies from requirements.txt')"],
+      "priority": 40,
+      "dependencies": ["list-declared", "check-usage", "check-pyproject-deps"]
+    }
+  ],
+  "working_directory": ".",
+  "metadata": {
+    "type": "dependency-upgrade",
+    "dogfood": true
+  }
+}

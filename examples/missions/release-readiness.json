@@ -1,0 +1,45 @@
+{
+  "schema_version": "1",
+  "mission_id": "dogfood-release-readiness-005",
+  "title": "Release Readiness — Pre-Release Validation",
+  "description": "Run tests, verify package metadata, verify documentation, inspect repository cleanliness, and generate a readiness report.",
+  "goals": [
+    "All tests pass",
+    "Package metadata is correct",
+    "Documentation is current",
+    "Repository is clean"
+  ],
+  "tasks": [
+    {
+      "task_id": "run-tests",
+      "title": "Run full test suite",
+      "command": ["python3", "-m", "pytest", "tests/", "-q"],
+      "priority": 10
+    },
+    {
+      "task_id": "verify-metadata",
+      "title": "Verify package metadata",
+      "command": ["python3", "-c", "import tomllib; p=tomllib.load(open('pyproject.toml','rb')); proj=p['project']; checks={'name': bool(proj.get('name')), 'version': bool(proj.get('version')), 'description': bool(proj.get('description')), 'python': bool(proj.get('requires-python'))}; failed=[k for k,v in checks.items() if not v]; print(f'Metadata checks: {len(checks)-len(failed)}/{len(checks)} passed'); print('All metadata present' if not failed else f'Missing: {failed}')"],
+      "priority": 20
+    },
+    {
+      "task_id": "verify-docs",
+      "title": "Verify documentation exists",
+      "command": ["python3", "-c", "from pathlib import Path; docs=['README.md','docs/api.md']; existing=[d for d in docs if Path(d).exists()]; missing=[d for d in docs if not Path(d).exists()]; print(f'Documentation: {len(existing)}/{len(docs)} present'); print('All docs present' if not missing else f'Missing: {missing}')"],
+      "priority": 30,
+      "dependencies": ["run-tests"]
+    },
+    {
+      "task_id": "check-cleanliness",
+      "title": "Check repository cleanliness",
+      "command": ["python3", "-c", "import os; stale=[]; [stale.extend([os.path.join(r,f) for f in files if any(s in f for s in ['__pycache__','.pyc','.egg-info'])]) for r,_,files in os.walk('.') if '.git' not in r]; print(f'Stale files: {len(stale)}'); print('\\n'.join(stale[:5]) if stale else 'Repository is clean')"],
+      "priority": 40,
+      "dependencies": ["run-tests"]
+    }
+  ],
+  "working_directory": ".",
+  "metadata": {
+    "type": "release-preparation",
+    "dogfood": true
+  }
+}

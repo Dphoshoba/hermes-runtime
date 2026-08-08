@@ -1,0 +1,44 @@
+{
+  "schema_version": "1",
+  "mission_id": "dogfood-repo-maintenance-001",
+  "title": "Repository Maintenance — Inspect and Clean",
+  "description": "Inspect the sample repository, identify safe cleanup opportunities, run tests, and report findings.",
+  "goals": [
+    "Verify repository structure is intact",
+    "Identify unnecessary files",
+    "Run test suite and report results"
+  ],
+  "tasks": [
+    {
+      "task_id": "inspect-structure",
+      "title": "Inspect repository structure",
+      "command": ["python3", "-c", "import os; print('\\n'.join(sorted(f for f in os.listdir('.') if not f.startswith('.'))))"],
+      "priority": 10
+    },
+    {
+      "task_id": "check-gitignore",
+      "title": "Check for files that should be gitignored",
+      "command": ["python3", "-c", "import os; patterns=['__pycache__','*.pyc','*.egg-info','.pytest_cache']; found=[]; [found.extend([os.path.join(r,f) for f in files if any(p in f for p in ['__pycache__','.pyc','.egg-info','.pytest_cache'])]) for r,_,files in os.walk('.')]; print('\\n'.join(found) if found else 'No stale files found')"],
+      "priority": 20
+    },
+    {
+      "task_id": "run-tests",
+      "title": "Run test suite",
+      "command": ["python3", "-m", "pytest", "tests/", "-q"],
+      "priority": 30,
+      "dependencies": ["inspect-structure"]
+    },
+    {
+      "task_id": "check-version",
+      "title": "Verify version consistency",
+      "command": ["python3", "-c", "import tomllib; p=tomllib.load(open('pyproject.toml','rb')); print(f'pyproject version: {p[\"project\"][\"version\"]}')"],
+      "priority": 40,
+      "dependencies": ["inspect-structure"]
+    }
+  ],
+  "working_directory": ".",
+  "metadata": {
+    "type": "repository-maintenance",
+    "dogfood": true
+  }
+}

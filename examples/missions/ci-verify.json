@@ -1,0 +1,44 @@
+{
+  "schema_version": "1",
+  "mission_id": "dogfood-ci-verify-003",
+  "title": "CI Verification — Test and Build Check",
+  "description": "Inspect test and build configuration, execute verification, and summarize results.",
+  "goals": [
+    "Verify test suite passes",
+    "Verify package builds",
+    "Check for configuration issues"
+  ],
+  "tasks": [
+    {
+      "task_id": "run-pytest",
+      "title": "Execute test suite",
+      "command": ["python3", "-m", "pytest", "tests/", "-v", "--tb=short"],
+      "priority": 10
+    },
+    {
+      "task_id": "check-imports",
+      "title": "Verify all imports resolve",
+      "command": ["python3", "-c", "import sample_app; print(f'sample_app v{sample_app.__version__} imported successfully')"],
+      "priority": 20
+    },
+    {
+      "task_id": "type-check",
+      "title": "Basic type consistency check",
+      "command": ["python3", "-c", "from sample_app import add, multiply, divide; assert isinstance(add(1,2), int); assert isinstance(multiply(3,4), int); assert isinstance(divide(10,2), float); print('Type checks passed')"],
+      "priority": 30,
+      "dependencies": ["check-imports"]
+    },
+    {
+      "task_id": "boundary-tests",
+      "title": "Edge case verification",
+      "command": ["python3", "-c", "from sample_app import fibonacci, is_prime; assert fibonacci(0)==[]; assert fibonacci(1)==[0]; assert is_prime(2)==True; assert is_prime(1)==False; print('Boundary tests passed')"],
+      "priority": 40,
+      "dependencies": ["check-imports"]
+    }
+  ],
+  "working_directory": ".",
+  "metadata": {
+    "type": "ci-verification",
+    "dogfood": true
+  }
+}
