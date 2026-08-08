@@ -35,6 +35,10 @@ hermes_v01/
   mission_recommendation_cli.py    # hermes-recommend CLI (generate/approve/reject/status)
   mission_recommendation_renderer.py # JSON, Markdown, per-mission export
 
+  # Benchmark & Validation
+  benchmark_engine.py             # BenchmarkResult, snapshots, trends, confidence
+  benchmark_cli.py                # hermes-benchmark CLI (run/compare/summary/trend/report/confidence)
+
   # Queue & Scheduling
   work_queue.py        # Deterministic, restart-safe work queue
   supervisor.py        # Autonomous execution supervisor
@@ -209,6 +213,42 @@ Every approved mission retains references to its origin:
 - Never auto-executes missions
 - Never bypasses human approval
 - Never allows REJECTED missions to be re-approved (without explicit policy)
+
+## Benchmark & Validation
+
+### Benchmark Engine
+
+The benchmark engine measures Hermes pipeline performance against real-world repositories:
+
+```
+hermes-benchmark run → BenchmarkResult
+                    → Snapshot (persisted)
+                    → TrendEntry (longitudinal)
+                    → EngineeringConfidence (evidence-based)
+```
+
+### Metrics Collected
+
+- **Timing**: per-stage pipeline duration
+- **Memory**: peak RSS during execution
+- **Repository**: files, modules, functions, classes discovered
+- **Pipeline**: findings, recommendations, approvals, missions generated
+
+### Confidence Scoring
+
+Confidence derives from measurable evidence:
+- Module-to-file coverage ratio (Repo Intel)
+- Findings per module density (Eng Intel)
+- Governance approval rate
+- Mission generation rate
+- Determinism coefficient of variation
+
+### Snapshot Storage
+
+Snapshots stored in `validation/snapshots/` as JSON. Supports:
+- Longitudinal trend analysis
+- Regression detection
+- Drift detection between repository versions
 
 ## Evidence Integrity
 

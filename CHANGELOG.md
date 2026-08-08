@@ -58,6 +58,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
   - All missions remain in DRAFT state by default — never auto-approved or auto-enqueued
   - 44 tests (`test_planner_integration.py`) — approve, reject, status, duplicate idempotency, planner rejection, traceability, CLI, backward compatibility
   - 824 total tests passing
+- **Validation & Benchmark Program v1.1** — engineering confidence and validation
+  - `hermes_v01/benchmark_engine.py` — BenchmarkResult, BenchmarkComparison, BenchmarkSummary, TrendEntry, EngineeringConfidence, Snapshot models
+  - `hermes_v01/benchmark_cli.py` — `hermes-benchmark` CLI with run/compare/summary/trend/report/confidence
+  - `validation/` — directory structure for golden repositories, snapshots, benchmarks
+  - `validation/benchmark_config.json` — 7 golden repositories (requests, click, flask, fastapi, django, numpy, pandas)
+  - `validation/golden_repositories/hermes-runtime.json` — Hermes self-validation dataset
+  - `validation/clone_golden_repos.sh` — script to clone golden repositories
+  - Snapshot persistence and longitudinal trend analysis
+  - Evidence-based engineering confidence scoring
+  - Determinism verification across multiple runs
+  - Drift detection between snapshots
+  - 32 tests (`test_benchmark.py`) — calculations, comparison, trend, golden validation, determinism, CLI, confidence, persistence
+  - 856 total tests passing
+  - `BENCHMARKING.md` — benchmarking guide
+  - `VALIDATION_GUIDE.md` — validation guide
 
 ### Changed
 - Version bumped to `1.0.0a0` (PEP 440 alpha) across `pyproject.toml` and `__init__.py`

@@ -1,0 +1,19 @@
+{
+  "calculation_method": "evidence_based",
+  "confidence_scores": {
+    "engineering_intelligence": 1.0,
+    "governance": 0.0019,
+    "overall": 0.5505,
+    "recommendations": 1.0,
+    "repository_intelligence": 0.0
+  },
+  "evidence_sources": [
+    "Modules scanned: 763, files: 0, ratio: 0.00",
+    "Findings per module: 4.89, confidence: 1.00",
+    "Approval rate: 0.00 (7/3731)",
+    "Missions per approval: 1.00",
+    "Overall confidence: 0.55",
+    "Determinism coefficient of variation: 0.0039"
+  ],
+  "timestamp": "2026-08-08T11:20:27.515702Z"
+}

@@ -301,3 +301,17 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 - All missions remain DRAFT by default — never auto-approved or auto-enqueued
 - 44 tests covering approve, reject, status, idempotency, planner rejection, traceability, CLI, backward compat
 - 824 total tests passing
+
+## Validation & Benchmark Program v1.1 ✅ COMPLETE
+
+- Benchmark engine for measuring pipeline performance
+- 7 golden repositories (requests, click, flask, fastapi, django, numpy, pandas)
+- `hermes-benchmark` CLI: run, compare, summary, trend, report, confidence
+- Snapshot persistence for longitudinal analysis
+- Evidence-based engineering confidence scoring
+- Drift detection between snapshots
+- Determinism verification across multiple runs
+- Hermes self-benchmarking validated
+- `BENCHMARKING.md` and `VALIDATION_GUIDE.md` documentation
+- 32 tests covering calculations, comparison, trend, golden validation, determinism, CLI, confidence, persistence
+- 856 total tests passing

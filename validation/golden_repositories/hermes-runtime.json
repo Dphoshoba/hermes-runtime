@@ -1,0 +1,15 @@
+{
+  "schema_version": "1",
+  "repository": {
+    "name": "hermes-runtime-v0.3-runtime",
+    "path": "."
+  },
+  "expected_findings_min": 5,
+  "expected_recommendations_min": 3,
+  "expected_missions_min": 1,
+  "expected_health_score_min": 50.0,
+  "expected_modules_min": 20,
+  "expected_classes_min": 30,
+  "expected_functions_min": 100,
+  "notes": "Hermes self-analysis golden dataset"
+}

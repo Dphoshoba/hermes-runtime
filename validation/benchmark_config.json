@@ -1,0 +1,65 @@
+{
+  "schema_version": "1",
+  "benchmarks": {
+    "requests": {
+      "name": "requests",
+      "repo_url": "https://github.com/psf/requests",
+      "description": "Python HTTP for Humans",
+      "language": "python",
+      "expected_modules_min": 10,
+      "expected_findings_min": 5
+    },
+    "click": {
+      "name": "click",
+      "repo_url": "https://github.com/pallets/click",
+      "description": "Python composable command line interface toolkit",
+      "language": "python",
+      "expected_modules_min": 5,
+      "expected_findings_min": 3
+    },
+    "flask": {
+      "name": "flask",
+      "repo_url": "https://github.com/pallets/flask",
+      "description": "The Python micro framework for building web applications",
+      "language": "python",
+      "expected_modules_min": 10,
+      "expected_findings_min": 5
+    },
+    "fastapi": {
+      "name": "fastapi",
+      "repo_url": "https://github.com/fastapi/fastapi",
+      "description": "FastAPI framework, high performance, easy to learn, fast to code, ready for production",
+      "language": "python",
+      "expected_modules_min": 10,
+      "expected_findings_min": 5
+    },
+    "django": {
+      "name": "django",
+      "repo_url": "https://github.com/django/django",
+      "description": "The Web framework for perfectionists with deadlines",
+      "language": "python",
+      "expected_modules_min": 50,
+      "expected_findings_min": 20
+    },
+    "numpy": {
+      "name": "numpy",
+      "repo_url": "https://github.com/numpy/numpy",
+      "description": "The fundamental package for scientific computing with Python",
+      "language": "python",
+      "expected_modules_min": 20,
+      "expected_findings_min": 10
+    },
+    "pandas": {
+      "name": "pandas",
+      "repo_url": "https://github.com/pandas-dev/pandas",
+      "description": "Flexible and powerful data analysis / manipulation library for Python",
+      "language": "python",
+      "expected_modules_min": 20,
+      "expected_findings_min": 10
+    }
+  },
+  "hermes_root": ".",
+  "snapshots_dir": "validation/snapshots",
+  "golden_dir": "validation/golden_repositories",
+  "benchmarks_dir": "validation/benchmarks"
+}

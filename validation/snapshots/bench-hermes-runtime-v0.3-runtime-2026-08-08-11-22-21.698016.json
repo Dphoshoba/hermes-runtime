@@ -1,0 +1,48 @@
+{
+  "engineering_health": 0.0,
+  "findings_summary": {
+    "total": 533
+  },
+  "missions_summary": {
+    "total": 1
+  },
+  "repository_name": "hermes-runtime-v0.3-runtime",
+  "result": {
+    "duration_seconds": 0.6481,
+    "errors": [],
+    "memory": {
+      "peak_bytes": 39745224704,
+      "peak_mb": 37904.0
+    },
+    "pipeline_output": {
+      "approved_recommendations": 1,
+      "findings_generated": 533,
+      "missions_generated": 1,
+      "pipeline_steps": 5,
+      "recommendations_generated": 533,
+      "total_tasks": 4
+    },
+    "repository_metrics": {
+      "classes_scanned": 396,
+      "files_scanned": 0,
+      "functions_scanned": 535,
+      "modules_scanned": 109,
+      "public_apis_scanned": 783
+    },
+    "repository_name": "hermes-runtime-v0.3-runtime",
+    "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+    "repository_url": "",
+    "timestamp": "2026-08-08T11:22:21.698016Z",
+    "timing": {
+      "ei_generation_seconds": 0.0115,
+      "gov_generation_seconds": 0.0434,
+      "mission_generation_seconds": 0.0001,
+      "repo_scan_seconds": 0.5773,
+      "ri_generation_seconds": 0.0159,
+      "total_pipeline_seconds": 0.6481
+    },
+    "warnings": []
+  },
+  "snapshot_id": "bench-hermes-runtime-v0.3-runtime-2026-08-08-11-22-21.698016",
+  "timestamp": "2026-08-08T11:22:21.698016Z"
+}
