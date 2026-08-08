@@ -12,3 +12,15 @@ env/
 .mypy_cache/
 .ruff_cache/
 *.log
+
+# Generated intelligence output (runtime artifacts, not source)
+engineering-governance/
+engineering-intelligence/
+mission-recommendations/
+repo-intelligence/
+
+# External repository clones (benchmark inputs)
+validation/golden_repositories/
+
+# Benchmark snapshots (generated, transient)
+validation/snapshots/
