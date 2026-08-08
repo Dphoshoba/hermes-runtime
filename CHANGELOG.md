@@ -39,6 +39,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
   - `ENGINEERING_GOVERNANCE_SCHEMA.md` — complete schema documentation
   - 31 tests (`test_engineering_governance.py`) — decisions, duplicates, conflicts, evidence, architecture, rendering, CLI, Hermes self-governance
   - 749 total tests passing
+- **Mission Recommendation Integration v1.0** — governance-approved recommendations → draft missions
+  - `hermes_v01/mission_recommendation_models.py` — DraftMission, GeneratedTask, TraceabilityLink, MissionRecommendations
+  - `hermes_v01/mission_generator.py` — ApprovedCandidateMission → Hermes Mission conversion with task templates
+  - `hermes_v01/mission_recommendation_renderer.py` — JSON, Markdown, and per-mission export
+  - `hermes_v01/mission_recommendation_cli.py` — `hermes-recommend` CLI with generate/show/summary/export
+  - Full traceability: every mission links back to governance, engineering, and repository intelligence
+  - All missions in DRAFT state — never enqueued automatically
+  - 31 tests (`test_mission_recommendations.py`) — generation, schema, traceability, determinism, CLI, pipeline dogfood
+  - 780 total tests passing
 
 ### Changed
 - Version bumped to `1.0.0a0` (PEP 440 alpha) across `pyproject.toml` and `__init__.py`
