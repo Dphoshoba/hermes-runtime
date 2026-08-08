@@ -14,6 +14,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - `DOGFOOD_FINDINGS.md` — 8 friction findings from dogfooding
 - `examples/missions/` — 5 representative mission definitions
 - `validation/sample-repo/` — isolated test repository for dogfooding
+- **Repository Intelligence v0.1** — static repository analysis subsystem
+  - `hermes_v01/repo_intel_models.py` — 17 frozen dataclasses (ModuleInfo, ClassInfo, FunctionInfo, ImportInfo, ModuleGraph, PublicAPI, TestIntelligence, DependencyIntelligence, ArchitectureSummary, ComplexitySignal, DebtSignal, etc.)
+  - `hermes_v01/repo_scanner.py` — AST-based static scanner: module discovery, import extraction, class/function extraction with signatures, test discovery with target inference, pyproject.toml + requirements.txt dependency parsing, configuration file discovery, CLI entry point extraction
+  - `hermes_v01/repo_analyzer.py` — analysis engine: module graph with cycle detection, public API inventory, complexity signals, technical debt signals, architecture summary
+  - `hermes_v01/repo_renderer.py` — JSON and Markdown artifact rendering
+  - `hermes_v01/repo_cli.py` — `hermes-repo` CLI with scan/show/check/summary subcommands
+  - `REPOSITORY_INTELLIGENCE_SCHEMA.md` — complete schema documentation
+  - 68 tests (`test_repo_intelligence.py`) — scanner, analyzer, renderer, CLI, determinism, dogfooding
+  - 661 total tests passing
 
 ### Changed
 - Version bumped to `1.0.0a0` (PEP 440 alpha) across `pyproject.toml` and `__init__.py`

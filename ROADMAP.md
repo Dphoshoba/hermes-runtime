@@ -224,3 +224,19 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 4. **Python version compatibility validation** — check command compatibility with min Python (DF-005)
 5. **Built-in task helpers** — common operations without inline Python (DF-004)
 6. **Per-task environment control** — env vars and working directory overrides (DF-006)
+
+## Repository Intelligence v0.1 ✅ COMPLETE
+
+- Static repository analysis subsystem
+- AST-based module discovery, import extraction, class/function extraction
+- Test discovery with target inference
+- Dependency extraction from pyproject.toml and requirements.txt
+- Module graph with cycle detection, isolated/highly-connected module identification
+- Public API inventory (classes, functions, CLI entry points)
+- Complexity signals (large modules, complex functions, deep nesting)
+- Technical debt signals (no docstrings, no tests, import cycles, isolated modules)
+- `hermes-repo` CLI: scan, show, check, summary
+- Deterministic JSON output (identical scans produce byte-identical artifacts)
+- REPOSITORY_INTELLIGENCE_SCHEMA.md documentation
+- 68 tests covering scanner, analyzer, renderer, CLI, determinism, and Hermes self-scan
+- 661 total tests passing
