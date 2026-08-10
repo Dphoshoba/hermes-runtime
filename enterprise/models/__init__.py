@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     Column, String, Text, Boolean, Integer, Float, DateTime, JSON, ForeignKey,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -123,9 +124,10 @@ class Finding(Base):
 
 class Mission(Base):
     __tablename__ = "missions"
+    __table_args__ = (UniqueConstraint("mission_id", "repository_id", name="uq_mission_per_repo"),)
 
     id = Column(String(36), primary_key=True, default=_uuid)
-    mission_id = Column(String(255), unique=True, nullable=False, index=True)
+    mission_id = Column(String(255), nullable=False, index=True)
     repository_id = Column(String(36), ForeignKey("repositories.id"), index=True)
     title = Column(String(512), nullable=False)
     description = Column(Text)
