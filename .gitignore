@@ -13,6 +13,17 @@ env/
 .ruff_cache/
 *.log
 
+# Runtime databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Node.js
+node_modules/
+
+# Frontend build output
+enterprise-ui/dist/
+
 # Generated intelligence output (runtime artifacts, not source)
 engineering-governance/
 engineering-intelligence/
@@ -24,3 +35,16 @@ validation/golden_repositories/
 
 # Benchmark snapshots (generated, transient)
 validation/snapshots/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

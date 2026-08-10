@@ -41,6 +41,27 @@ If these sections are absent, the proposal should not be accepted.
 | v1.0.1 | Bug fixes from pilot users |
 | v1.0.2 | Performance improvements |
 | v1.1.0 | Features justified by operational evidence |
+| v1.2.0 | 7-Day Operational Validation Program |
+
+---
+
+## v1.2.0 — 7-Day Operational Validation Program 🔄 IN PROGRESS
+
+Infrastructure complete. Ready to begin 7-day trial.
+
+- Operational Trial lifecycle (PLANNED → ACTIVE → COMPLETED/ABORTED) ✅
+- Daily Snapshot system (immutable end-of-day records) ✅
+- Operator Feedback (USEFUL, FALSE_POSITIVE, NOT_ACTIONABLE, NEEDS_MORE_EVIDENCE, DUPLICATE, UNKNOWN) ✅
+- Friction Journal (confusing_ui, unnecessary_clicks, missing_information, etc.) ✅
+- Trust Metrics (Finding Precision, Scan Reliability, Retry Recovery Rate) ✅
+- Morning Brief (governance, findings, friction, recommended review order) ✅
+- Trial Dashboard (per-day summaries, cumulative totals) ✅
+- Feature Proposals (evidence-based acceptance: ACCEPT, DEFER, REJECT, NEEDS_MORE_EVIDENCE) ✅
+- Scheduling (read-only, configurable cron) ✅
+- Safety Boundary enforcement (9 forbidden operations) ✅
+- Final Report Generator (OPERATIONAL_VALIDATION_REPORT.md) ✅
+- 41 focused tests passing ✅
+- **Next:** Begin 7-day operational trial with repository cohort
 
 ---
 

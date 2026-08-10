@@ -2,7 +2,7 @@
 
 Autonomous engineering runtime for deterministic mission execution with full audit trails.
 
-**Version: 1.0.0-beta**
+**Version: 1.1.0**
 
 > **Operational Maturity:** Hermes is now in an operational maturity phase. Future development is driven by real engineering experience — pilot results, benchmark evidence, and verified defects. See [ROADMAP.md](ROADMAP.md) for the evidence-driven evolution policy.
 
@@ -13,6 +13,59 @@ pip install -e .
 ```
 
 Requires Python >= 3.10.
+
+## Engineering Command Center
+
+The web-based observability platform for Hermes Enterprise:
+
+```bash
+# Start backend
+cd enterprise
+pip install fastapi uvicorn sqlalchemy python-jose passlib bcrypt pydantic email-validator
+uvicorn enterprise.app:app --reload
+
+# Start frontend
+cd enterprise-ui
+npm install
+npm run dev
+```
+
+Open http://localhost:3000. Register an account, then use the dashboard to monitor repositories, journal events, findings, missions, and reports.
+
+### Running Tests
+
+```bash
+# Backend unit + integration tests
+python -m pytest tests/ -x -q
+
+# E2E API tests (auth, repos, dashboard, scans, findings)
+python -m pytest tests/test_e2e_flows.py -v
+
+# Dogfood tests (validates 3 GitHub repos)
+python -m pytest tests/test_dogfood.py -v
+
+# Browser E2E tests (happy path + failure path)
+python -m pytest tests/test_e2e_browser.py -v
+
+# 7-Day Operational Validation tests (41 tests)
+python -m pytest tests/test_validation.py -v
+
+# Frontend behavioral tests (vitest + React Testing Library)
+cd enterprise-ui && npx vitest run
+```
+
+### Scan Management
+
+- **Create scan:** `POST /api/scans` with `repository_id`
+- **Start scan:** `POST /api/scans/{id}/start`
+- **Cancel scan:** `POST /api/scans/{id}/cancel` (idempotent)
+- **Retry scan:** `POST /api/scans/{id}/retry` (creates new job with incremented attempt)
+- **View timeline:** `GET /api/scans/{id}` returns `stage_timings` with per-stage duration
+
+### Dashboard APIs
+
+- `GET /api/dashboard/activity-v2?since=<timestamp>` — operational metrics
+- `GET /api/dashboard/overnight?window_start=<ts>&window_end=<ts>` — daily summary
 
 ## CLI Commands
 
@@ -31,6 +84,7 @@ Requires Python >= 3.10.
 | `hermes-capabilities` | Plugin and executor management |
 | `hermes-plan` | Mission planning and validation |
 | `hermes-mission` | Mission execution and reporting |
+| `hermes-journal` | Engineering journal — append-only pipeline observability |
 
 ## One-shot validation
 

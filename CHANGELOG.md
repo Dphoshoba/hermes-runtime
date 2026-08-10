@@ -4,9 +4,175 @@ All notable changes to the Hermes Runtime are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.0] - 2026-08-10
+
+### Added
+- **7-Day Operational Validation Program** — infrastructure for evidence-driven daily operations
+  - `POST /api/trial` — create and manage operational trials
+  - `GET /api/trial/{id}` — get trial status
+  - `POST /api/trial/{id}/complete` / `abort` — trial lifecycle
+  - `POST /api/trial/{id}/snapshots/{date}` — create immutable daily snapshots
+  - `GET /api/trial/{id}/snapshots` — list trial snapshots
+  - `GET /api/trial/{id}/dashboard` — 7-day trial dashboard
+- **Operator Feedback** — classify findings during trial
+  - `POST /api/feedback` — submit feedback (USEFUL, FALSE_POSITIVE, NOT_ACTIONABLE, NEEDS_MORE_EVIDENCE, DUPLICATE, UNKNOWN)
+  - `GET /api/feedback` — list feedback with trial/finding filters
+- **Friction Journal** — record operational friction
+  - `POST /api/friction` — record friction (category, severity, description, workaround)
+  - `GET /api/friction` — list friction with category/severity filters
+- **Trust Metrics** — evidence-based trust indicators
+  - Finding Precision, Operator Acceptance Rate, Scan Reliability, Retry Recovery Rate
+  - Safety Violation Count, Journal Integrity Failure Count
+  - `GET /api/operations/trust-metrics`
+- **Daily Morning Brief** — extended overnight summary
+  - Time-of-day greeting, scan/findings/governance/friction metrics
+  - Recommended review order, repositories requiring attention
+  - `GET /api/operations/morning-brief`
+- **Daily Operational Metrics** — per-day aggregation
+  - `GET /api/operations/daily-metrics/{date}`
+  - Repository operations, engineering intelligence, governance, quality, performance
+- **Final Report Generator** — OPERATIONAL_VALIDATION_REPORT.md generation
+  - `GET /api/trial/{id}/report` (via service)
+  - Executive summary, cohort, reliability, findings, governance, friction, safety
+- **Feature Proposals** — evidence-based feature acceptance
+  - `POST /api/proposals` — propose feature with problem, evidence, frequency
+  - `POST /api/proposals/{id}/decide` — ACCEPT, DEFER, REJECT, NEEDS_MORE_EVIDENCE
+  - `GET /api/proposals` — list proposals with decision filter
+- **Scheduling** — read-only repository analysis scheduling
+  - `GET /api/scheduling/repositories` — list schedulable repositories
+  - `POST /api/scheduling/validate` — validate schedule with safety check
+- **Safety Boundary** — enforcement of read-only trial mode
+  - Forbidden: modify_source_code, create_branch, commit, push, create_pull_request, merge, modify_github_settings, modify_workflows, execute_mission
+  - `enterprise/services/safety.py` — check_safety_boundary(), enforce_read_only()
+- **5 new database models**: OperationalTrial, DailySnapshot, OperatorFeedback, FrictionRecord, FeatureProposal
+- **41 focused tests** covering trial lifecycle, snapshots, feedback, friction, trust, morning brief, dashboard, proposals, scheduling, safety, report generation, schema validation
+
+## [1.1.0] - 2026-08-10
+
+### Added
+- **Scan Lifecycle Control** — full scan management with cancel and retry
+  - `POST /api/scans/{id}/cancel` — cancel queued or running scans (idempotent)
+  - `POST /api/scans/{id}/retry` — retry failed/cancelled scans with lineage tracking
+  - Scan attempt counting with `attempt` and `previous_scan_id` fields
+  - Cancellation timestamps: `cancellation_requested_at`, `cancelled_at`
+  - Failure classification: `auth_error`, `not_found`, `rate_limit`, `timeout`, `network_error`, `unknown`
+  - `requested_by` tracking for user-initiated actions
+  - Engineering Journal events emitted for `scan.cancelled`, `scan.completed`, `scan.failed`, `scan.retried`
+- **Scan Model Hardening** — extended ScanJob with operational metadata
+  - `attempt` — scan retry attempt number
+  - `previous_scan_id` — links retry to original scan
+  - `requested_by` — user who initiated the scan
+  - `cancellation_requested_at` / `cancelled_at` — cancellation timing
+  - `failure_classification` — structured error categorization
+  - `stage_timings` — per-stage timing with started_at, completed_at, duration_seconds
+  - Migration `003_scan_hardening` for backward-compatible schema evolution
+- **Pipeline Timings** — per-stage performance tracking
+  - 6 stages tracked: metadata, repository_analysis, engineering_analysis, governance_analysis, journal_sync, finding_generation
+  - Duration in seconds for each stage
+  - Total scan duration persisted
+  - Timing exposed in `GET /api/scans/{id}` and `GET /api/scans/{id}/history`
+- **Dashboard Activity API** — aggregated operational metrics
+  - `GET /api/dashboard/activity-v2?since=<timestamp>` — real-time dashboard metrics
+  - `repositories_total`, `repositories_ready`, `repositories_blocked`
+  - `scans_queued`, `scans_running`, `scans_completed_since`, `scans_failed_since`
+  - `new_findings_since`, `governance_approved_since`, `governance_rejected_since`
+  - `draft_missions_since`, `ci_failures_since`
+  - `latest_activity` — recent journal events
+  - `average_repository_health`
+- **Overnight Summary API** — daily operational summary
+  - `GET /api/dashboard/overnight?window_start=<ts>&window_end=<ts>`
+  - `repositories_scanned`, `blocked_repositories`
+  - `successful_scans`, `failed_scans`
+  - `new_findings`, `resolved_findings`
+  - `governance_decisions`, `draft_missions`, `ci_failures`
+  - `top_repositories_requiring_attention` — repos with recent failures or blocked status
+  - Natural language `summary` text
+- **Frontend Dashboard** — real Command Center landing page
+  - Time-of-day greeting with user name
+  - 11 metric cards: repositories, ready, blocked, queued scans, running scans, completed, failed, new findings, approved recs, draft missions, avg health
+  - Overnight summary section with scan and activity metrics
+  - Recent activity feed from journal events
+- **Repository List UI** — card-based repository view
+  - Repository cards with name, provider, visibility, branch, commit SHA
+  - Health score and findings count badges
+  - Last sync and scan timestamps
+  - Open, Sync, Scan action buttons
+  - Click-through to repository detail
+- **Repository Detail UI** — tabbed repository view
+  - Overview tab: provider, visibility, branch, commit, health, findings, sync/scan timestamps
+  - Scans tab: scan job list with timeline detail view
+  - Findings tab: severity-filtered finding list
+  - Scan timeline visualization: metadata → repository_analysis → engineering_analysis → governance_analysis → journal_sync → finding_generation
+- **Scan Actions UI** — scan management from browser
+  - Cancel button for pending/running scans with confirmation
+  - Retry button for failed/cancelled scans
+  - Optimistic UI updates after actions
+  - Error display for rejected operations
+- **Live Status** — scan progress without page reload
+  - Scan list shows current stage, attempt, duration
+  - Scan detail timeline shows per-stage progress
+  - Status badges with color coding
+- **Error Handling** — structured error responses
+  - GitHub permission denied: "GitHub sync failed"
+  - Repository unavailable: "Repository not found"
+  - Scan failed: failure classification in response
+  - Cancel/retry rejected: specific error messages
+  - Auth expired: 401 with clear message
+- **Testing** — 77 enterprise backend tests (34 new)
+  - Scan create, start, cancel, retry lifecycle
+  - Cancel idempotency
+  - Cancel of completed scan (no-op)
+  - Retry lineage tracking
+  - Attempt counting
+  - Stage timings validation
+  - Scan history recording
+  - Journal event emission for cancel/retry
+  - Dashboard activity aggregation
+  - Overnight summary generation
+  - Malformed timestamp handling
+  - Auth boundary verification
+- **Alembic Migrations** — 002_scan_jobs, 003_scan_hardening
+
+### Changed
+- Repository model: added `provider`, `identifier`, `commit_sha`, `visibility`, `last_synced_at`
+- ScanJob model: added `attempt`, `previous_scan_id`, `requested_by`, `cancellation_requested_at`, `cancelled_at`, `failure_classification`, `stage_timings`
+- Repository router: added `provider` filter, auto-identifier detection on create, `POST /{repo_id}/sync`
+- Dashboard router: added `activity-v2` and `overnight` endpoints
+- Frontend: updated Repository type with new fields, added ScanJob and ScanHistory types
+
 ## [1.0.0-beta] - 2026-08-09
 
 ### Added
+- **Engineering Command Center v1.0** — first web application for Hermes Enterprise
+  - FastAPI backend with SQLAlchemy ORM and SQLite/PostgreSQL support
+  - JWT authentication with bcrypt password hashing
+  - Repository Registry — CRUD operations for repository management
+  - Dashboard API — aggregated stats (repositories, findings, missions, health, journal activity)
+  - Journal API — query and filter engineering journal events
+  - Findings API — query findings by severity, category, status
+  - Missions API — query mission queue by status and type
+  - Reports API — query mission execution reports
+  - React + TypeScript frontend with Vite
+  - Dashboard view with stats cards and recent activity feed
+  - Repositories view with health scores and status badges
+  - Journal view with event type filtering
+  - Findings view with severity filtering
+  - Missions view with status filtering
+  - Reports view with task completion details
+  - Alembic migration infrastructure with initial schema
+  - 43 comprehensive backend tests covering auth, CRUD, filtering, and integration
+- **Engineering Journal v1.0** — append-only observability for the entire pipeline
+  - `JournalEvent` frozen dataclass with content-addressed integrity (SHA-256 payload hash)
+  - `JournalStore` with append-only JSONL persistence, file locking, and immutable writes
+  - `JournalEmitter` with 26 stage-specific emit helpers covering all pipeline stages
+  - `OvernightSummary` generator with deterministic aggregation and Markdown rendering
+  - `hermes-journal` CLI: `record`, `list`, `show`, `summary`, `integrity`, `types`, `export`
+  - 26 event types across 10 pipeline stages: readiness, repository intelligence, engineering intelligence, governance, mission recommendation, mission planning, mission execution, evidence, review, health, GitHub
+  - Concurrent-safe append with `fcntl.flock` locking
+  - Deterministic event ordering by timestamp
+  - Content integrity verification via SHA-256 payload hashing
+  - Daily JSONL file storage with atomic writes
+  - 98 comprehensive tests covering model, storage, emitter, summary, CLI, and integration
 - **Repository Readiness Assessment** — mandatory pre-pipeline safety gate
   - `RepositoryReadiness` canonical model with 20+ fields
   - `assess_readiness()` function for version control, working tree, baseline integrity, analysis confidence, and mission safety checks

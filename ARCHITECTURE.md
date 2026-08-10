@@ -74,6 +74,13 @@ hermes_v01/
   governance_intel_models.py # Governance data models
   governance_renderer.py     # JSON/Markdown rendering
 
+  # Engineering Journal
+  journal_models.py          # JournalEvent canonical model
+  journal_store.py           # Append-only JSONL persistence
+  journal_emitter.py         # Stage-specific event emitters
+  journal_summary.py         # Overnight summary generator
+  journal_cli.py             # hermes-journal CLI
+
   # CLI Entry Points
   *_cli.py             # CLI handlers for each subsystem
 ```
@@ -283,3 +290,173 @@ Snapshots stored in `validation/snapshots/` as JSON. Supports:
 - SHA-256 digests verify content integrity
 - `fsync` ensures durability on write
 - `os.link` prevents partial writes (atomic rename)
+
+## Engineering Journal
+
+The Engineering Journal is an append-only event log that provides complete observability across all pipeline stages without modifying existing behavior.
+
+### Architecture
+
+```
+Pipeline Stages
+      │
+      ▼
+┌─────────────────┐
+│ JournalEmitter   │  26 stage-specific emit helpers
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ JournalStore     │  Append-only JSONL + in-memory index
+│ (fcntl.flock)    │  Concurrent-safe, content-addressed
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Daily JSONL      │  YYYY-MM-DD.jsonl (one line per event)
+│ Files            │  Atomic writes via mkstemp → fsync → os.replace
+└─────────────────┘
+```
+
+### Event Model
+
+```python
+@dataclass(frozen=True)
+class JournalEvent:
+    event_id: str           # SHA-256(content)[:16]
+    timestamp: str          # ISO 8601 UTC
+    event_type: str         # e.g. "readiness.assessed"
+    stage: str              # Derived from event_type
+    repository: str | None  # Repository identifier
+    actor: str              # "system", "cli", or user identity
+    payload: dict           # Stage-specific data
+    payload_sha256: str     # Content hash for integrity
+    metadata: dict          # Optional trace/correlation IDs
+```
+
+### Event Types (26)
+
+| Stage | Event Types |
+|-------|-------------|
+| readiness | `readiness.assessed`, `readiness.blocked` |
+| repository_intelligence | `repo.scanned`, `repo.analyzed` |
+| engineering_intelligence | `engineering.analyzed` |
+| governance | `governance.decided` |
+| mission_recommendation | `recommendation.generated`, `recommendation.approved`, `recommendation.rejected` |
+| mission_planning | `mission.created`, `mission.planned` |
+| mission_execution | `mission.started`, `mission.completed`, `mission.failed`, `mission.cancelled`, `mission.aborted`, `mission.paused`, `mission.resumed` |
+| evidence | `evidence.recorded` |
+| review | `review.completed` |
+| health | `health.checked` |
+| github | `github.metadata_fetched`, `github.branches_listed`, `github.pr_listed`, `github.actions_checked`, `github.materialized` |
+
+### Guarantees
+
+- **Append-only:** Events are never modified or deleted after write
+- **Immutable:** Written JSONL files are not rewritten; new events go to the end
+- **Content-addressed:** Each event carries a SHA-256 hash of its payload
+- **Deterministic ordering:** Events are ordered by timestamp within daily files
+- **Concurrent-safe:** File locking via `fcntl.flock` prevents corruption
+- **No pipeline modification:** Journal is purely observational; existing behavior unchanged
+
+## Engineering Command Center
+
+The first web application for Hermes Enterprise — a self-hosted observability platform.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  React + TypeScript Frontend (enterprise-ui/)                       │
+│  ├── Dashboard    (stats + activity)                                │
+│  ├── Repositories (registry + health)                               │
+│  ├── Journal      (event log)                                       │
+│  ├── Findings     (severity/category)                               │
+│  ├── Missions     (queue status)                                    │
+│  └── Reports      (execution results)                               │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ REST API
+┌───────────────────────────────▼─────────────────────────────────────┐
+│  FastAPI Backend (enterprise/)                                       │
+│  ├── Auth (JWT + bcrypt)                                            │
+│  ├── Repository Registry                                            │
+│  ├── Dashboard (aggregated stats)                                   │
+│  ├── Journal (event queries)                                        │
+│  ├── Findings (engineering findings)                                │
+│  ├── Missions (queue management)                                    │
+│  └── Reports (execution reports)                                    │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │
+┌───────────────────────────────▼─────────────────────────────────────┐
+│  SQLAlchemy ORM + SQLite (dev) / PostgreSQL (prod)                  │
+│  ├── users, repositories, journal_events, findings                  │
+│  ├── missions, reports                                              │
+│  └── Alembic migrations                                             │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Health check |
+| `/api/auth/register` | POST | Register user |
+| `/api/auth/login` | POST | Login (returns JWT) |
+| `/api/auth/me` | GET | Current user |
+| `/api/repositories` | GET/POST | List/create repositories |
+| `/api/repositories/{id}` | GET/PATCH/DELETE | Repository CRUD |
+| `/api/repositories/{id}/sync` | POST | Sync GitHub metadata |
+| `/api/scans` | GET/POST | List/create scan jobs |
+| `/api/scans/{id}` | GET | Get scan status + timings |
+| `/api/scans/{id}/start` | POST | Start a pending scan |
+| `/api/scans/{id}/cancel` | POST | Cancel a queued/running scan |
+| `/api/scans/{id}/retry` | POST | Retry a failed/cancelled scan |
+| `/api/scans/{id}/history` | GET | Get scan stage history |
+| `/api/dashboard/stats` | GET | Aggregated statistics |
+| `/api/dashboard/activity` | GET | Recent journal activity |
+| `/api/dashboard/activity-v2` | GET | Operational activity metrics |
+| `/api/dashboard/overnight` | GET | Overnight summary |
+| `/api/journal` | GET | Query journal events |
+| `/api/journal/{event_id}` | GET | Get single event |
+| `/api/findings` | GET | Query findings |
+| `/api/findings/{id}` | GET | Get single finding |
+| `/api/missions` | GET | Query missions |
+| `/api/missions/{id}` | GET | Get single mission |
+| `/api/reports` | GET | Query reports |
+| `/api/reports/{id}` | GET | Get single report |
+
+### Scan Lifecycle
+
+Scans progress through these states: `pending` → `queued` → `running` → `completed` / `failed` / `cancelled`.
+
+**Stages:** metadata → repository_analysis → engineering_analysis → governance_analysis → journal_sync → finding_generation
+
+**Cancellation:** Idempotent. Cancelling a completed scan returns it unchanged. Cancelling a running scan sets `cancelled_at` and emits `scan.cancelled`.
+
+**Retry:** Creates a new ScanJob linked to the previous attempt via `previous_scan_id`. The `attempt` field increments. Only `failed` and `cancelled` scans are retryable.
+
+**Timing:** Each stage records `started_at`, `completed_at`, `duration_seconds` in `stage_timings`. Total duration stored in `duration_seconds`.
+
+### Database Schema
+
+- **users** — id, email, name, hashed_password, is_active, is_admin
+- **repositories** — id, name, url, default_branch, language, status, provider, identifier, commit_sha, visibility, last_scanned_at, last_synced_at, health_score, findings_count
+- **journal_events** — id, event_id, timestamp, event_type, stage, repository_id, actor, payload, payload_sha256
+- **findings** — id, repository_id, finding_type, severity, category, title, description, module, priority_score, effort, status
+- **missions** — id, mission_id, repository_id, title, description, mission_type, status, priority
+- **reports** — id, mission_id, repository_id, title, status, summary, report_data, duration_seconds, tasks_*
+- **scan_jobs** — id, repository_id, status, scan_type, branch, commit_sha, started_at, completed_at, duration_seconds, error_message, stages_completed, current_stage, findings_count, attempt, previous_scan_id, requested_by, cancellation_requested_at, cancelled_at, failure_classification, stage_timings
+- **scan_history** — id, scan_job_id, stage, status, message, duration_seconds, created_at
+
+### Running
+
+```bash
+# Backend
+cd enterprise
+uvicorn enterprise.app:app --reload
+
+# Frontend
+cd enterprise-ui
+npm install
+npm run dev
+```
