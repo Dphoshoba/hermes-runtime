@@ -327,3 +327,58 @@ class FeatureProposal(Base):
     decision_notes = Column(Text)
     decided_at = Column(DateTime)
     created_at = Column(DateTime, default=_utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Finding Adjudication — Evidence-Based Human Review
+# ---------------------------------------------------------------------------
+
+class FindingAdjudication(Base):
+    __tablename__ = "finding_adjudications"
+    __table_args__ = (
+        UniqueConstraint("finding_id", "operator", "reviewed_at", name="uq_adjudication_per_operator_time"),
+    )
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    finding_id = Column(String(36), ForeignKey("findings.id"), nullable=False, index=True)
+    repository_id = Column(String(36), ForeignKey("repositories.id"), index=True)
+    scan_id = Column(String(36), ForeignKey("scan_jobs.id"))
+    trial_id = Column(String(100), index=True)
+
+    classification = Column(String(50), nullable=False, index=True)
+    observation_status = Column(String(30), default="SUPPORTED")
+    concern_status = Column(String(30), default="POSSIBLE")
+    actionability_status = Column(String(30), default="NEEDS_MORE_EVIDENCE")
+    file_context = Column(String(30), default="UNKNOWN")
+    exceedance_ratio = Column(Float)
+
+    operator = Column(String(255), nullable=False)
+    operator_notes = Column(Text)
+    reviewed_at = Column(DateTime, nullable=False, default=_utcnow)
+    source = Column(String(50), default="human_review")
+    confidence = Column(Float, default=1.0)
+    evidence_snapshot = Column(JSON, default=dict)
+    governance_decision_at_review = Column(String(50))
+    related_mission_ids = Column(JSON, default=list)
+    schema_version = Column(String(20), default="1.0")
+
+    finding = relationship("Finding")
+    repository = relationship("Repository")
+
+
+# ---------------------------------------------------------------------------
+# Mission ↔ Finding Explicit Linkage
+# ---------------------------------------------------------------------------
+
+class MissionFindingLink(Base):
+    __tablename__ = "mission_finding_links"
+    __table_args__ = (
+        UniqueConstraint("mission_id", "finding_id", name="uq_mission_finding_link"),
+    )
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    mission_id = Column(String(255), nullable=False, index=True)
+    finding_id = Column(String(36), ForeignKey("findings.id"), nullable=False, index=True)
+    repository_id = Column(String(36), ForeignKey("repositories.id"), index=True)
+    relationship_type = Column(String(30), default="PRIMARY")
+    created_at = Column(DateTime, default=_utcnow)

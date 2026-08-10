@@ -620,3 +620,87 @@ class ScheduleResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ---------------------------------------------------------------------------
+# Human Review — Finding Adjudication
+# ---------------------------------------------------------------------------
+
+class AdjudicationCreate(BaseModel):
+    classification: str = Field(
+        pattern=r"^(USEFUL|FALSE_POSITIVE|NOT_ACTIONABLE|NEEDS_MORE_EVIDENCE|DUPLICATE|UNKNOWN)$"
+    )
+    notes: str | None = None
+    operator: str = Field(min_length=1, max_length=255)
+    trial_id: str | None = None
+
+
+class AdjudicationResponse(BaseModel):
+    id: str
+    finding_id: str
+    repository_id: str | None
+    classification: str
+    observation_status: str
+    concern_status: str
+    actionability_status: str
+    file_context: str
+    exceedance_ratio: float | None
+    operator: str
+    operator_notes: str | None
+    reviewed_at: datetime
+    source: str
+    confidence: float
+    governance_decision_at_review: str | None
+    related_mission_ids: list[str]
+    schema_version: str
+
+    class Config:
+        from_attributes = True
+
+
+class ReviewQueueItem(BaseModel):
+    finding_id: str
+    db_id: str
+    repository_id: str | None
+    repository_name: str
+    severity: str
+    category: str
+    title: str
+    description: str
+    module: str
+    file_context: str
+    line_count: int | None
+    exceedance_ratio: float | None
+    exceedance_tier: str | None
+    evidence_references: list[dict[str, Any]]
+    governance_decision: str
+    governance_rationale: str
+    observation_status: str
+    concern_status: str
+    actionability_status: str
+    mission_linkage: Any
+    current_adjudication: str | None
+    operator: str | None
+    operator_notes: str | None
+    reviewed_at: str | None
+
+
+class ReviewQueueResponse(BaseModel):
+    items: list[ReviewQueueItem]
+    total: int
+    limit: int
+    offset: int
+    pending_review: int | None = None
+
+
+class ReviewSummaryResponse(BaseModel):
+    total_reviewed: int
+    useful: int
+    false_positive: int
+    not_actionable: int
+    needs_more_evidence: int
+    duplicate: int
+    unknown: int
+    finding_precision: float | None
+    actionability_rate: float | None
+    pending_review: int

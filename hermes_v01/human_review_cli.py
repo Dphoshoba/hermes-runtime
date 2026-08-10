@@ -1,0 +1,194 @@
+"""CLI for Human Review Queue — classify and inspect findings.
+
+Usage:
+    hermes-review list [--repository ID] [--severity SEV] [--unreviewed]
+    hermes-review show FINDING-ID
+    hermes-review classify FINDING-ID CLASSIFICATION [--notes NOTE] [--operator NAME]
+    hermes-review summary
+    hermes-review export [--json]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "enterprise"))
+
+
+def _get_db():
+    import os
+    os.environ.setdefault("HERMES_DATABASE_URL", "sqlite:///./hermes_enterprise.db")
+    from database import SessionLocal
+    return SessionLocal()
+
+
+def cmd_list(args: argparse.Namespace) -> int:
+    from services.review_service import build_review_queue
+    db = _get_db()
+    try:
+        result = build_review_queue(
+            db,
+            repository_id=args.repository,
+            severity=args.severity,
+            reviewed=None if not args.unreviewed else False,
+            limit=args.limit,
+        )
+        for item in result["items"]:
+            status = item["current_adjudication"] or "PENDING"
+            ctx = item["file_context"]
+            print(f"  {item['finding_id']:20s}  {item['repository_name']:20s}  {item['severity']:10s}  {ctx:15s}  {status}")
+        print(f"\n  Total: {result['total']}  Showing: {len(result['items'])}")
+        return 0
+    finally:
+        db.close()
+
+
+def cmd_show(args: argparse.Namespace) -> int:
+    from services.review_service import (
+        classify_file_context, infer_observation_status, infer_concern_status,
+        infer_actionability_status, _extract_line_count, compute_exceedance_ratio,
+        classify_exceedance_tier,
+    )
+    from models import Finding, Repository
+    db = _get_db()
+    try:
+        finding = db.query(Finding).filter(Finding.id == args.finding_id).first()
+        if not finding:
+            print(f"Finding {args.finding_id} not found")
+            return 1
+
+        repo = db.query(Repository).filter(Repository.id == finding.repository_id).first()
+        ctx = classify_file_context(finding.module or "")
+        lc = _extract_line_count(finding)
+        er = compute_exceedance_ratio(lc, 300) if lc else None
+        meta = finding.metadata_json or {}
+
+        print(f"Finding:       {finding.id}")
+        print(f"Repository:    {repo.name if repo else 'UNKNOWN'}")
+        print(f"Severity:      {finding.severity}")
+        print(f"Category:      {finding.category}")
+        print(f"Title:         {finding.title}")
+        print(f"Module:        {finding.module or 'N/A'}")
+        print(f"File Context:  {ctx}")
+        print(f"Line Count:    {lc or 'N/A'}")
+        print(f"Exceedance:    {er} ({classify_exceedance_tier(er) if er else 'N/A'})")
+        print(f"Observation:   {infer_observation_status(finding)}")
+        print(f"Concern:       {infer_concern_status(finding, ctx)}")
+        print(f"Actionability: {infer_actionability_status(finding, ctx, er)}")
+        print(f"Governance:    {meta.get('governance_decision', {}).get('decision', 'N/A')}")
+        print(f"  Rationale:   {meta.get('governance_decision', {}).get('rationale', '')}")
+
+        from services.review_service import get_adjudications_for_finding
+        adjs = get_adjudications_for_finding(db, finding.id)
+        if adjs:
+            print(f"\nAdjudications ({len(adjs)}):")
+            for a in adjs:
+                print(f"  [{a.classification}] by {a.operator} at {a.reviewed_at}")
+                if a.operator_notes:
+                    print(f"    Note: {a.operator_notes}")
+        else:
+            print("\nNo adjudications yet.")
+
+        return 0
+    finally:
+        db.close()
+
+
+def cmd_classify(args: argparse.Namespace) -> int:
+    from services.review_service import create_adjudication, emit_finding_reviewed
+    db = _get_db()
+    try:
+        adj = create_adjudication(
+            db,
+            finding_id=args.finding_id,
+            classification=args.classification,
+            operator=args.operator or "cli-operator",
+            notes=args.notes,
+        )
+        emit_finding_reviewed(
+            db,
+            finding_id=args.finding_id,
+            repository_id=adj.repository_id,
+            classification=args.classification,
+            operator=args.operator or "cli-operator",
+            notes=args.notes,
+            adjudication_id=adj.id,
+        )
+        print(f"Adjudicated {args.finding_id} as {args.classification}")
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+    finally:
+        db.close()
+
+
+def cmd_summary(args: argparse.Namespace) -> int:
+    from services.review_service import get_review_summary, get_pending_count
+    db = _get_db()
+    try:
+        summary = get_review_summary(db)
+        summary["pending_review"] = get_pending_count(db)
+        print(json.dumps(summary, indent=2))
+        return 0
+    finally:
+        db.close()
+
+
+def cmd_export(args: argparse.Namespace) -> int:
+    from services.review_service import build_review_queue, get_review_summary
+    db = _get_db()
+    try:
+        data = {
+            "summary": get_review_summary(db),
+            "queue": build_review_queue(db, limit=1000),
+        }
+        print(json.dumps(data, indent=2, default=str))
+        return 0
+    finally:
+        db.close()
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Human Review Queue CLI")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p_list = sub.add_parser("list", help="List findings for review")
+    p_list.add_argument("--repository", help="Filter by repository ID")
+    p_list.add_argument("--severity", help="Filter by severity")
+    p_list.add_argument("--unreviewed", action="store_true", help="Only unreviewed")
+    p_list.add_argument("--limit", type=int, default=50)
+
+    p_show = sub.add_parser("show", help="Show finding details")
+    p_show.add_argument("finding_id", help="Finding ID")
+
+    p_classify = sub.add_parser("classify", help="Classify a finding")
+    p_classify.add_argument("finding_id", help="Finding ID")
+    p_classify.add_argument("classification", help="Classification",
+                            choices=["USEFUL", "FALSE_POSITIVE", "NOT_ACTIONABLE",
+                                     "NEEDS_MORE_EVIDENCE", "DUPLICATE", "UNKNOWN"])
+    p_classify.add_argument("--notes", help="Operator notes")
+    p_classify.add_argument("--operator", help="Operator name")
+
+    p_summary = sub.add_parser("summary", help="Show review summary")
+
+    p_export = sub.add_parser("export", help="Export review data")
+    p_export.add_argument("--json", action="store_true")
+
+    args = parser.parse_args()
+
+    commands = {
+        "list": cmd_list,
+        "show": cmd_show,
+        "classify": cmd_classify,
+        "summary": cmd_summary,
+        "export": cmd_export,
+    }
+    return commands[args.command](args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

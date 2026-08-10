@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import engine, sessionmaker
 from .routers import auth, repositories, dashboard, journal, findings, missions, reports, scans
-from .routers import trial, feedback, friction, operations, proposals, scheduling
+from .routers import trial, feedback, friction, operations, proposals, scheduling, review
 
 
 @asynccontextmanager
@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(
     title="Hermes Engineering Command Center",
-    version="1.2.0",
+    version="1.3.0",
     description="Observability platform for Hermes Enterprise",
     lifespan=lifespan,
 )
@@ -50,8 +50,9 @@ app.include_router(friction.router, prefix="/api/friction", tags=["Friction Jour
 app.include_router(operations.router, prefix="/api/operations", tags=["Operations"])
 app.include_router(proposals.router, prefix="/api/proposals", tags=["Feature Proposals"])
 app.include_router(scheduling.router, prefix="/api/scheduling", tags=["Scheduling"])
+app.include_router(review.router, prefix="/api/review", tags=["Human Review"])
 
 
 @app.get("/api/health")
 def health_check() -> dict[str, str]:
-    return {"status": "ok", "version": "1.2.0"}
+    return {"status": "ok", "version": "1.3.0"}

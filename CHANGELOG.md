@@ -4,6 +4,53 @@ All notable changes to the Hermes Runtime are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.0] - 2026-08-11
+
+### Added
+- **Evidence-Based Finding Adjudication** — first-class capability for human review
+  - `FindingAdjudication` model — append-only, immutable adjudication records
+  - `MissionFindingLink` model — explicit finding→mission traceability (PRIMARY, SUPPORTING, MERGED_FROM)
+  - File context classification (PRODUCTION, TEST, FIXTURE, GENERATED, VENDOR, CONFIGURATION, DOCUMENTATION)
+  - Observation/concern/actionability 3-level distinction
+  - Threshold exceedance ratio and tier classification (NEAR_THRESHOLD, MODERATE, HIGH, EXTREME)
+  - Test-file policy: production thresholds do not auto-apply to test context
+  - Configuration requirement validation: must establish expected config before flagging absence
+- **Human Review Queue Service** — `enterprise/services/review_service.py`
+  - Queue construction with file context, exceedance, observation/concern/actionability
+  - Append-only adjudication persistence
+  - Review summary with finding precision, actionability rate
+  - Mission↔Finding explicit linkage (idempotent, many-to-one)
+  - Journal event emission (finding.reviewed, finding.reclassified)
+- **Enterprise API** — `/api/review/*` endpoints
+  - `GET /api/review/findings` — review queue with filters (repository, severity, category, reviewed)
+  - `GET /api/review/findings/{id}` — finding detail with adjudications
+  - `POST /api/review/findings/{id}/adjudications` — create classification (append-only)
+  - `GET /api/review/summary` — aggregate review metrics
+  - `GET /api/review/export` — full review data export
+- **Enterprise UI** — Human Review page (`/review`)
+  - Summary cards (Pending, Useful, FP, Not Actionable, Needs Evidence, Duplicate, Precision, Actionability)
+  - Filterable findings table with file context, observation/concern/actionability status
+  - Side panel with full finding detail and one-click classification buttons
+  - Re-review support with old adjudications preserved
+- **CLI** — `hermes-human-review`
+  - `hermes-human-review list` — list findings with filters
+  - `hermes-human-review show FINDING-ID` — full finding detail
+  - `hermes-human-review classify FINDING-ID CLASSIFICATION` — classify from CLI
+  - `hermes-human-review summary` — review metrics
+  - `hermes-human-review export` — export review data
+- **Journal Integration** — append-only events
+  - `finding.reviewed` — operator classified a finding
+  - `finding.reclassified` — operator changed previous classification
+- **30 Day 2R Operator Classifications** — persisted to database
+  - USEFUL: 4, NOT_ACTIONABLE: 12, NEEDS_MORE_EVIDENCE: 13, DUPLICATE: 1
+  - Finding Precision: 13.8%, Actionability Rate: 13.3%
+- **Human Review Report** — `HUMAN_REVIEW_REPORT_DAY2R.md`
+- **41 focused tests** — file context, threshold, actionability, linkage, journal, Day 2R persistence
+
+### Fixed
+- Mission uniqueness constraint changed from global `unique=True` to per-repository `UniqueConstraint("mission_id", "repository_id")` (DEF-001)
+- Frontend STAGE_ORDER updated to match 9 canonical pipeline stages
+
 ## [1.2.0] - 2026-08-10
 
 ### Added

@@ -9,6 +9,7 @@ const links = [
   { to: '/findings', label: 'Findings' },
   { to: '/missions', label: 'Missions' },
   { to: '/reports', label: 'Reports' },
+  { to: '/review', label: 'Human Review' },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

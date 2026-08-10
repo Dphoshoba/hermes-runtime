@@ -12,6 +12,7 @@ import JournalPage from './pages/JournalPage'
 import FindingsPage from './pages/FindingsPage'
 import MissionsPage from './pages/MissionsPage'
 import ReportsPage from './pages/ReportsPage'
+import HumanReviewPage from './pages/HumanReviewPage'
 
 interface AuthCtx {
   user: User | null;
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="/findings" element={<ProtectedRoute><FindingsPage /></ProtectedRoute>} />
         <Route path="/missions" element={<ProtectedRoute><MissionsPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+        <Route path="/review" element={<ProtectedRoute><HumanReviewPage /></ProtectedRoute>} />
       </Routes>
     </AuthProvider>
   );

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hermes-runtime-v01"
-version = "1.2.0"
+version = "1.3.0"
 description = "Autonomous engineering runtime for deterministic mission execution"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -45,6 +45,7 @@ hermes-benchmark = "hermes_v01.benchmark_cli:main"
 hermes-ready = "hermes_v01.readiness_cli:main"
 hermes-github = "hermes_v01.github_cli:main"
 hermes-journal = "hermes_v01.journal_cli:main"
+hermes-human-review = "hermes_v01.human_review_cli:main"
 
 [tool.setuptools]
 packages = ["hermes_v01"]
