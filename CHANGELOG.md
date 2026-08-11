@@ -6,6 +6,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [1.3.0] - 2026-08-11
 
+### Operational Validation Trial 001 — COMPLETED
+
+Seven-day operational validation trial completed. Hermes Enterprise is now in controlled beta.
+
+**Trial Summary:**
+- 7-day validation across 3 repositories (hermes-runtime, flask, express)
+- 84 findings generated, 65 unique findings reviewed
+- 5 USEFUL, 23 NOT_ACTIONABLE, 36 NEEDS_MORE_EVIDENCE, 1 DUPLICATE
+- Governance over-approval: 81.5%–100% (production) → 0.0% (candidate Variant I)
+- Safety violations: 0
+- Target mutations: 0
+- 1325 tests passing
+
+**Key Findings:**
+- Production Governance defaults to APPROVED when no rule matches (unsafe)
+- Candidate Variant I (default → NEEDS_MORE_EVIDENCE) eliminates over-approval
+- USEFUL recall weakly validated (only 1 USEFUL finding in Day 7)
+- CONFIGURATION governance unvalidated (0 findings)
+- Mission traceability incomplete (0% linkage)
+
+**Decisions:**
+- Enterprise: READY_WITH_KNOWN_LIMITATIONS
+- Governance: MORE_GOVERNANCE_VALIDATION_REQUIRED
+- Production Governance: UNCHANGED
+- Recommended Mode: CONTROLLED_BETA with mandatory human review
+
+**Artifacts:**
+- OPERATIONAL_VALIDATION_REPORT.md — full trial report
+- CONTROLLED_BETA_GUIDE.md — operator workflow guide
+- validation/snapshots/day7_final_closure.json — trial completion event
+
 ### Added
 - **Evidence-Based Finding Adjudication** — first-class capability for human review
   - `FindingAdjudication` model — append-only, immutable adjudication records

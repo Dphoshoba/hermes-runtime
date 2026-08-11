@@ -41,15 +41,82 @@ If these sections are absent, the proposal should not be accepted.
 | v1.0.1 | Bug fixes from pilot users |
 | v1.0.2 | Performance improvements |
 | v1.1.0 | Features justified by operational evidence |
-| v1.2.0 | 7-Day Operational Validation Program |
+| v1.2.0 | 7-Day Operational Validation Program ✅ COMPLETE |
+| v1.3.x | Controlled Beta Validation |
 
 ---
 
-## v1.2.0 — 7-Day Operational Validation Program 🔄 IN PROGRESS
+## v1.3.x — Controlled Beta Validation 🔄 IN PROGRESS
 
-Infrastructure complete. Ready to begin 7-day trial.
+Hermes Enterprise is in controlled beta with mandatory human review. Governance is advisory.
 
-- Operational Trial lifecycle (PLANNED → ACTIVE → COMPLETED/ABORTED) ✅
+### v1.3.1 — Governance Useful-Recall Validation (NEXT)
+
+**Problem:** USEFUL recall is weakly validated (only 1 USEFUL finding in Day 7 sample).
+
+**Evidence:** Day 7 blind sample contained 1 USEFUL, 7 NOT_ACTIONABLE, 11 NEEDS_MORE_EVIDENCE. Candidate Variant I deferred the single USEFUL finding to NEEDS_MORE_EVIDENCE.
+
+**Success metric:** Independent sample with ≥5 USEFUL findings. Candidate preserves ≥80% of USEFUL findings.
+
+**Status:** ACCEPT FOR VALIDATION
+
+### v1.3.2 — Configuration Governance Validation
+
+**Problem:** No CONFIGURATION findings were available in Day 7 blind sample.
+
+**Evidence:** Day 7 sample composition: 0 CONFIGURATION findings.
+
+**Success metric:** Blind sample with ≥3 CONFIGURATION findings. Governance correctly defers or handles configuration context.
+
+**Status:** ACCEPT FOR VALIDATION
+
+### v1.3.3 — High-Severity Governance Validation
+
+**Problem:** No high-severity findings were available in Day 7 blind sample.
+
+**Evidence:** Day 7 sample composition: 0 high-severity findings.
+
+**Success metric:** Blind sample with ≥3 high-severity findings. Governance correctly handles severity escalation.
+
+**Status:** ACCEPT FOR VALIDATION
+
+### v1.3.4 — EXTREME_EXCEEDANCE Governance Validation
+
+**Problem:** No EXTREME_EXCEEDANCE findings were available in Day 7 blind sample.
+
+**Evidence:** Day 7 sample composition: 0 EXTREME_EXCEEDANCE findings.
+
+**Success metric:** Blind sample with ≥2 EXTREME_EXCEEDANCE findings. Governance correctly auto-approves strong evidence.
+
+**Status:** ACCEPT FOR VALIDATION
+
+### v1.3.5 — Mission Traceability Closure
+
+**Problem:** Mission generator does not consistently populate originating finding linkage. 0% linkage coverage.
+
+**Evidence:** 78 missions in database, 0 with explicit finding links.
+
+**Success metric:** 100% explicit linkage for new missions generated after fix.
+
+**Status:** ACCEPT
+
+### v1.3.6 — Pilot-User Defects and Friction
+
+**Problem:** Unknown defects and friction from controlled beta usage.
+
+**Evidence:** To be collected during controlled beta.
+
+**Success metric:** Defects identified and resolved. Friction reduced.
+
+**Status:** ACCEPT
+
+---
+
+## v1.2.0 — 7-Day Operational Validation Program ✅ COMPLETE
+
+Infrastructure complete. 7-day trial executed.
+
+- Operational Trial lifecycle (PLANNED → ACTIVE → COMPLETED) ✅
 - Daily Snapshot system (immutable end-of-day records) ✅
 - Operator Feedback (USEFUL, FALSE_POSITIVE, NOT_ACTIONABLE, NEEDS_MORE_EVIDENCE, DUPLICATE, UNKNOWN) ✅
 - Friction Journal (confusing_ui, unnecessary_clicks, missing_information, etc.) ✅
@@ -60,8 +127,10 @@ Infrastructure complete. Ready to begin 7-day trial.
 - Scheduling (read-only, configurable cron) ✅
 - Safety Boundary enforcement (9 forbidden operations) ✅
 - Final Report Generator (OPERATIONAL_VALIDATION_REPORT.md) ✅
-- 41 focused tests passing ✅
-- **Next:** Begin 7-day operational trial with repository cohort
+- 1325 tests passing ✅
+- Trial COMPLETED: 2026-08-11 ✅
+- Enterprise Decision: READY_WITH_KNOWN_LIMITATIONS ✅
+- Governance Decision: MORE_GOVERNANCE_VALIDATION_REQUIRED ✅
 
 ---
 
