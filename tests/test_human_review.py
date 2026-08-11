@@ -527,3 +527,302 @@ class TestDay2RClassificationPersistence:
         classifiable = 30 - 1
         assert summary["finding_precision"] == pytest.approx(4 / classifiable, rel=1e-2)
         assert summary["actionability_rate"] == pytest.approx(4 / 30, rel=1e-2)
+
+
+# ---------------------------------------------------------------------------
+# Queue integrity regression tests
+# ---------------------------------------------------------------------------
+
+class TestReviewQueueIntegrity:
+    def test_review_items_use_persisted_finding_identity(self, setup_db):
+        db = setup_db
+        repo = Repository(name="test", url="https://example.com/test")
+        db.add(repo)
+        db.commit()
+        f = Finding(
+            repository_id=repo.id, finding_type="x", severity="high", category="c",
+            title="t", module="src/main.py",
+            metadata_json={"finding_id": "FINDING-001", "evidence_references": []},
+        )
+        db.add(f)
+        db.commit()
+
+        result = build_review_queue(db)
+        assert len(result["items"]) == 1
+        item = result["items"][0]
+        assert item["db_id"] == f.id
+        assert item["finding_id"] == "FINDING-001"
+
+    def test_same_core_finding_id_across_repos_no_collision(self, setup_db):
+        db = setup_db
+        repo1 = Repository(name="repo-a", url="https://example.com/a")
+        repo2 = Repository(name="repo-b", url="https://example.com/b")
+        db.add_all([repo1, repo2])
+        db.commit()
+
+        f1 = Finding(
+            repository_id=repo1.id, finding_type="x", severity="high", category="c",
+            title="t1", module="src/a.py",
+            metadata_json={"finding_id": "FINDING-001", "evidence_references": []},
+        )
+        f2 = Finding(
+            repository_id=repo2.id, finding_type="x", severity="high", category="c",
+            title="t2", module="src/b.py",
+            metadata_json={"finding_id": "FINDING-001", "evidence_references": []},
+        )
+        db.add_all([f1, f2])
+        db.commit()
+
+        result = build_review_queue(db)
+        assert len(result["items"]) == 2
+        ids = {item["db_id"] for item in result["items"]}
+        assert len(ids) == 2
+
+    def test_same_core_finding_id_across_scans_no_collision(self, setup_db):
+        db = setup_db
+        repo = Repository(name="test", url="https://example.com/test")
+        db.add(repo)
+        db.commit()
+
+        f1 = Finding(
+            repository_id=repo.id, finding_type="x", severity="high", category="c",
+            title="t1", module="src/a.py",
+            metadata_json={"finding_id": "FINDING-001", "evidence_references": []},
+        )
+        f2 = Finding(
+            repository_id=repo.id, finding_type="x", severity="medium", category="c",
+            title="t2", module="src/b.py",
+            metadata_json={"finding_id": "FINDING-001", "evidence_references": []},
+        )
+        db.add_all([f1, f2])
+        db.commit()
+
+        result = build_review_queue(db)
+        assert len(result["items"]) == 2
+        ids = {item["db_id"] for item in result["items"]}
+        assert len(ids) == 2
+
+    def test_review_queue_can_be_restricted_to_scan(self, setup_db):
+        db = setup_db
+        repo = Repository(name="test", url="https://example.com/test")
+        db.add(repo)
+        db.commit()
+
+        f1 = Finding(
+            repository_id=repo.id, finding_type="x", severity="high", category="c",
+            title="t1", module="src/a.py",
+            metadata_json={"finding_id": "FINDING-001", "evidence_references": []},
+        )
+        f2 = Finding(
+            repository_id=repo.id, finding_type="x", severity="medium", category="c",
+            title="t2", module="src/b.py",
+            metadata_json={"finding_id": "FINDING-002", "evidence_references": []},
+        )
+        db.add_all([f1, f2])
+        db.commit()
+
+        result = build_review_queue(db, repository_id=repo.id)
+        assert result["total"] == 2
+
+        result2 = build_review_queue(db, repository_id="nonexistent")
+        assert result2["total"] == 0
+
+    def test_context_summary_equals_actual_selected_records(self, setup_db):
+        db = setup_db
+        repo = Repository(name="test", url="https://example.com/test")
+        db.add(repo)
+        db.commit()
+
+        for i in range(3):
+            f = Finding(
+                repository_id=repo.id, finding_type="x", severity="high", category="c",
+                title=f"prod{i}", module="src/main.py",
+                metadata_json={"finding_id": f"P-{i:03d}", "evidence_references": []},
+            )
+            db.add(f)
+        for i in range(2):
+            f = Finding(
+                repository_id=repo.id, finding_type="x", severity="medium", category="c",
+                title=f"test{i}", module=f"tests/test_{i}.py",
+                metadata_json={"finding_id": f"T-{i:03d}", "evidence_references": []},
+            )
+            db.add(f)
+        db.commit()
+
+        result = build_review_queue(db)
+        items = result["items"]
+        ctx_counts = {}
+        for item in items:
+            ctx = item["file_context"]
+            ctx_counts[ctx] = ctx_counts.get(ctx, 0) + 1
+
+        assert ctx_counts.get("PRODUCTION", 0) == 3
+        assert ctx_counts.get("TEST", 0) == 2
+
+    def test_severity_summary_equals_actual_selected_records(self, setup_db):
+        db = setup_db
+        repo = Repository(name="test", url="https://example.com/test")
+        db.add(repo)
+        db.commit()
+
+        for i in range(2):
+            f = Finding(
+                repository_id=repo.id, finding_type="x", severity="high", category="c",
+                title=f"h{i}", module="src/a.py",
+                metadata_json={"finding_id": f"H-{i:03d}", "evidence_references": []},
+            )
+            db.add(f)
+        f = Finding(
+            repository_id=repo.id, finding_type="x", severity="low", category="c",
+            title="l0", module="src/b.py",
+            metadata_json={"finding_id": "L-000", "evidence_references": []},
+        )
+        db.add(f)
+        db.commit()
+
+        result = build_review_queue(db)
+        sev_counts = {}
+        for item in result["items"]:
+            s = item["severity"]
+            sev_counts[s] = sev_counts.get(s, 0) + 1
+
+        assert sev_counts.get("high", 0) == 2
+        assert sev_counts.get("low", 0) == 1
+
+    def test_repository_summary_equals_actual_selected_records(self, setup_db):
+        db = setup_db
+        repo1 = Repository(name="repo-a", url="https://example.com/a")
+        repo2 = Repository(name="repo-b", url="https://example.com/b")
+        db.add_all([repo1, repo2])
+        db.commit()
+
+        for i in range(3):
+            f = Finding(
+                repository_id=repo1.id, finding_type="x", severity="high", category="c",
+                title=f"a{i}", module="src/x.py",
+                metadata_json={"finding_id": f"A-{i:03d}", "evidence_references": []},
+            )
+            db.add(f)
+        f = Finding(
+            repository_id=repo2.id, finding_type="x", severity="medium", category="c",
+            title="b0", module="src/y.py",
+            metadata_json={"finding_id": "B-000", "evidence_references": []},
+        )
+        db.add(f)
+        db.commit()
+
+        result = build_review_queue(db)
+        repo_counts = {}
+        for item in result["items"]:
+            r = item["repository_name"]
+            repo_counts[r] = repo_counts.get(r, 0) + 1
+
+        assert repo_counts.get("repo-a", 0) == 3
+        assert repo_counts.get("repo-b", 0) == 1
+
+    def test_governance_summary_equals_actual_selected_records(self, setup_db):
+        db = setup_db
+        repo = Repository(name="test", url="https://example.com/test")
+        db.add(repo)
+        db.commit()
+
+        for i in range(3):
+            f = Finding(
+                repository_id=repo.id, finding_type="x", severity="high", category="c",
+                title=f"ap{i}", module="src/a.py",
+                metadata_json={
+                    "finding_id": f"G-{i:03d}",
+                    "evidence_references": [],
+                    "governance_decision": {"decision": "APPROVED", "rationale": "ok"},
+                },
+            )
+            db.add(f)
+        f = Finding(
+            repository_id=repo.id, finding_type="x", severity="medium", category="c",
+            title="rej0", module="src/b.py",
+            metadata_json={
+                "finding_id": "R-000",
+                "evidence_references": [],
+                "governance_decision": {"decision": "REJECTED", "rationale": "no"},
+            },
+        )
+        db.add(f)
+        db.commit()
+
+        result = build_review_queue(db)
+        gov_counts = {}
+        for item in result["items"]:
+            g = item["governance_decision"]
+            gov_counts[g] = gov_counts.get(g, 0) + 1
+
+        assert gov_counts.get("APPROVED", 0) == 3
+        assert gov_counts.get("REJECTED", 0) == 1
+
+    def test_no_duplicate_persisted_finding_enters_sample_twice(self, setup_db):
+        db = setup_db
+        repo = Repository(name="test", url="https://example.com/test")
+        db.add(repo)
+        db.commit()
+        f = Finding(
+            repository_id=repo.id, finding_type="x", severity="high", category="c",
+            title="t", module="src/a.py",
+            metadata_json={"finding_id": "FINDING-001", "evidence_references": []},
+        )
+        db.add(f)
+        db.commit()
+
+        result = build_review_queue(db)
+        db_ids = [item["db_id"] for item in result["items"]]
+        assert len(db_ids) == len(set(db_ids))
+
+    def test_every_review_item_has_scan_provenance(self, setup_db):
+        db = setup_db
+        repo = Repository(name="test", url="https://example.com/test")
+        db.add(repo)
+        db.commit()
+
+        from enterprise.models import ScanJob
+        scan = ScanJob(
+            repository_id=repo.id, status="completed", commit_sha="abc123def456",
+        )
+        db.add(scan)
+        db.commit()
+
+        f = Finding(
+            repository_id=repo.id, finding_type="x", severity="high", category="c",
+            title="t", module="src/a.py",
+            metadata_json={"finding_id": "FINDING-001", "evidence_references": []},
+        )
+        db.add(f)
+        db.commit()
+
+        result = build_review_queue(db)
+        item = result["items"][0]
+        assert item["scan_id"] == scan.id
+        assert item["commit_sha"] == "abc123def456"
+
+    def test_historical_queue_remains_immutable_after_regeneration(self, setup_db):
+        db = setup_db
+        repo = Repository(name="test", url="https://example.com/test")
+        db.add(repo)
+        db.commit()
+        f = Finding(
+            repository_id=repo.id, finding_type="x", severity="high", category="c",
+            title="t", module="src/a.py",
+            metadata_json={"finding_id": "FINDING-001", "evidence_references": []},
+        )
+        db.add(f)
+        db.commit()
+
+        result1 = build_review_queue(db)
+        item1 = result1["items"][0].copy()
+
+        create_adjudication(db, f.id, "USEFUL", "reviewer")
+
+        result2 = build_review_queue(db)
+        item2 = result2["items"][0]
+
+        assert item1["db_id"] == item2["db_id"]
+        assert item1["finding_id"] == item2["finding_id"]
+        assert item1["scan_id"] == item2["scan_id"]
+        assert item1["commit_sha"] == item2["commit_sha"]

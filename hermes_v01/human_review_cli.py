@@ -39,7 +39,9 @@ def cmd_list(args: argparse.Namespace) -> int:
         for item in result["items"]:
             status = item["current_adjudication"] or "PENDING"
             ctx = item["file_context"]
-            print(f"  {item['finding_id']:20s}  {item['repository_name']:20s}  {item['severity']:10s}  {ctx:15s}  {status}")
+            scan_short = (item.get("scan_id") or "N/A")[:8]
+            commit_short = (item.get("commit_sha") or "N/A")[:8]
+            print(f"  {item['finding_id']:20s}  {item['repository_name']:20s}  {item['severity']:10s}  {ctx:15s}  scan={scan_short}  commit={commit_short}  {status}")
         print(f"\n  Total: {result['total']}  Showing: {len(result['items'])}")
         return 0
     finally:
@@ -61,12 +63,19 @@ def cmd_show(args: argparse.Namespace) -> int:
             return 1
 
         repo = db.query(Repository).filter(Repository.id == finding.repository_id).first()
+        from models import ScanJob
+        scan = db.query(ScanJob).filter(
+            ScanJob.repository_id == finding.repository_id,
+            ScanJob.status == "completed",
+        ).order_by(ScanJob.completed_at.desc()).first()
         ctx = classify_file_context(finding.module or "")
         lc = _extract_line_count(finding)
         er = compute_exceedance_ratio(lc, 300) if lc else None
         meta = finding.metadata_json or {}
 
         print(f"Finding:       {finding.id}")
+        print(f"Scan ID:       {scan.id if scan else 'N/A'}")
+        print(f"Commit SHA:    {scan.commit_sha if scan else 'N/A'}")
         print(f"Repository:    {repo.name if repo else 'UNKNOWN'}")
         print(f"Severity:      {finding.severity}")
         print(f"Category:      {finding.category}")

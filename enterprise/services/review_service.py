@@ -194,6 +194,7 @@ def build_review_queue(
     findings = q.order_by(Finding.severity, Finding.id).all()
 
     repo_cache: dict[str, Repository] = {}
+    scan_cache: dict[str, ScanJob | None] = {}
     items = []
     for f in findings:
         repo = repo_cache.get(f.repository_id)
@@ -201,6 +202,18 @@ def build_review_queue(
             repo = db.query(Repository).filter(Repository.id == f.repository_id).first()
             if repo:
                 repo_cache[f.repository_id] = repo
+
+        if f.repository_id not in scan_cache:
+            scan_cache[f.repository_id] = (
+                db.query(ScanJob)
+                .filter(
+                    ScanJob.repository_id == f.repository_id,
+                    ScanJob.status == "completed",
+                )
+                .order_by(ScanJob.completed_at.desc())
+                .first()
+            )
+        scan = scan_cache[f.repository_id]
 
         file_context = classify_file_context(f.module or "")
         line_count = _extract_line_count(f)
@@ -227,6 +240,8 @@ def build_review_queue(
         item = {
             "finding_id": meta.get("finding_id", f.id),
             "db_id": f.id,
+            "scan_id": scan.id if scan else None,
+            "commit_sha": scan.commit_sha if scan else None,
             "repository_id": f.repository_id,
             "repository_name": repo.name if repo else "UNKNOWN",
             "severity": f.severity,

@@ -5,6 +5,8 @@ import { apiFetch } from '../lib/api'
 interface ReviewItem {
   finding_id: string
   db_id: string
+  scan_id: string | null
+  commit_sha: string | null
   repository_id: string
   repository_name: string
   severity: string
@@ -242,6 +244,9 @@ export default function HumanReviewPage() {
           </div>
 
           <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+            <Row label="Finding DB ID" value={selected.db_id} />
+            <Row label="Scan ID" value={selected.scan_id || 'N/A'} />
+            <Row label="Commit SHA" value={selected.commit_sha || 'N/A'} />
             <Row label="Repository" value={selected.repository_name} />
             <Row label="Title" value={selected.title} />
             <Row label="Severity" value={selected.severity} />

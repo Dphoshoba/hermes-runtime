@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -64,6 +65,8 @@ class AdjudicationResponse(BaseModel):
 class ReviewQueueItem(BaseModel):
     finding_id: str
     db_id: str
+    scan_id: str | None
+    commit_sha: str | None
     repository_id: str | None
     repository_name: str
     severity: str
@@ -158,9 +161,22 @@ def get_review_finding(
     line_count = _extract_line_count(finding)
     exceedance = compute_exceedance_ratio(line_count, 300) if line_count else None
 
+    from ..models import ScanJob
+    scan = (
+        db.query(ScanJob)
+        .filter(
+            ScanJob.repository_id == finding.repository_id,
+            ScanJob.status == "completed",
+        )
+        .order_by(ScanJob.completed_at.desc())
+        .first()
+    )
+
     return {
         "finding": {
             "id": finding.id,
+            "scan_id": scan.id if scan else None,
+            "commit_sha": scan.commit_sha if scan else None,
             "repository_id": finding.repository_id,
             "repository_name": repo.name if repo else "UNKNOWN",
             "severity": finding.severity,
