@@ -1,8 +1,9 @@
 # CONTROLLED BETA GUIDE — Hermes Enterprise
 
-**Version:** 1.3.0
+**Version:** 1.4.0
 **Status:** CONTROLLED_BETA
 **Trial:** Operational Validation Trial 001 — COMPLETED
+**Controlled Beta:** Cycle 6 — Mission Prioritization Promoted to Production
 
 ---
 

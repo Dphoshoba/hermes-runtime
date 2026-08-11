@@ -5,7 +5,9 @@
   "started_at": "2026-08-11T10:07:40.401636+00:00",
   "hermes_version": "1.3.0",
   "hermes_commit": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
-  "operators": ["david"],
+  "operators": [
+    "david"
+  ],
   "policy_version": "1.0",
   "governance_mode": "ADVISORY",
   "execution_mode": "DISABLED",
@@ -21,7 +23,7 @@
       "baseline_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
       "language": "Python",
       "framework": "FastAPI",
-      "reason": "Hermes itself — dogfooding",
+      "reason": "Hermes itself \u2014 dogfooding",
       "criticality": "high",
       "active_development": true
     },
@@ -33,7 +35,7 @@
       "baseline_sha": "2a2df4315bc7d8e55d32808e0eca571e4b2823f3",
       "language": "TypeScript",
       "framework": "Next.js",
-      "reason": "React/frontend — Next.js application",
+      "reason": "React/frontend \u2014 Next.js application",
       "criticality": "medium",
       "active_development": false
     },
@@ -45,7 +47,7 @@
       "baseline_sha": "4e9dfbde238602820f979729da88f073488cc584",
       "language": "JavaScript",
       "framework": "React",
-      "reason": "React/frontend — Create React App",
+      "reason": "React/frontend \u2014 Create React App",
       "criticality": "medium",
       "active_development": false
     },
@@ -57,7 +59,7 @@
       "baseline_sha": "83f1c00959c728fb9ee59648c2af85d459c4c6b4",
       "language": "Python",
       "framework": "FastAPI",
-      "reason": "Python/backend — FastAPI application",
+      "reason": "Python/backend \u2014 FastAPI application",
       "criticality": "medium",
       "active_development": false
     },
@@ -69,7 +71,7 @@
       "baseline_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
       "language": "Mixed",
       "framework": "Various",
-      "reason": "Larger mature repository — mixed codebase",
+      "reason": "Larger mature repository \u2014 mixed codebase",
       "criticality": "medium",
       "active_development": true
     }
@@ -118,5 +120,149 @@
     "mission_linkage_coverage": 0,
     "safety_violations": 0,
     "target_mutations": 0
-  }
+  },
+  "cycle_history": [
+    {
+      "cycle": 2,
+      "status": "COMPLETE",
+      "repo": "multi-repository (5 repos)",
+      "findings_generated": 1631,
+      "review_sample_size": 50,
+      "human_classifications": {
+        "USEFUL": 1,
+        "NOT_ACTIONABLE": 27,
+        "NEEDS_MORE_EVIDENCE": 22,
+        "FALSE_POSITIVE": 0,
+        "DUPLICATE": 0,
+        "UNKNOWN": 0
+      },
+      "governance_over_approval_rate": 0.974,
+      "variant_i_exact_agreement": 0.44,
+      "production_exact_agreement": 0.1,
+      "finding_volume": "HIGH",
+      "mission_generation": "REGRESSION (0 missions)",
+      "artifacts": [
+        "CONTROLLED_BETA_CYCLE2_REPORT.md",
+        "/tmp/cycle2_scan_results.json",
+        "/tmp/beta_review_sample.json",
+        "/tmp/beta_classifications.json"
+      ]
+    },
+    {
+      "cycle": 3,
+      "status": "COMPLETE",
+      "repo": "multi-repository (5 repos)",
+      "objective": "Investigate and fix mission generation regression",
+      "findings_generated": 228,
+      "missions_generated": 109,
+      "governance_approved": 181,
+      "governance_rejected": 47,
+      "governance_approval_rate": 0.794,
+      "defects_resolved": [
+        "DEFECT-001: Mission generation regression"
+      ],
+      "new_findings": [
+        "50-mission cap per repository limits mission generation",
+        "cognikid-web has 0 findings (small codebase)",
+        "inspirevoice-backend has high rejection rate (69.2%)"
+      ],
+      "artifacts": [
+        "CONTROLLED_BETA_CYCLE3_REPORT.md",
+        "/tmp/cycle3_full_pipeline_results.json"
+      ]
+    },
+    {
+      "cycle": 4,
+      "status": "COMPLETE",
+      "repo": "multi-repository (5 repos)",
+      "objective": "Mission traceability validation and 50-mission cap analysis",
+      "mission_traceability_coverage": 1.0,
+      "cap_analysis": {
+        "total_approved": 181,
+        "total_generated": 109,
+        "total_lost": 72,
+        "cap_impact_percent": 39.8
+      },
+      "useful_candidates": 4,
+      "defects_discovered": [
+        "DEFECT-002: 50-mission cap per repository"
+      ],
+      "artifacts": [
+        "CONTROLLED_BETA_CYCLE4_REPORT.md",
+        "/tmp/cycle4_cap_analysis.json",
+        "/tmp/cycle4_useful_candidates.json"
+      ]
+    },
+    {
+      "cycle": 5,
+      "status": "COMPLETE",
+      "repo": "multi-repository (5 repos)",
+      "objective": "Mission prioritization validation",
+      "total_missions": 181,
+      "persisted_missions": 109,
+      "excluded_missions": 72,
+      "useful_excluded": 0,
+      "not_actionable_excluded": 3,
+      "nme_excluded": 2,
+      "current_ordering": "Finding ID (numeric order)",
+      "defect_classification": "PRIORITIZATION_MISSING",
+      "recommendation": "IMPLEMENT_PRIORITY_FILTERING",
+      "strategy_comparison": {
+        "CURRENT": {
+          "missions": 109,
+          "useful_retention": 1.0,
+          "burden_min": 33.5
+        },
+        "CAP_100": {
+          "missions": 181,
+          "useful_retention": 1.0,
+          "burden_min": 52.2
+        },
+        "PRIORITY_50": {
+          "missions": 50,
+          "useful_retention": 1.0,
+          "burden_min": 16.2
+        }
+      },
+      "artifacts": [
+        "CONTROLLED_BETA_CYCLE5_REPORT.md",
+        "/tmp/cycle5_pre_cap_missions.json",
+        "/tmp/cycle5_value_loss_analysis.json",
+        "/tmp/cycle5_strategy_comparison.json",
+        "/tmp/cycle5_priority_metrics.json",
+        "/tmp/cycle5_shadow_priority.json",
+        "/tmp/cycle5_variant_i_evidence.json"
+      ]
+    },
+    {
+      "cycle": 6,
+      "status": "COMPLETE",
+      "repo": "multi-repository (5 repos)",
+      "objective": "Implement evidence-based mission prioritization",
+      "defect_resolution": "DEFECT-002 RESOLVED: PRIORITIZATION_MISSING",
+      "prioritizer_version": "1.0.0",
+      "candidate_missions": 181,
+      "selected_missions": 109,
+      "deferred_missions": 72,
+      "suppressed_missions": 22,
+      "cap": 50,
+      "cycle_5_replay_agreement": 1.0,
+      "useful_retention": 1.0,
+      "not_actionable_leakage": 0.0,
+      "mission_linkage_coverage": 1.0,
+      "deferred_mission_traceability": 1.0,
+      "focused_tests": "25/25 PASSED",
+      "regression_tests": "82/82 PASSED",
+      "recommendation": "PRIORITIZATION_VALIDATED",
+      "artifacts": [
+        "hermes_v01/mission_prioritizer.py",
+        "tests/test_mission_prioritizer.py",
+        "CONTROLLED_BETA_CYCLE6_REPORT.md",
+        "/tmp/cycle6_replay_results.json",
+        "/tmp/cycle6_holdout_results.json"
+      ]
+    }
+  ],
+  "current_cycle": 7,
+  "last_updated": "2026-08-11T11:50:44.233487+00:00"
 }

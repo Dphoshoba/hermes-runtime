@@ -4,6 +4,46 @@ All notable changes to the Hermes Runtime are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.0] - 2026-08-11
+
+### Mission Prioritization — Evidence-Based Selection (PROMOTED TO PRODUCTION)
+
+**DEFECT-002 RESOLVED:** 50-mission cap no longer truncates by finding-ID order.
+New pipeline stage `mission_prioritization` inserts between mission_recommendation and persistence.
+
+**Key Changes:**
+- `mission_prioritizer.py` — evidence-based priority scoring and selection (v1.0.0)
+- Production pipeline uses `prioritize_missions()` instead of `[:50]` truncation
+- Selection statuses: SELECTED, DEFERRED_BY_PRIORITY_CAP, SUPPRESSED_NON_ACTIONABLE, SUPPRESSED_FALSE_POSITIVE, SUPPRESSED_DUPLICATE, REVIEW_REQUIRED
+- Scoring: human classification (+10/−10/−2) + severity (10→1) + evidence diversity (+3/+2/+1) + governance (+2/−2) + context (−1/−0.5)
+- Tie-breaking: priority DESC → severity DESC → evidence DESC → finding ID ASC
+
+**Validation (Cycle 6):**
+- 25/25 regression tests passing
+- 100% Cycle 5 replay agreement
+- 0% NOT_ACTIONABLE leakage (22 suppressed)
+- 100% USEFUL retention (4/4 selected)
+- Production acceptance: 4/4 repositories passing
+- Regression gate: 82/82 tests passing
+
+**Promotion Status:**
+- Enterprise Decision: READY_WITH_KNOWN_LIMITATIONS
+- Governance Decision: MORE_GOVERNANCE_VALIDATION_REQUIRED
+- Autonomous Mission Execution: DISABLED
+- Repository Mutation: DISABLED
+- Operating Mode: CONTROLLED_BETA with mandatory human review
+
+### Added
+- **Evidence-Based Mission Prioritization** — replaces arbitrary finding-ID ordering
+  - `MissionPrioritizer` — composite priority scoring with 5 signal sources
+  - `MissionPrioritization` — selection results with traceability
+  - `PrioritizedMission` — individual mission with priority_score and selection_status
+  - `MissionPrioritizationSummary` — batch statistics and policy info
+  - `mission_prioritizer.py` — standalone module, no pipeline dependencies
+  - `test_mission_prioritizer.py` — 25 regression tests
+  - 100% traceability: every candidate mission tracked through selection/exclusion
+  - Priority bands: P0_CRITICAL (≥15), P1_HIGH (≥10), P2_MEDIUM (≥5), P3_LOW (≥0), P4_REVIEW_REQUIRED (<0)
+
 ## [1.3.0] - 2026-08-11
 
 ### Operational Validation Trial 001 — COMPLETED

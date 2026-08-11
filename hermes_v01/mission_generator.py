@@ -2,6 +2,14 @@
 
 Converts ApprovedCandidateMission objects into Hermes Mission artifacts.
 Every mission remains in DRAFT state. Never enqueues automatically.
+
+Pipeline:
+    Finding → Governance → Candidate Mission → Mission Prioritization → Attention Cap → Persisted Draft Mission
+
+Product Principle:
+    The goal is NOT "generate as many missions as possible."
+    The goal is "surface the smallest number of missions containing
+    the greatest evidence-supported engineering value."
 """
 
 from __future__ import annotations
@@ -15,6 +23,7 @@ from .mission_recommendation_models import (
     MissionRecommendations,
     TraceabilityLink,
 )
+from .mission_prioritizer import prioritize_missions, prioritization_result_to_dict
 
 
 # ---------------------------------------------------------------------------
@@ -119,21 +128,19 @@ def _generate_traceability(
 def generate_missions(governance: dict[str, Any]) -> MissionRecommendations:
     """Main entry point. Consume governance dict, produce mission recommendations.
 
-    Caps at 50 missions to keep pipeline performant.
+    Uses evidence-based mission prioritization instead of arbitrary truncation.
+    Applies 50-mission attention cap AFTER priority ranking.
     """
     repository = governance.get("repository", {})
     assessment = governance.get("assessment", {})
     approved_missions = assessment.get("approved_missions", [])
     approval_decisions = assessment.get("approval_decisions", [])
 
-    # Cap at 50 missions for performance
-    approved_missions = approved_missions[:50]
-
     # Build EI findings lookup from governance decisions
-    # (governance decisions reference engineering findings)
     ei_findings: dict[str, Any] = {}
 
-    draft_missions: list[DraftMission] = []
+    # Phase 1: Generate all candidate missions (before prioritization)
+    candidate_missions: list[dict[str, Any]] = []
     type_counts: dict[str, int] = {}
     total_tasks = 0
 
@@ -152,40 +159,85 @@ def generate_missions(governance: dict[str, Any]) -> MissionRecommendations:
 
         # Find governance decision for this finding
         gov_ref = ""
+        gov_decision = "UNKNOWN"
         for d in approval_decisions:
             if d.get("finding_id", "") == fid:
                 gov_ref = f"GOV-{fid}"
+                gov_decision = d.get("decision", "UNKNOWN")
                 break
 
+        # Build mission dict for prioritizer
+        mission_dict = {
+            "mission_id": mission_id,
+            "originating_finding_id": fid,
+            "finding_severity": approved.get("severity", "medium"),
+            "human_classification": approved.get("human_classification", "UNKNOWN"),
+            "governance_decision": gov_decision,
+            "file_context": affected[0] if affected else "",
+            "evidence_references": [],
+            "recommendation": rec,
+            "mission_type": mtype,
+            "estimated_effort": effort,
+            "priority_score": priority,
+            "governance_approval_reference": gov_ref,
+            "traceability": traceability,
+            "tasks": tasks,
+        }
+        candidate_missions.append(mission_dict)
+        type_counts[mtype] = type_counts.get(mtype, 0) + 1
+        total_tasks += len(tasks)
+
+    # Phase 2: Prioritize missions using evidence-based scoring
+    prioritization_result = prioritize_missions(
+        candidate_missions,
+        limit=50,
+        repository=repository.get("name"),
+    )
+
+    # Phase 3: Generate draft missions from SELECTED candidates only
+    draft_missions: list[DraftMission] = []
+    selected_type_counts: dict[str, int] = {}
+    selected_tasks = 0
+
+    for mp in prioritization_result.selected:
+        # Find the original mission dict
+        mission_dict = next(
+            (m for m in candidate_missions if m["mission_id"] == mp.mission_id),
+            None,
+        )
+        if not mission_dict:
+            continue
+
         draft = DraftMission(
-            mission_id=mission_id,
-            title=f"[DRAFT] {rec[:80]}",
-            description=f"Generated from governance-approved recommendation for {fid}",
-            objective=rec,
-            tasks=tasks,
-            goals=(rec,),
+            mission_id=mission_dict["mission_id"],
+            title=f"[DRAFT] {mission_dict['recommendation'][:80]}",
+            description=f"Generated from governance-approved recommendation for {mission_dict['originating_finding_id']}",
+            objective=mission_dict["recommendation"],
+            tasks=tuple(mission_dict["tasks"]),
+            goals=(mission_dict["recommendation"],),
             constraints=("Must not execute without human approval",),
             required_capabilities=(),
             working_directory=None,
             repository=repository.get("path"),
             state="DRAFT",
-            traceability=traceability,
-            originating_finding_id=fid,
-            originating_recommendation=rec,
-            governance_approval_reference=gov_ref,
-            estimated_effort=effort,
-            priority_score=priority,
-            mission_type=mtype,
+            traceability=mission_dict["traceability"],
+            originating_finding_id=mission_dict["originating_finding_id"],
+            originating_recommendation=mission_dict["recommendation"],
+            governance_approval_reference=mission_dict["governance_approval_reference"],
+            estimated_effort=mission_dict["estimated_effort"],
+            priority_score=mp.priority_score,
+            mission_type=mission_dict["mission_type"],
         )
         draft_missions.append(draft)
-        type_counts[mtype] = type_counts.get(mtype, 0) + 1
-        total_tasks += len(tasks)
+        mtype = mission_dict["mission_type"]
+        selected_type_counts[mtype] = selected_type_counts.get(mtype, 0) + 1
+        selected_tasks += len(mission_dict["tasks"])
 
     summary = MissionRecommendationSummary(
         total_governance_approvals=len(approved_missions),
         missions_generated=len(draft_missions),
-        missions_by_type=type_counts,
-        total_tasks=total_tasks,
+        missions_by_type=selected_type_counts,
+        total_tasks=selected_tasks,
         traceability_validated=True,
     )
 

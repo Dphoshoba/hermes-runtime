@@ -36,6 +36,7 @@ hermes_v01/
   # Mission Recommendation Integration
   mission_recommendation_models.py  # DraftMission, GeneratedTask, TraceabilityLink
   mission_generator.py             # ApprovedCandidateMission → DraftMission
+  mission_prioritizer.py           # Evidence-based priority scoring and selection (v1.0.0)
   draft_mission_translator.py      # APPROVED DraftMission → Mission translation
   mission_recommendation_cli.py    # hermes-recommend CLI (generate/approve/reject/status)
   mission_recommendation_renderer.py # JSON, Markdown, per-mission export
