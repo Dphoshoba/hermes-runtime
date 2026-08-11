@@ -110,6 +110,38 @@ Hermes Enterprise is in controlled beta with mandatory human review. Governance 
 
 **Status:** ACCEPT
 
+### v1.3.7 — Evidence-Based Mission Prioritization ✅ COMPLETE
+
+**Problem:** Missions were ordered by finding ID (numeric), not priority. The 50-mission cap was arbitrarily truncating rather than selecting by value.
+
+**Evidence:** Cycle 5 analysis showed:
+- 181 total candidate missions, 109 persisted under cap
+- Current ordering = finding ID (not priority)
+- Boundary analysis: mission #51 (excluded) had higher shadow score than #50 (retained)
+- PRIORITY_50 retained 100% of USEFUL missions with 0% NOT_ACTIONABLE leakage
+- Operator burden reduced from 33.5 min to 16.2 min
+
+**Solution:** Implemented `mission_prioritizer.py` with:
+- Deterministic evidence-based priority scoring
+- Human review dominance (USEFUL → P0, NOT_ACTIONABLE → suppressed)
+- 50-mission attention cap (not arbitrary truncation)
+- Deferred mission auditability
+- 100% traceability maintained
+
+**Success metric:** 
+- Cycle 5 replay: 100% agreement with frozen PRIORITY_50
+- 25/25 regression tests passing
+- 0% NOT_ACTIONABLE leakage
+- 100% USEFUL retention
+
+**Status:** COMPLETE
+
+**Artifacts:**
+- `hermes_v01/mission_prioritizer.py` — Priority scoring and selection
+- `tests/test_mission_prioritizer.py` — 25 regression tests
+- `CONTROLLED_BETA_CYCLE5_REPORT.md` — Analysis report
+- `CONTROLLED_BETA_CYCLE6_REPORT.md` — Implementation report
+
 ---
 
 ## v1.2.0 — 7-Day Operational Validation Program ✅ COMPLETE
