@@ -261,6 +261,33 @@
         "/tmp/cycle6_replay_results.json",
         "/tmp/cycle6_holdout_results.json"
       ]
+    },
+    {
+      "cycle": 7,
+      "started_at": "2026-08-12T10:00:00Z",
+      "completed_at": "2026-08-12T10:28:38.027565+00:00",
+      "status": "COMPLETE",
+      "objective": "Governance Promotion Readiness Validation",
+      "repositories_scanned": 12,
+      "total_findings": 285,
+      "frozen_dataset": {
+        "hash": "dbdf8de1e76b2809949f887701edda576d9af30f418a4e2435eb27bf91c06eee",
+        "total_findings": 50,
+        "unique_finding_ids": 31,
+        "unique_finding_repo_pairs": 50
+      },
+      "human_labels": {
+        "USEFUL": 14,
+        "NOT_ACTIONABLE": 6,
+        "NEEDS_MORE_EVIDENCE": 30
+      },
+      "governance_evaluation": {
+        "production_useful_recall": 64.3,
+        "variant_i_useful_recall": 0.0
+      },
+      "decision": "MORE_GOVERNANCE_VALIDATION_REQUIRED",
+      "recommendation": "Do NOT promote Variant I",
+      "critical_finding": "Variant I's default \u2192 NEEDS_MORE_EVIDENCE semantics are TOO CONSERVATIVE for genuinely USEFUL findings"
     }
   ],
   "current_cycle": 7,
