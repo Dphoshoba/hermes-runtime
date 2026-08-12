@@ -1,0 +1,309 @@
+{
+  "milestone": "Evidence Enrichment v2 \u2014 Signal Discrimination",
+  "decision": "STATIC_EVIDENCE_INSUFFICIENT_FOR_AUTOMATED_GOVERNANCE",
+  "rationale": "No v2 signal separates USEFUL from NME/NOT_ACTIONABLE with acceptable separation; most are NO_DISCRIMINATION, breadth is inverse. Human actionability judgments are not recoverable from static/history evidence in this strict cohort.",
+  "label_firewall_verified": true,
+  "coverage_gate": {
+    "churn": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    },
+    "cochange": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    },
+    "structural_centrality": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    },
+    "test_relationship": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    },
+    "corroboration": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    },
+    "responsibility_breadth": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    }
+  },
+  "signal_distributions": {
+    "churn_commit_count": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "min": 1,
+        "max": 2,
+        "mean": 1.1
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "min": 1,
+        "max": 2,
+        "mean": 1.1538
+      },
+      "USEFUL": {
+        "n": 9,
+        "min": 1,
+        "max": 4,
+        "mean": 1.3333
+      }
+    },
+    "churn_score": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "min": 1.0,
+        "max": 536.0,
+        "mean": 296.4
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "min": 17.5,
+        "max": 593.0,
+        "mean": 219.8846
+      },
+      "USEFUL": {
+        "n": 9,
+        "min": 94.0,
+        "max": 642.0,
+        "mean": 339.5278
+      }
+    },
+    "cochange_partner_count": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "min": 0,
+        "max": 14,
+        "mean": 7.0
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "min": 0,
+        "max": 15,
+        "mean": 7.1923
+      },
+      "USEFUL": {
+        "n": 9,
+        "min": 0,
+        "max": 15,
+        "mean": 8.4444
+      }
+    },
+    "cochange_coupling_class": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "categories": {
+          "HIGH_COUPLING": 8,
+          "ISOLATED": 2
+        }
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "categories": {
+          "HIGH_COUPLING": 22,
+          "ISOLATED": 4
+        }
+      },
+      "USEFUL": {
+        "n": 9,
+        "categories": {
+          "HIGH_COUPLING": 7,
+          "MODERATE_COUPLING": 1,
+          "ISOLATED": 1
+        }
+      }
+    },
+    "centrality_inbound": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "min": 0,
+        "max": 0,
+        "mean": 0.0
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "min": 0,
+        "max": 3,
+        "mean": 0.1154
+      },
+      "USEFUL": {
+        "n": 9,
+        "min": 0,
+        "max": 4,
+        "mean": 0.4444
+      }
+    },
+    "test_relationship_type": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "categories": {
+          "NO_STATIC_TEST_REFERENCE": 7,
+          "STATIC_TEST_RELATIONSHIP": 3
+        }
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "categories": {
+          "NO_STATIC_TEST_REFERENCE": 16,
+          "STATIC_TEST_RELATIONSHIP": 10
+        }
+      },
+      "USEFUL": {
+        "n": 9,
+        "categories": {
+          "NO_STATIC_TEST_REFERENCE": 7,
+          "STATIC_TEST_RELATIONSHIP": 2
+        }
+      }
+    },
+    "corroboration_strength": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "categories": {
+          "WEAK": 8,
+          "MODERATE": 2
+        }
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "categories": {
+          "WEAK": 24,
+          "HIGH": 2
+        }
+      },
+      "USEFUL": {
+        "n": 9,
+        "categories": {
+          "WEAK": 8,
+          "HIGH": 1
+        }
+      }
+    },
+    "breadth_score": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "min": 0,
+        "max": 79,
+        "mean": 18.9
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "min": 0,
+        "max": 19,
+        "mean": 10.8846
+      },
+      "USEFUL": {
+        "n": 9,
+        "min": 0,
+        "max": 21,
+        "mean": 8.5556
+      }
+    }
+  },
+  "signal_quality": {
+    "churn_commit_count": "NO_DISCRIMINATION",
+    "churn_score": "NO_DISCRIMINATION",
+    "cochange_partner_count": "NO_DISCRIMINATION",
+    "centrality_inbound": "NO_DISCRIMINATION",
+    "breadth_score": "NO_DISCRIMINATION",
+    "cochange_coupling_class": "NO_DISCRIMINATION",
+    "test_relationship_type": "NO_DISCRIMINATION",
+    "corroboration_strength": "NO_DISCRIMINATION"
+  },
+  "matched_pairs": [
+    {
+      "useful_id": "FINDING-078",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 14,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-082",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 14,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-064",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 15,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-106",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 1,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-001",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 4,
+      "nme_churn": 1,
+      "useful_cochange": 2,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-096",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 0,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-063",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 8,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-097",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 14,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-061",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 8,
+      "nme_cochange": 14
+    }
+  ]
+}

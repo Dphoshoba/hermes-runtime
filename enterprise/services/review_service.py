@@ -285,7 +285,17 @@ def create_adjudication(
     trial_id: str | None = None,
     scan_id: str | None = None,
     governance_decision_at_review: str | None = None,
+    *,
+    policy_suppressed: bool = False,
+    suppression_rule_id: str | None = None,
+    suppression_rule_version: str | None = None,
 ) -> FindingAdjudication:
+    """Append-only human adjudication (authoritative system of record).
+
+    Human authority only: the operator is required. For deterministic policy
+    suppression, policy_suppressed=True with a suppression_rule_id is recorded
+    (kept distinct from human NOT_ACTIONABLE) and remains auditable.
+    """
     finding = db.query(Finding).filter(Finding.id == finding_id).first()
     if not finding:
         raise ValueError(f"Finding {finding_id} not found")
@@ -295,6 +305,9 @@ def create_adjudication(
     line_count = _extract_line_count(finding)
     threshold = 300
     exceedance = compute_exceedance_ratio(line_count, threshold) if line_count else None
+
+    if policy_suppressed and suppression_rule_id:
+        operator = f"POLICY:{suppression_rule_id}"
 
     adjudication = FindingAdjudication(
         finding_id=finding_id,
@@ -314,6 +327,9 @@ def create_adjudication(
         governance_decision_at_review=governance_decision_at_review or meta.get("governance_decision", {}).get("decision", ""),
         related_mission_ids=[],
         schema_version="1.0",
+        policy_suppressed=policy_suppressed,
+        suppression_rule_id=suppression_rule_id,
+        suppression_rule_version=suppression_rule_version,
     )
     db.add(adjudication)
     db.commit()
@@ -377,6 +393,76 @@ def get_pending_count(db: Session) -> int:
         .subquery()
     )
     return db.query(Finding).filter(~Finding.id.in_(reviewed_ids)).count()
+
+
+# ---------------------------------------------------------------------------
+# Deterministic policy suppression (Post Cycle 8)
+# Kept distinct from human NOT_ACTIONABLE. Auditable + recoverable.
+# ---------------------------------------------------------------------------
+
+def apply_deterministic_suppression(
+    db: Session,
+    finding_id: str,
+    suppression_rule_id: str,
+    reason: str,
+    rule_version: str = "1.0",
+    notes: str | None = None,
+) -> FindingAdjudication:
+    """Machine-authoritative but NON-actionability suppression.
+
+    Records a distinct, auditable adjudication (policy_suppressed=True) that
+    prevents mission generation without pretending a human decided
+    NOT_ACTIONABLE. The finding remains visible/recoverable for review.
+    """
+    adj = create_adjudication(
+        db,
+        finding_id=finding_id,
+        classification="SUPPRESSED_BY_POLICY",
+        operator="",  # set to POLICY:<rule_id> inside create_adjudication
+        notes=notes or reason,
+        policy_suppressed=True,
+        suppression_rule_id=suppression_rule_id,
+        suppression_rule_version=rule_version,
+    )
+    _emit_journal_event(
+        db,
+        event_type="policy.suppression",
+        stage="evidence_risk_gate",
+        repository_id=adj.repository_id,
+        payload={
+            "finding_id": finding_id,
+            "suppression_rule_id": suppression_rule_id,
+            "rule_version": rule_version,
+            "reason": reason,
+            "adjudication_id": adj.id,
+        },
+        actor=f"POLICY:{suppression_rule_id}",
+    )
+    return adj
+
+
+def list_suppressions(
+    db: Session,
+    repository_id: str | None = None,
+) -> list[dict[str, Any]]:
+    q = db.query(FindingAdjudication).filter(
+        FindingAdjudication.policy_suppressed.is_(True)
+    )
+    if repository_id:
+        q = q.filter(FindingAdjudication.repository_id == repository_id)
+    rows = q.order_by(FindingAdjudication.reviewed_at.desc()).all()
+    return [
+        {
+            "adjudication_id": r.id,
+            "finding_id": r.finding_id,
+            "suppression_rule_id": r.suppression_rule_id,
+            "rule_version": r.suppression_rule_version,
+            "operator": r.operator,
+            "notes": r.operator_notes,
+            "reviewed_at": r.reviewed_at.isoformat() if r.reviewed_at else None,
+        }
+        for r in rows
+    ]
 
 
 # ---------------------------------------------------------------------------

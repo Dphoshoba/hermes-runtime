@@ -19,6 +19,12 @@ from .governance_intel_models import (
     GovernanceAssessment,
     RecommendationAssessment,
     ApprovalSummary,
+    FindingGate,
+    GATE_OBSERVED,
+    GATE_CORROBORATED,
+    GATE_DUPLICATE,
+    GATE_INSUFFICIENT_EVIDENCE,
+    GATE_REQUIRES_REVIEW,
 )
 
 
@@ -138,6 +144,68 @@ def _decide(a: RecommendationAssessment) -> ApprovalDecision:
     return ApprovalDecision(fid, "APPROVED", "Sufficiently evidenced and complete", ())
 
 
+# ---------------------------------------------------------------------------
+# Evidence & Risk Gate (Post Cycle 8) — machine authority only
+# ---------------------------------------------------------------------------
+
+def _gate_state_from_assessment(a: RecommendationAssessment) -> tuple[str, str, str]:
+    """Return (observation_state, gate_state, evidence_sufficiency).
+
+    Never returns ACTIONABLE / NOT_ACTIONABLE. The default is REQUIRES_REVIEW
+    (human-authority-default): Hermes routes to human review; it does not decide
+    actionability.
+    """
+    observation = GATE_CORROBORATED if a.evidence_quality.diversity != "single_source" \
+        else GATE_OBSERVED
+    if a.duplication == "duplicate":
+        return observation, GATE_DUPLICATE, "INSUFFICIENT"
+    if a.evidence_quality.level == "low" or a.confidence < 0.4:
+        return observation, GATE_INSUFFICIENT_EVIDENCE, "INSUFFICIENT"
+    # Default: route to human review. Hermes does not classify actionability.
+    return observation, GATE_REQUIRES_REVIEW, "SUFFICIENT"
+
+
+def _risk_band(risk_level: str, severity: str) -> str:
+    if risk_level in ("high",) or severity in ("critical", "high"):
+        return "HIGH"
+    if risk_level in ("medium",) or severity in ("medium",):
+        return "MODERATE"
+    return "LOW"
+
+
+def _gate_review_rank(a: RecommendationAssessment, risk_band: str,
+                      evidence_sufficiency: str) -> float:
+    risk_w = {"HIGH": 1.0, "MODERATE": 0.6, "LOW": 0.3}[risk_band]
+    ev_w = 1.0 if evidence_sufficiency == "SUFFICIENT" else 0.4
+    conf_w = 0.5 + a.confidence
+    return round(risk_w * ev_w * conf_w, 4)
+
+
+def _gate(a: RecommendationAssessment, legacy_decision: str | None = None) -> FindingGate:
+    observation, gate_state, evidence_sufficiency = _gate_state_from_assessment(a)
+    risk_band = _risk_band(a.risk_level, a.scope or "local")
+    rank = _gate_review_rank(a, risk_band, evidence_sufficiency)
+    note = (
+        "Machine gate routes to human review; actionability requires human "
+        "adjudication. Static evidence cannot determine USEFUL/NOT_ACTIONABLE."
+    )
+    if legacy_decision in ("APPROVED", "APPROVED_WITH_NOTES"):
+        note = (f"Legacy Governance decision '{legacy_decision}' reinterpreted as "
+                f"advisory (LEGACY_APPROVED); re-routed to human review.")
+    gate = FindingGate(
+        finding_id=a.finding_id,
+        observation_state=observation,
+        gate_state=gate_state,
+        risk_band=risk_band,
+        evidence_sufficiency=evidence_sufficiency,
+        review_rank=rank,
+        uncertainty_note=note,
+        evidence_references=tuple(e.as_dict() for e in (a.evidence_quality,)),
+        legacy_decision=legacy_decision,
+    )
+    return gate
+
+
 def _gen_missions(decisions: list[ApprovalDecision], recs: dict[str, dict[str, Any]],
                   amap: dict[str, RecommendationAssessment]) -> list[ApprovedCandidateMission]:
     missions: list[ApprovedCandidateMission] = []
@@ -168,8 +236,17 @@ def _gen_missions(decisions: list[ApprovalDecision], recs: dict[str, dict[str, A
     return missions
 
 
-def govern_engineering(ei: dict[str, Any]) -> EngineeringGovernance:
-    """Main entry point. Consume EI dict, produce governance model."""
+def govern_engineering(ei: dict[str, Any], mode: str = "gate") -> EngineeringGovernance:
+    """Main entry point. Consume EI dict, produce governance model.
+
+    mode="gate"  (default, Controlled Beta): Evidence & Risk Gate. Machine
+        emits FindingGate routings (OBSERVED/CORROBORATED/REQUIRES_REVIEW/...),
+        never ACTIONABLE/NOT_ACTIONABLE. approved_missions is empty — no
+        automated authorization for missions.
+    mode="legacy": reproduces pre-Cycle-8 automated-approval semantics for
+        frozen-history replay / reproducibility only. NOT the default
+        authorization path.
+    """
     repository = ei.get("repository", {})
     recs = ei.get("recommendations", [])
     findings_list = ei.get("findings", [])
@@ -182,15 +259,24 @@ def govern_engineering(ei: dict[str, Any]) -> EngineeringGovernance:
 
     assessments = [_assess_one(r, findings_map, dup_ids, pri_ids) for r in recs]
     amap = {a.finding_id: a for a in assessments}
-    decisions = [_decide(a) for a in assessments]
-    missions = _gen_missions(decisions, {r.get("finding_id", ""): r for r in recs}, amap)
 
-    approved = sum(1 for d in decisions if d.decision == "APPROVED")
-    awn = sum(1 for d in decisions if d.decision == "APPROVED_WITH_NOTES")
-    nme = sum(1 for d in decisions if d.decision == "NEEDS_MORE_EVIDENCE")
-    deferred = sum(1 for d in decisions if d.decision == "DEFERRED")
-    rejected = sum(1 for d in decisions if d.decision == "REJECTED")
-    total = len(decisions)
+    if mode == "legacy":
+        decisions = tuple(_decide(a) for a in assessments)
+        missions = _gen_missions(list(decisions), {r.get("finding_id", ""): r for r in recs}, amap)
+        gates: tuple[FindingGate, ...] = ()
+        approved = sum(1 for d in decisions if d.decision == "APPROVED")
+        awn = sum(1 for d in decisions if d.decision == "APPROVED_WITH_NOTES")
+        nme = sum(1 for d in decisions if d.decision == "NEEDS_MORE_EVIDENCE")
+        deferred = sum(1 for d in decisions if d.decision == "DEFERRED")
+        rejected = sum(1 for d in decisions if d.decision == "REJECTED")
+    else:  # gate mode (default)
+        decisions = tuple()  # no automated approval decisions emitted
+        missions = ()  # no machine-authorized candidate missions
+        gates = tuple(_gate(a) for a in assessments)
+        # summary counts reflect gate vocabulary
+        approved = awn = nme = deferred = rejected = 0
+
+    total = len(assessments)
     rate = (approved + awn) / total if total > 0 else 0.0
 
     summary = ApprovalSummary(total_evaluated=total, approved=approved, approved_with_notes=awn,
@@ -198,7 +284,8 @@ def govern_engineering(ei: dict[str, Any]) -> EngineeringGovernance:
                               conflicts_found=len(conflicts), duplicates_found=len(dups), approval_rate=rate)
 
     assessment = GovernanceAssessment(
-        recommendation_assessments=tuple(assessments), approval_decisions=tuple(decisions),
-        conflicts=tuple(conflicts), duplicates=tuple(dups), approved_missions=tuple(missions), summary=summary)
+        recommendation_assessments=tuple(assessments), approval_decisions=decisions,
+        conflicts=tuple(conflicts), duplicates=tuple(dups), approved_missions=tuple(missions),
+        gate_routings=gates, summary=summary)
 
     return EngineeringGovernance(repository=repository, assessment=assessment)

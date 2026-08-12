@@ -15,7 +15,7 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "enterprise"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root -> import enterprise.*
 
 
 def _get_db():
@@ -26,7 +26,7 @@ def _get_db():
 
 
 def cmd_list(args: argparse.Namespace) -> int:
-    from services.review_service import build_review_queue
+    from enterprise.services.review_service import build_review_queue
     db = _get_db()
     try:
         result = build_review_queue(
@@ -49,12 +49,12 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 
 def cmd_show(args: argparse.Namespace) -> int:
-    from services.review_service import (
+    from enterprise.services.review_service import (
         classify_file_context, infer_observation_status, infer_concern_status,
         infer_actionability_status, _extract_line_count, compute_exceedance_ratio,
         classify_exceedance_tier,
     )
-    from models import Finding, Repository
+    from enterprise.models import Finding, Repository
     db = _get_db()
     try:
         finding = db.query(Finding).filter(Finding.id == args.finding_id).first()
@@ -63,7 +63,7 @@ def cmd_show(args: argparse.Namespace) -> int:
             return 1
 
         repo = db.query(Repository).filter(Repository.id == finding.repository_id).first()
-        from models import ScanJob
+        from enterprise.models import ScanJob
         scan = db.query(ScanJob).filter(
             ScanJob.repository_id == finding.repository_id,
             ScanJob.status == "completed",
@@ -107,7 +107,7 @@ def cmd_show(args: argparse.Namespace) -> int:
 
 
 def cmd_classify(args: argparse.Namespace) -> int:
-    from services.review_service import create_adjudication, emit_finding_reviewed
+    from enterprise.services.review_service import create_adjudication, emit_finding_reviewed
     db = _get_db()
     try:
         adj = create_adjudication(
@@ -136,7 +136,7 @@ def cmd_classify(args: argparse.Namespace) -> int:
 
 
 def cmd_summary(args: argparse.Namespace) -> int:
-    from services.review_service import get_review_summary, get_pending_count
+    from enterprise.services.review_service import get_review_summary, get_pending_count
     db = _get_db()
     try:
         summary = get_review_summary(db)
@@ -148,7 +148,7 @@ def cmd_summary(args: argparse.Namespace) -> int:
 
 
 def cmd_export(args: argparse.Namespace) -> int:
-    from services.review_service import build_review_queue, get_review_summary
+    from enterprise.services.review_service import build_review_queue, get_review_summary
     db = _get_db()
     try:
         data = {
@@ -156,6 +156,23 @@ def cmd_export(args: argparse.Namespace) -> int:
             "queue": build_review_queue(db, limit=1000),
         }
         print(json.dumps(data, indent=2, default=str))
+        return 0
+    finally:
+        db.close()
+
+
+def cmd_suppressions(args: argparse.Namespace) -> int:
+    from enterprise.services.review_service import list_suppressions
+    db = _get_db()
+    try:
+        rows = list_suppressions(db, repository_id=args.repository)
+        if not rows:
+            print("No policy suppressions recorded.")
+            return 0
+        for r in rows:
+            print(f"  {r['finding_id']:20s}  rule={r['suppression_rule_id']}  "
+                  f"v{r['rule_version']}  by={r['operator']}  at={r['reviewed_at']}")
+        print(f"\n  Total suppressions: {len(rows)}")
         return 0
     finally:
         db.close()
@@ -174,13 +191,17 @@ def main() -> int:
     p_show = sub.add_parser("show", help="Show finding details")
     p_show.add_argument("finding_id", help="Finding ID")
 
-    p_classify = sub.add_parser("classify", help="Classify a finding")
+    p_classify = sub.add_parser("classify", help="Classify a finding (human authority)")
     p_classify.add_argument("finding_id", help="Finding ID")
-    p_classify.add_argument("classification", help="Classification",
+    p_classify.add_argument("classification", help="Classification (human-only authority)",
                             choices=["USEFUL", "FALSE_POSITIVE", "NOT_ACTIONABLE",
-                                     "NEEDS_MORE_EVIDENCE", "DUPLICATE", "UNKNOWN"])
+                                     "NEEDS_MORE_EVIDENCE", "DUPLICATE", "UNKNOWN",
+                                     "ACTIONABLE"])
     p_classify.add_argument("--notes", help="Operator notes")
-    p_classify.add_argument("--operator", help="Operator name")
+    p_classify.add_argument("--operator", help="Operator name (required for authority)")
+
+    p_suppressions = sub.add_parser("suppressions", help="List deterministic policy suppressions")
+    p_suppressions.add_argument("--repository", help="Filter by repository ID")
 
     p_summary = sub.add_parser("summary", help="Show review summary")
 

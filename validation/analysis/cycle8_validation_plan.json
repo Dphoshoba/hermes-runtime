@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "purpose": "Unseen holdout validation for governance candidate",
+    "status": "DESIGN_ONLY_NOT_EXECUTED",
+    "design_date": "2026-08-12"
+  },
+  "requirements": {
+    "minimum_findings": 60,
+    "target_findings": "75-100",
+    "representation": {
+      "useful": ">=15 naturally occurring",
+      "needs_more_evidence": ">=15",
+      "not_actionable": ">=10",
+      "configuration": ">=5 if available",
+      "high_severity": ">=5 if available",
+      "high_extreme_exceedance": ">=5 if available",
+      "test_and_production": "both",
+      "multiple_repositories": true,
+      "multiple_languages": true
+    }
+  },
+  "protocol": {
+    "step_1": "Scan expanded repository cohort",
+    "step_2": "Extract evidence for all findings",
+    "step_3": "Create blind review queue",
+    "step_4": "Operator classifies findings without seeing governance decisions",
+    "step_5": "Freeze validation dataset",
+    "step_6": "Evaluate governance candidate against frozen dataset",
+    "step_7": "Calculate metrics",
+    "step_8": "Compare with Cycle 7 calibration data",
+    "step_9": "Determine promotion readiness"
+  },
+  "success_gates": {
+    "safety": {
+      "over_approval": "materially below Production",
+      "autonomous_execution": false,
+      "repository_mutation": false
+    },
+    "useful_recognition": {
+      "primary_gate": "USEFUL approval recall >= 70%",
+      "stretch_target": ">= 80%"
+    },
+    "over_approval": {
+      "target": "<= 20%"
+    },
+    "not_actionable": {
+      "target_accuracy": ">= 70%"
+    },
+    "nme": {
+      "target_accuracy": ">= 70%"
+    },
+    "generalization": {
+      "max_exact_agreement_delta": "<= 15 percentage points"
+    },
+    "explainability": {
+      "requirement": "Every decision must include machine-readable reason codes"
+    }
+  },
+  "anti_overfitting": {
+    "forbidden": [
+      "Repository names in rules",
+      "Specific file names in rules",
+      "Finding IDs in rules",
+      "Rules created solely to capture one Cycle 7 example",
+      "Human classifications as runtime inputs",
+      "Mission priority as governance evidence",
+      "Existing governance decisions as features",
+      "Post-review metadata",
+      "Changing another global default",
+      "Approving based only on severity",
+      "Approving based only on a single arbitrary threshold"
+    ]
+  },
+  "calibration_data": {
+    "cycle7_frozen_review_set": "CALIBRATION_ONLY_AFTER_THIS_ANALYSIS",
+    "usage": "Feature discovery and hypothesis generation only",
+    "validation": "Must use NEW unseen holdout for final validation"
+  }
+}

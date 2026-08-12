@@ -125,7 +125,7 @@ class TestModels:
 
 class TestApprovalDecisions:
     def test_all_recommendations_get_decisions(self, sample_ei):
-        gov = govern_engineering(sample_ei)
+        gov = govern_engineering(sample_ei, mode="legacy")
         assert len(gov.assessment.approval_decisions) == len(sample_ei["recommendations"])
 
     def test_decisions_are_valid(self, sample_ei):
@@ -209,7 +209,7 @@ class TestDuplicateDetection:
                               "severity": 5.0, "scope": 5.0, "formula": "f"},
                               "estimated_effort": "small", "estimated_risk": "low", "expected_benefit": "B"}],
         )
-        gov = govern_engineering(ei)
+        gov = govern_engineering(ei, mode="legacy")
         decisions = {d.finding_id: d.decision for d in gov.assessment.approval_decisions}
         assert decisions["F-002"] == "REJECTED"
 
@@ -396,7 +396,7 @@ class TestHermesSelfGovernance:
         assert render_json(gov1) == render_json(gov2)
 
     def test_hermes_markdown_readable(self, hermes_ei):
-        gov = govern_engineering(hermes_ei)
+        gov = govern_engineering(hermes_ei, mode="legacy")
         md = render_markdown(gov)
         assert "## Approval Summary" in md
         assert "## Approved Candidate Missions" in md or "## Rejected" in md

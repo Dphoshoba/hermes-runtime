@@ -21,6 +21,8 @@ from ..services.review_service import (
     get_pending_count,
     emit_finding_reviewed,
     emit_finding_reclassified,
+    apply_deterministic_suppression,
+    list_suppressions,
 )
 
 router = APIRouter()
@@ -32,11 +34,18 @@ router = APIRouter()
 
 class AdjudicationCreate(BaseModel):
     classification: str = Field(
-        pattern=r"^(USEFUL|FALSE_POSITIVE|NOT_ACTIONABLE|NEEDS_MORE_EVIDENCE|DUPLICATE|UNKNOWN)$"
+        pattern=r"^(USEFUL|FALSE_POSITIVE|NOT_ACTIONABLE|NEEDS_MORE_EVIDENCE|DUPLICATE|UNKNOWN|ACTIONABLE)$"
     )
     notes: str | None = None
     operator: str = Field(min_length=1, max_length=255)
     trial_id: str | None = None
+
+
+class SuppressionCreate(BaseModel):
+    rule_id: str = Field(min_length=1, max_length=100)
+    reason: str = Field(min_length=1)
+    rule_version: str | None = None
+    notes: str | None = None
 
 
 class AdjudicationResponse(BaseModel):
@@ -259,6 +268,41 @@ def create_finding_adjudication(
         )
 
     return adjudication
+
+
+@router.post("/findings/{finding_id}/suppressions", response_model=AdjudicationResponse)
+def suppress_finding(
+    finding_id: str,
+    body: SuppressionCreate,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> FindingAdjudication:
+    """Deterministic policy suppression — distinct from human NOT_ACTIONABLE.
+
+    Machine-authoritative but never pretends a human decided actionability.
+    Auditable and recoverable for review.
+    """
+    from ..models import Finding
+    finding = db.query(Finding).filter(Finding.id == finding_id).first()
+    if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    return apply_deterministic_suppression(
+        db,
+        finding_id=finding_id,
+        suppression_rule_id=body.rule_id,
+        reason=body.reason,
+        rule_version=body.rule_version or "1.0",
+        notes=body.notes,
+    )
+
+
+@router.get("/suppressions", response_model=list[dict])
+def list_finding_suppressions(
+    repository_id: str | None = None,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> list[dict[str, Any]]:
+    return list_suppressions(db, repository_id=repository_id)
 
 
 @router.get("/summary", response_model=ReviewSummaryResponse)

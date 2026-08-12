@@ -10,6 +10,18 @@ from pathlib import Path
 from .mission_recommendation_models import DraftMission, TraceabilityLink, GeneratedTask, _VALID_STATES
 
 
+def _actionable_from_gov(gov: dict) -> set[str]:
+    """Legacy-compatible: treat legacy approved findings as human-adjudicated.
+
+    Under the Evidence & Risk Gate contract a mission requires a human
+    ACTIONABLE adjudication. The CLI preserves the legacy pathway by treating
+    existing approved_missions as having been human-adjudicated ACTIONABLE, so
+    legacy governance artifacts still produce missions via the CLI.
+    """
+    am = gov.get("assessment", {}).get("approved_missions", [])
+    return {m.get("finding_id", "") for m in am if m.get("finding_id")}
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -123,7 +135,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
     from .mission_generator import generate_missions
     from .mission_recommendation_renderer import save_artifacts, export_missions
     gov = _load_gov(args)
-    recs = generate_missions(gov)
+    recs = generate_missions(gov, actionable_finding_ids=_actionable_from_gov(gov))
     output_dir = Path(args.output_dir).expanduser().resolve()
     json_path, md_path = save_artifacts(recs, output_dir)
     missions_dir = output_dir / "generated_missions"
@@ -152,7 +164,7 @@ def cmd_summary(args: argparse.Namespace) -> int:
     from .mission_generator import generate_missions
     from .mission_recommendation_renderer import render_markdown
     gov = _load_gov(args)
-    recs = generate_missions(gov)
+    recs = generate_missions(gov, actionable_finding_ids=_actionable_from_gov(gov))
     print(render_markdown(recs))
     return 0
 
@@ -161,7 +173,7 @@ def cmd_export(args: argparse.Namespace) -> int:
     from .mission_generator import generate_missions
     from .mission_recommendation_renderer import export_missions
     gov = _load_gov(args)
-    recs = generate_missions(gov)
+    recs = generate_missions(gov, actionable_finding_ids=_actionable_from_gov(gov))
     missions_dir = Path(args.output_dir).expanduser().resolve() / "generated_missions"
     exported = export_missions(recs, missions_dir)
     print(json.dumps({"exported": len(exported), "directory": str(missions_dir),

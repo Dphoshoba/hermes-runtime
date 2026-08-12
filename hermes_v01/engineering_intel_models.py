@@ -118,9 +118,11 @@ class Finding:
     explanation: str                         # detailed reasoning
     evidence_references: tuple[EvidenceReference, ...]
     affected_components: tuple[AffectedComponent, ...]
+    enrichment: dict | None = None           # Evidence Enrichment v1 (additive; None for legacy)
+    enrichment_v2: dict | None = None        # Evidence Enrichment v2 disc. signals (additive; None for legacy)
 
     def as_dict(self) -> dict[str, Any]:
-        return {
+        d = {
             "finding_id": self.finding_id,
             "category": self.category,
             "severity": self.severity,
@@ -130,6 +132,11 @@ class Finding:
             "evidence_references": [e.as_dict() for e in self.evidence_references],
             "affected_components": [c.as_dict() for c in self.affected_components],
         }
+        if self.enrichment is not None:
+            d["enrichment"] = self.enrichment
+        if self.enrichment_v2 is not None:
+            d["enrichment_v2"] = self.enrichment_v2
+        return d
 
 
 @dataclass(frozen=True)

@@ -1085,7 +1085,10 @@ def _compute_summary(
 # Public API
 # ---------------------------------------------------------------------------
 
-def analyze_engineering(ri: dict[str, Any]) -> EngineeringIntelligence:
+def analyze_engineering(
+    ri: dict[str, Any],
+    v2_context: dict[str, Any] | None = None,
+) -> EngineeringIntelligence:
     """Analyze Repository Intelligence and produce Engineering Intelligence.
 
     This is the main entry point. It consumes a Repository Intelligence dict
@@ -1093,8 +1096,41 @@ def analyze_engineering(ri: dict[str, Any]) -> EngineeringIntelligence:
     EngineeringIntelligence model.
 
     Deterministic: same input → same output (byte-identical JSON).
+
+    Evidence Enrichment v1 is applied here (additive) using the RI's recorded
+    repository identity + git revision where available. This does NOT introduce
+    a new canonical pipeline stage and does NOT modify Governance.
+
+    Evidence Enrichment v2 (discriminative signal discovery) is OPTIONAL and
+    guarded: it is only applied when `v2_context` (precomputed repo history /
+    graph context, built once per repository+commit) is passed. Ordinary EI
+    execution without `v2_context` is unchanged and requires no v2 inputs.
     """
+    from .evidence_enrichment import enrich_findings
+    from .evidence_enrichment_v2 import extract_v2
+
+    def _build_enrichment_v2(finding_dict: dict[str, Any],
+                             v2_ctx: dict[str, Any]) -> dict[str, Any] | None:
+        """Label-free v2 extraction, guarded by caller-provided context.
+
+        v2_ctx carries precomputed repo history/graph (built once per repo +
+        commit) and the repository identity needed for read-only git access.
+        Extraction never inspects any human classification.
+        """
+        return extract_v2(
+            finding_dict,
+            repository_path=v2_ctx.get("repository_path"),
+            commit_sha=v2_ctx.get("commit_sha"),
+            affected_path=v2_ctx.get("affected_path_override"),
+            repo_file_graph=v2_ctx.get("repo_file_graph"),
+            repo_history=v2_ctx.get("repo_history"),
+            all_finding_components=v2_ctx.get("all_finding_components"),
+        )
+
     repository = ri.get("repository", {})
+    repo_identity = repository.get("name") or repository.get("identifier")
+    commit_sha = repository.get("git_revision")
+    repo_path = repository.get("path")
 
     # Generate findings from all sources
     findings: list[Finding] = []
@@ -1130,6 +1166,53 @@ def analyze_engineering(ri: dict[str, Any]) -> EngineeringIntelligence:
     ]
 
     findings_tuple = tuple(findings)
+
+    # ---- Evidence Enrichment v1 (additive) ----
+    # Convert to dict form, enrich, then re-wrap. Enrichment is lossless: it
+    # only attaches a new `enrichment` key and never alters existing fields.
+    findings_as_dict = [f.as_dict() for f in findings_tuple]
+    enriched_dicts = enrich_findings(
+        findings_as_dict,
+        ri,
+        repository_identifier=repo_identity,
+        commit_sha=commit_sha,
+        repo_local_path=repo_path,
+    )
+    # Rebuild frozen Finding objects carrying the enrichment block.
+    rebuilt: list[Finding] = []
+    for d in enriched_dicts:
+        rebuilt.append(
+            Finding(
+                finding_id=d["finding_id"],
+                category=d["category"],
+                severity=d["severity"],
+                confidence=d["confidence"],
+                title=d["title"],
+                explanation=d["explanation"],
+                evidence_references=tuple(
+                    EvidenceReference(
+                        source=e["source"],
+                        reference_path=e.get("reference_path", ""),
+                        detail=e.get("detail", ""),
+                    )
+                    for e in d.get("evidence_references", [])
+                ),
+                affected_components=tuple(
+                    AffectedComponent(
+                        component_type=c.get("component_type", "module"),
+                        component_path=c.get("component_path", ""),
+                        component_name=c.get("component_name", ""),
+                    )
+                    for c in d.get("affected_components", [])
+                ),
+                enrichment=d.get("enrichment"),
+                enrichment_v2=(
+                    _build_enrichment_v2(d, v2_context)
+                    if v2_context is not None else None
+                ),
+            )
+        )
+    findings_tuple = tuple(rebuilt)
 
     # Generate recommendations
     recommendations = tuple(

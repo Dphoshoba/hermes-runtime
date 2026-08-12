@@ -34,7 +34,8 @@ def hermes_gov():
     ri_json = json.loads(json.dumps(ri.as_dict(), sort_keys=True))
     ei = analyze_engineering(ri_json)
     ei_json = json.loads(json.dumps(ei.as_dict(), sort_keys=True))
-    gov = govern_engineering(ei_json)
+    # Legacy mode preserved for reproducibility of the pre-Cycle-8 pathway.
+    gov = govern_engineering(ei_json, mode="legacy")
     return json.loads(json.dumps(gov.as_dict(), sort_keys=True))
 
 
@@ -73,6 +74,18 @@ def _gov_empty() -> dict:
         "summary": {"total_evaluated": 0, "approved": 0, "approved_with_notes": 0,
                     "needs_more_evidence": 0, "deferred": 0, "rejected": 0,
                     "conflicts_found": 0, "duplicates_found": 0, "approval_rate": 0.0}}}
+
+
+def _actionable_ids(gov: dict) -> set[str]:
+    """Human adjudicated ACTIONABLE finding ids (Evidence & Risk Gate contract).
+
+    Under the new architecture a mission requires a human ACTIONABLE
+    adjudication. For the preserved legacy pathway these tests validate, the
+    legacy approved findings are treated as having been human-adjudicated
+    ACTIONABLE so the legacy→mission plumbing stays exercised.
+    """
+    am = gov.get("assessment", {}).get("approved_missions", [])
+    return {m.get("finding_id", "") for m in am if m.get("finding_id")}
 
 
 # ---------------------------------------------------------------------------
@@ -118,38 +131,38 @@ class TestModels:
 class TestMissionGeneration:
     def test_generates_from_approved(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         assert recs.summary.missions_generated == 1
 
     def test_no_missions_from_empty(self):
         gov = _gov_empty()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         assert recs.summary.missions_generated == 0
 
     def test_mission_is_draft(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         assert recs.draft_missions[0].state == "DRAFT"
 
     def test_mission_has_tasks(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         assert len(recs.draft_missions[0].tasks) > 0
 
     def test_mission_has_traceability(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         assert recs.draft_missions[0].traceability is not None
 
     def test_mission_has_governance_reference(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         m = recs.draft_missions[0]
         assert m.governance_approval_reference != ""
 
     def test_mission_type_counts(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         assert recs.summary.missions_by_type.get("testing_improvements", 0) == 1
 
     def test_multiple_approved(self):
@@ -175,7 +188,7 @@ class TestMissionGeneration:
                             "conflicts_found": 0, "duplicates_found": 0, "approval_rate": 1.0},
             },
         })
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         assert recs.summary.missions_generated == 2
 
 
@@ -186,7 +199,7 @@ class TestMissionGeneration:
 class TestSchemaCompliance:
     def test_mission_conforms_to_hermes_schema(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         m = recs.draft_missions[0]
         d = m.as_dict()
         # Required fields
@@ -206,7 +219,7 @@ class TestSchemaCompliance:
 
     def test_mission_json_valid(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         raw = render_json(recs)
         data = json.loads(raw)
         assert "draft_missions" in data
@@ -219,7 +232,7 @@ class TestSchemaCompliance:
 class TestTraceability:
     def test_every_mission_has_traceability(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         for m in recs.draft_missions:
             assert m.traceability is not None
             assert m.traceability.engineering_finding_id != ""
@@ -227,7 +240,7 @@ class TestTraceability:
 
     def test_traceability_links_to_governance(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         m = recs.draft_missions[0]
         assert m.originating_finding_id == "F-001"
 
@@ -239,13 +252,13 @@ class TestTraceability:
 class TestRenderer:
     def test_json_valid(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         data = json.loads(render_json(recs))
         assert "draft_missions" in data
 
     def test_json_roundtrip(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         raw = render_json(recs)
         data = json.loads(raw)
         raw2 = json.dumps(data, indent=2, sort_keys=True)
@@ -253,26 +266,26 @@ class TestRenderer:
 
     def test_markdown_has_header(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         md = render_markdown(recs)
         assert md.startswith("# Mission Recommendations")
 
     def test_markdown_has_summary(self):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         md = render_markdown(recs)
         assert "## Summary" in md
 
     def test_save_artifacts(self, tmp_output):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         jp, mp = save_artifacts(recs, tmp_output)
         assert jp.exists()
         assert mp.exists()
 
     def test_export_missions(self, tmp_output):
         gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        recs = generate_missions(gov, actionable_finding_ids=_actionable_ids(gov))
         exported = export_missions(recs, tmp_output / "missions")
         assert len(exported) == 1
         assert exported[0].exists()
@@ -340,7 +353,7 @@ class TestMalformedInput:
 
 class TestPipelineDogfood:
     def test_full_pipeline(self, hermes_gov):
-        recs = generate_missions(hermes_gov)
+        recs = generate_missions(hermes_gov, actionable_finding_ids=_actionable_ids(hermes_gov))
         assert recs.summary.missions_generated > 0
         # Every mission traces to governance
         for m in recs.draft_missions:
@@ -348,14 +361,14 @@ class TestPipelineDogfood:
             assert m.state == "DRAFT"
 
     def test_no_rejected_becomes_mission(self, hermes_gov):
-        recs = generate_missions(hermes_gov)
+        recs = generate_missions(hermes_gov, actionable_finding_ids=_actionable_ids(hermes_gov))
         # All missions should have governance approval reference
         for m in recs.draft_missions:
             assert m.governance_approval_reference != ""
 
     def test_mission_json_valid_for_planner(self, hermes_gov):
         """Verify mission JSON could be consumed by Hermes Planner."""
-        recs = generate_missions(hermes_gov)
+        recs = generate_missions(hermes_gov, actionable_finding_ids=_actionable_ids(hermes_gov))
         for m in recs.draft_missions:
             d = m.as_dict()
             # Planner expects these fields

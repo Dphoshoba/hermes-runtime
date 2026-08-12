@@ -1,0 +1,4019 @@
+{
+  "milestone": "Evidence Enrichment v2 \u2014 Discriminative Signal Discovery",
+  "strict_cohort_repositories": [
+    "hermes-runtime",
+    "faithtech-blueprint"
+  ],
+  "strict_cohort_size": 45,
+  "class_counts": {
+    "NOT_ACTIONABLE": 10,
+    "NEEDS_MORE_EVIDENCE": 26,
+    "USEFUL": 9
+  },
+  "extraction_version": "2.0.0-experimental",
+  "label_join_order": "AFTER_FREEZE",
+  "label_firewall_verified": true,
+  "coverage_gate": {
+    "churn": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    },
+    "cochange": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    },
+    "structural_centrality": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    },
+    "test_relationship": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    },
+    "corroboration": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    },
+    "responsibility_breadth": {
+      "available": 45,
+      "eligible": 45,
+      "coverage_percentage": 1.0,
+      "band": "HIGH_COVERAGE"
+    }
+  },
+  "signal_distributions": {
+    "churn_commit_count": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "min": 1,
+        "max": 2,
+        "mean": 1.1
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "min": 1,
+        "max": 2,
+        "mean": 1.1538
+      },
+      "USEFUL": {
+        "n": 9,
+        "min": 1,
+        "max": 4,
+        "mean": 1.3333
+      }
+    },
+    "churn_score": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "min": 1.0,
+        "max": 536.0,
+        "mean": 296.4
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "min": 17.5,
+        "max": 593.0,
+        "mean": 219.8846
+      },
+      "USEFUL": {
+        "n": 9,
+        "min": 94.0,
+        "max": 642.0,
+        "mean": 339.5278
+      }
+    },
+    "cochange_partner_count": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "min": 0,
+        "max": 14,
+        "mean": 7.0
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "min": 0,
+        "max": 15,
+        "mean": 7.1923
+      },
+      "USEFUL": {
+        "n": 9,
+        "min": 0,
+        "max": 15,
+        "mean": 8.4444
+      }
+    },
+    "cochange_coupling_class": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "categories": {
+          "HIGH_COUPLING": 8,
+          "ISOLATED": 2
+        }
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "categories": {
+          "HIGH_COUPLING": 22,
+          "ISOLATED": 4
+        }
+      },
+      "USEFUL": {
+        "n": 9,
+        "categories": {
+          "HIGH_COUPLING": 7,
+          "MODERATE_COUPLING": 1,
+          "ISOLATED": 1
+        }
+      }
+    },
+    "centrality_inbound": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "min": 0,
+        "max": 0,
+        "mean": 0.0
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "min": 0,
+        "max": 3,
+        "mean": 0.1154
+      },
+      "USEFUL": {
+        "n": 9,
+        "min": 0,
+        "max": 4,
+        "mean": 0.4444
+      }
+    },
+    "test_relationship_type": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "categories": {
+          "NO_STATIC_TEST_REFERENCE": 7,
+          "STATIC_TEST_RELATIONSHIP": 3
+        }
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "categories": {
+          "NO_STATIC_TEST_REFERENCE": 16,
+          "STATIC_TEST_RELATIONSHIP": 10
+        }
+      },
+      "USEFUL": {
+        "n": 9,
+        "categories": {
+          "NO_STATIC_TEST_REFERENCE": 7,
+          "STATIC_TEST_RELATIONSHIP": 2
+        }
+      }
+    },
+    "corroboration_strength": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "categories": {
+          "WEAK": 8,
+          "MODERATE": 2
+        }
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "categories": {
+          "WEAK": 24,
+          "HIGH": 2
+        }
+      },
+      "USEFUL": {
+        "n": 9,
+        "categories": {
+          "WEAK": 8,
+          "HIGH": 1
+        }
+      }
+    },
+    "breadth_score": {
+      "NOT_ACTIONABLE": {
+        "n": 10,
+        "min": 0,
+        "max": 79,
+        "mean": 18.9
+      },
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 26,
+        "min": 0,
+        "max": 19,
+        "mean": 10.8846
+      },
+      "USEFUL": {
+        "n": 9,
+        "min": 0,
+        "max": 21,
+        "mean": 8.5556
+      }
+    }
+  },
+  "matched_pairs_useful_vs_nme": [
+    {
+      "useful_id": "FINDING-078",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 14,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-082",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 14,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-064",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 15,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-106",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 1,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-001",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 4,
+      "nme_churn": 1,
+      "useful_cochange": 2,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-096",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 0,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-063",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 8,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-097",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 14,
+      "nme_cochange": 14
+    },
+    {
+      "useful_id": "FINDING-061",
+      "matched_nme_id": "FINDING-072",
+      "category": "UNKNOWN",
+      "useful_churn": 1,
+      "nme_churn": 1,
+      "useful_cochange": 8,
+      "nme_cochange": 14
+    }
+  ],
+  "strict_items": [
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-042",
+      "repository": "faithtech-blueprint",
+      "affected_path": "services/marketing/src/services/CampaignManager.ts",
+      "category": "UNKNOWN",
+      "classification": "NOT_ACTIONABLE",
+      "extraction_hash": "200f6efc898174b6",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "services/marketing/src/services/CampaignManager.ts",
+        "language": "typescript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 343,
+          "lines_deleted_history": 0,
+          "churn_score": 343.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 2,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "services/marketing/src/services/CampaignService.ts",
+            "services/beta-program/src/services/UserSurveys.ts"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 1,
+          "public_function_count": 14,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 3,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-041",
+      "repository": "faithtech-blueprint",
+      "affected_path": "services/marketing/src/services/CampaignService.ts",
+      "category": "UNKNOWN",
+      "classification": "NOT_ACTIONABLE",
+      "extraction_hash": "4da3a4dfabe1c8ca",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "services/marketing/src/services/CampaignService.ts",
+        "language": "typescript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 371,
+          "lines_deleted_history": 0,
+          "churn_score": 371.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 2,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "services/marketing/src/services/CampaignManager.ts",
+            "services/beta-program/src/services/UserSurveys.ts"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 1,
+          "public_function_count": 16,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 3,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-072",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/pages/templates/TemplateList.js",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "0c6733e85bc02d15",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/pages/templates/TemplateList.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 443,
+          "lines_deleted_history": 0,
+          "churn_score": 443.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js",
+            "client/src/hooks/useAuth.tsx"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 21,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 14,
+          "distinct_dependency_domains": 3,
+          "breadth_score": 17,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-018",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "04178b66c999367e",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 322,
+          "lines_deleted_history": 0,
+          "churn_score": 322.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 15,
+          "strongest_cochange_ratio": 6.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 3,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "HIGH",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 10,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 12,
+          "distinct_dependency_domains": 3,
+          "breadth_score": 15,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-058",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/providers/AccessibilityProvider.js",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "661bdd3a9f1bc79b",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/providers/AccessibilityProvider.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 136,
+          "lines_deleted_history": 0,
+          "churn_score": 136.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js",
+            "client/src/hooks/useAuth.tsx"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 2,
+          "public_function_count": 13,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 6,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 10,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-040",
+      "repository": "faithtech-blueprint",
+      "affected_path": "services/beta-program/src/services/UserSurveys.ts",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "8d66c616c91b8f16",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "services/beta-program/src/services/UserSurveys.ts",
+        "language": "typescript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 312,
+          "lines_deleted_history": 0,
+          "churn_score": 312.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 2,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "services/marketing/src/services/CampaignManager.ts",
+            "services/marketing/src/services/CampaignService.ts"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 1,
+          "public_function_count": 22,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 1,
+          "breadth_score": 2,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-024",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/components/templates/TemplateGallery.tsx",
+      "category": "UNKNOWN",
+      "classification": "NOT_ACTIONABLE",
+      "extraction_hash": "eb0b30e4e3a19d7b",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/components/templates/TemplateGallery.tsx",
+        "language": "typescript-react",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 490,
+          "lines_deleted_history": 0,
+          "churn_score": 490.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/pages/templates/TemplateCustomize.js",
+            "client/src/hooks/useAuth.tsx"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 12,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 6,
+          "distinct_dependency_domains": 3,
+          "breadth_score": 9,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-073",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/pages/templates/TemplateCustomize.js",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "129c1b9712f7f9fa",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/pages/templates/TemplateCustomize.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 593,
+          "lines_deleted_history": 0,
+          "churn_score": 593.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/hooks/useAuth.tsx"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 21,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 14,
+          "distinct_dependency_domains": 4,
+          "breadth_score": 18,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-080",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/hooks/useAuth.tsx",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "7a11a4a9867d9579",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/hooks/useAuth.tsx",
+        "language": "typescript-react",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 302,
+          "lines_deleted_history": 0,
+          "churn_score": 302.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 3,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.12,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 3,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 8,
+          "public_function_count": 27,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 4,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 14,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-047",
+      "repository": "faithtech-blueprint",
+      "affected_path": "services/user-service/src/routes/subscriptions.js",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "d7eedf51c53c40da",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "services/user-service/src/routes/subscriptions.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 2,
+          "recent_change_count_30": 2,
+          "lines_added_history": 415,
+          "lines_deleted_history": 39,
+          "churn_score": 227.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.03704,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 3,
+          "strongest_cochange_ratio": 0.5,
+          "top_cochange_paths": [
+            "services/user-service/src/controllers/authController.js",
+            "src/components/assessments/RecommendationsView.tsx",
+            "services/user-service/src/services/analyticsService.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 21,
+          "route_handler_count": 9,
+          "api_operation_count": 9,
+          "hook_count": 0,
+          "distinct_dependency_domains": 0,
+          "breadth_score": 18,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-031",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/pages/AssessmentManagement.tsx",
+      "category": "UNKNOWN",
+      "classification": "NOT_ACTIONABLE",
+      "extraction_hash": "bd949ff39d3bfd66",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/pages/AssessmentManagement.tsx",
+        "language": "typescript-react",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 395,
+          "lines_deleted_history": 0,
+          "churn_score": 395.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 15,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 8,
+          "distinct_dependency_domains": 4,
+          "breadth_score": 12,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-071",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/pages/profile/Profile.js",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "f412627de0d8b305",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/pages/profile/Profile.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 432,
+          "lines_deleted_history": 0,
+          "churn_score": 432.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 1,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.04,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 1,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 12,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 10,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 12,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-046",
+      "repository": "faithtech-blueprint",
+      "affected_path": "services/user-service/src/controllers/authController.js",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "50c19b0917db4832",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "services/user-service/src/controllers/authController.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 364,
+          "lines_deleted_history": 0,
+          "churn_score": 364.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 2,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "services/user-service/src/routes/subscriptions.js",
+            "src/components/assessments/RecommendationsView.tsx"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 29,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 0,
+          "breadth_score": 0,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-027",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/components/analytics/KPIDashboard.tsx",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "5c6199e5ee48d080",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/components/analytics/KPIDashboard.tsx",
+        "language": "typescript-react",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 359,
+          "lines_deleted_history": 0,
+          "churn_score": 359.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 1,
+          "public_function_count": 4,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 3,
+          "distinct_dependency_domains": 3,
+          "breadth_score": 7,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-067",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/pages/auth/ForgotPassword.js",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "9419feeaafdc2da5",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/pages/auth/ForgotPassword.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 164,
+          "lines_deleted_history": 0,
+          "churn_score": 164.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 1,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.04,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 1,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 4,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 6,
+          "distinct_dependency_domains": 3,
+          "breadth_score": 9,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-076",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "04178b66c999367e",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 322,
+          "lines_deleted_history": 0,
+          "churn_score": 322.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 15,
+          "strongest_cochange_ratio": 6.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 3,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "HIGH",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 10,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 12,
+          "distinct_dependency_domains": 3,
+          "breadth_score": 15,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-078",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/hooks/useTemplates.js",
+      "category": "UNKNOWN",
+      "classification": "USEFUL",
+      "extraction_hash": "8e72586d7ce1ba0b",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/hooks/useTemplates.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 220,
+          "lines_deleted_history": 0,
+          "churn_score": 220.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 1,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.04,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 1,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 3,
+          "public_function_count": 18,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 16,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 21,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-031",
+      "repository": "hermes-runtime",
+      "affected_path": "tests/test_mission_types.py",
+      "category": "UNKNOWN",
+      "classification": "NOT_ACTIONABLE",
+      "extraction_hash": "8bb4caa505a3c3db",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "tests/test_mission_types.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 536,
+          "lines_deleted_history": 0,
+          "churn_score": 536.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 0,
+          "strongest_cochange_ratio": 0.0,
+          "top_cochange_paths": [],
+          "change_coupling_classification": "ISOLATED",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 1,
+          "test_files_referencing_component": [
+            "tests/test_mission_types.py"
+          ],
+          "component_referenced_by_tests": 1,
+          "test_relationship_confidence": 0.333,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 2,
+          "corroboration_strength": "MODERATE",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 71,
+          "public_function_count": 57,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 8,
+          "breadth_score": 79,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-082",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/hooks/useAssessments.ts",
+      "category": "UNKNOWN",
+      "classification": "USEFUL",
+      "extraction_hash": "f99317f44ae36fa5",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/hooks/useAssessments.ts",
+        "language": "typescript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 182,
+          "lines_deleted_history": 0,
+          "churn_score": 182.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 10,
+          "public_function_count": 12,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 3,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 15,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-016",
+      "repository": "hermes-runtime",
+      "affected_path": "hermes_v01/mission_report.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "c237c94a73083799",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "hermes_v01/mission_report.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 2,
+          "recent_change_count_30": 2,
+          "lines_added_history": 587,
+          "lines_deleted_history": 18,
+          "churn_score": 302.5,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.04651,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 1,
+          "strongest_cochange_ratio": 0.5,
+          "top_cochange_paths": [
+            "hermes_v01/capabilities_cli.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 3,
+          "test_files_referencing_component": [
+            "tests/test_concurrent_execution.py",
+            "tests/test_mission_report.py",
+            "tests/test_mission_runner.py"
+          ],
+          "component_referenced_by_tests": 3,
+          "test_relationship_confidence": 1.0,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 12,
+          "public_function_count": 22,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 7,
+          "breadth_score": 19,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-024",
+      "repository": "hermes-runtime",
+      "affected_path": "tests/test_human_review.py",
+      "category": "UNKNOWN",
+      "classification": "NOT_ACTIONABLE",
+      "extraction_hash": "c3c82d475576c936",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "tests/test_human_review.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 2,
+          "recent_change_count_30": 2,
+          "lines_added_history": 828,
+          "lines_deleted_history": 0,
+          "churn_score": 414.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.04651,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 0,
+          "strongest_cochange_ratio": 0.0,
+          "top_cochange_paths": [],
+          "change_coupling_classification": "ISOLATED",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 1,
+          "test_files_referencing_component": [
+            "tests/test_human_review.py"
+          ],
+          "component_referenced_by_tests": 1,
+          "test_relationship_confidence": 0.333,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 2,
+          "corroboration_strength": "MODERATE",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 63,
+          "public_function_count": 54,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 5,
+          "breadth_score": 68,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-064",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+      "category": "UNKNOWN",
+      "classification": "USEFUL",
+      "extraction_hash": "04178b66c999367e",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 322,
+          "lines_deleted_history": 0,
+          "churn_score": 322.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 15,
+          "strongest_cochange_ratio": 6.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 3,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "HIGH",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 10,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 12,
+          "distinct_dependency_domains": 3,
+          "breadth_score": 15,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-056",
+      "repository": "faithtech-blueprint",
+      "affected_path": "src/components/assessments/RecommendationsView.tsx",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "f2c614b09eb29f86",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "src/components/assessments/RecommendationsView.tsx",
+        "language": "typescript-react",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 333,
+          "lines_deleted_history": 0,
+          "churn_score": 333.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 2,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "services/user-service/src/routes/subscriptions.js",
+            "services/user-service/src/controllers/authController.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 6,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 2,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 4,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-013",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/components/subscription/BillingHistory.tsx",
+      "category": "UNKNOWN",
+      "classification": "NOT_ACTIONABLE",
+      "extraction_hash": "175ed46c56a3cf3a",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/components/subscription/BillingHistory.tsx",
+        "language": "typescript-react",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 311,
+          "lines_deleted_history": 0,
+          "churn_score": 311.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 10,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 5,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 7,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-081",
+      "repository": "hermes-runtime",
+      "affected_path": "hermes_v01/python_scanner.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "c8cb29b5f6f0ed7a",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "hermes_v01/python_scanner.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 104,
+          "lines_deleted_history": 0,
+          "churn_score": 104.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 1,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "hermes_v01/engineering_analyzer.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 1,
+          "test_files_referencing_component": [
+            "tests/test_js_scanner.py"
+          ],
+          "component_referenced_by_tests": 1,
+          "test_relationship_confidence": 0.333,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 5,
+          "public_function_count": 4,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 5,
+          "breadth_score": 10,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-073",
+      "repository": "hermes-runtime",
+      "affected_path": "hermes_v01/engineering_cli.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "2766e5141174c8bf",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "hermes_v01/engineering_cli.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 153,
+          "lines_deleted_history": 0,
+          "churn_score": 153.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 1,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "hermes_v01/engineering_analyzer.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 4,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.2,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 4,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 1,
+          "test_files_referencing_component": [
+            "tests/test_engineering_intelligence.py"
+          ],
+          "component_referenced_by_tests": 1,
+          "test_relationship_confidence": 0.333,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 6,
+          "public_function_count": 7,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 4,
+          "breadth_score": 10,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-071",
+      "repository": "hermes-runtime",
+      "affected_path": "hermes_v01/benchmark_cli.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "fd5b902af28c9de7",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "hermes_v01/benchmark_cli.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 163,
+          "lines_deleted_history": 0,
+          "churn_score": 163.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 0,
+          "strongest_cochange_ratio": 0.0,
+          "top_cochange_paths": [],
+          "change_coupling_classification": "ISOLATED",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 1,
+          "test_files_referencing_component": [
+            "tests/test_benchmark.py"
+          ],
+          "component_referenced_by_tests": 1,
+          "test_relationship_confidence": 0.333,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 7,
+          "public_function_count": 8,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 3,
+          "breadth_score": 10,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-042",
+      "repository": "hermes-runtime",
+      "affected_path": "enterprise/migrations/versions/003_scan_hardening.py",
+      "category": "UNKNOWN",
+      "classification": "NOT_ACTIONABLE",
+      "extraction_hash": "ef15159d9bb00873",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "enterprise/migrations/versions/003_scan_hardening.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 35,
+          "lines_deleted_history": 0,
+          "churn_score": 35.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 8,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "enterprise/routers/proposals.py",
+            "enterprise/migrations/versions/002_scan_jobs.py",
+            "enterprise/routers/operations.py",
+            "enterprise/routers/feedback.py",
+            "enterprise/services/metrics_service.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 2,
+          "public_function_count": 2,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 4,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-072",
+      "repository": "hermes-runtime",
+      "affected_path": "hermes_v01/capabilities_cli.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "568845db4af51ad1",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "hermes_v01/capabilities_cli.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 2,
+          "recent_change_count_30": 2,
+          "lines_added_history": 118,
+          "lines_deleted_history": 8,
+          "churn_score": 63.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.04651,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 1,
+          "strongest_cochange_ratio": 0.5,
+          "top_cochange_paths": [
+            "hermes_v01/mission_report.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 8,
+          "public_function_count": 9,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 3,
+          "breadth_score": 11,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-106",
+      "repository": "faithtech-blueprint",
+      "affected_path": "services/user-service/src/services/analyticsService.js",
+      "category": "UNKNOWN",
+      "classification": "USEFUL",
+      "extraction_hash": "94157397babfd85c",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "services/user-service/src/services/analyticsService.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 642,
+          "lines_deleted_history": 0,
+          "churn_score": 642.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 1,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "services/user-service/src/routes/subscriptions.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 50,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 0,
+          "breadth_score": 0,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-052",
+      "repository": "hermes-runtime",
+      "affected_path": "enterprise/routers/proposals.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "55dd3ccddd37bbb6",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "enterprise/routers/proposals.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 76,
+          "lines_deleted_history": 0,
+          "churn_score": 76.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 8,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "enterprise/migrations/versions/003_scan_hardening.py",
+            "enterprise/migrations/versions/002_scan_jobs.py",
+            "enterprise/routers/operations.py",
+            "enterprise/routers/feedback.py",
+            "enterprise/services/metrics_service.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 1,
+          "test_files_referencing_component": [
+            "tests/test_validation.py"
+          ],
+          "component_referenced_by_tests": 1,
+          "test_relationship_confidence": 0.333,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 3,
+          "public_function_count": 3,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 9,
+          "breadth_score": 12,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-041",
+      "repository": "hermes-runtime",
+      "affected_path": "enterprise/migrations/versions/002_scan_jobs.py",
+      "category": "UNKNOWN",
+      "classification": "NOT_ACTIONABLE",
+      "extraction_hash": "2706edc7513dce89",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "enterprise/migrations/versions/002_scan_jobs.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 68,
+          "lines_deleted_history": 0,
+          "churn_score": 68.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 8,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "enterprise/migrations/versions/003_scan_hardening.py",
+            "enterprise/routers/proposals.py",
+            "enterprise/routers/operations.py",
+            "enterprise/routers/feedback.py",
+            "enterprise/services/metrics_service.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 2,
+          "public_function_count": 2,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 4,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-051",
+      "repository": "hermes-runtime",
+      "affected_path": "enterprise/routers/operations.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "aa2437e05efdfd23",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "enterprise/routers/operations.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 42,
+          "lines_deleted_history": 0,
+          "churn_score": 42.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 8,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "enterprise/migrations/versions/003_scan_hardening.py",
+            "enterprise/routers/proposals.py",
+            "enterprise/migrations/versions/002_scan_jobs.py",
+            "enterprise/routers/feedback.py",
+            "enterprise/services/metrics_service.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 3,
+          "test_files_referencing_component": [
+            "tests/test_engineering_journal.py",
+            "tests/test_resilience.py",
+            "tests/test_validation.py"
+          ],
+          "component_referenced_by_tests": 3,
+          "test_relationship_confidence": 1.0,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 3,
+          "public_function_count": 3,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 11,
+          "breadth_score": 14,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-001",
+      "repository": "hermes-runtime",
+      "affected_path": "hermes_v01/engineering_analyzer.py",
+      "category": "UNKNOWN",
+      "classification": "USEFUL",
+      "extraction_hash": "8397aa89352cfa33",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "hermes_v01/engineering_analyzer.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 4,
+          "recent_change_count_30": 4,
+          "lines_added_history": 1171,
+          "lines_deleted_history": 16,
+          "churn_score": 296.75,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.09302,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 2,
+          "strongest_cochange_ratio": 0.25,
+          "top_cochange_paths": [
+            "hermes_v01/python_scanner.py",
+            "hermes_v01/engineering_cli.py"
+          ],
+          "change_coupling_classification": "MODERATE_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 4,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.2,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 4,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 6,
+          "test_files_referencing_component": [
+            "tests/test_benchmark.py",
+            "tests/test_beta_readiness.py",
+            "tests/test_engineering_governance.py",
+            "tests/test_engineering_intelligence.py",
+            "tests/test_js_scanner.py",
+            "tests/test_mission_recommendations.py"
+          ],
+          "component_referenced_by_tests": 6,
+          "test_relationship_confidence": 1.0,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 1,
+          "public_function_count": 22,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 3,
+          "breadth_score": 4,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-060",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/components/assessment/CollaborativeAssessment.js",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "f07b8043c2d85011",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/components/assessment/CollaborativeAssessment.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 170,
+          "lines_deleted_history": 0,
+          "churn_score": 170.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 1,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 7,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 8,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 10,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-076",
+      "repository": "hermes-runtime",
+      "affected_path": "hermes_v01/governance_cli.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "1cbcce47096aeeca",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "hermes_v01/governance_cli.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 97,
+          "lines_deleted_history": 0,
+          "churn_score": 97.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 0,
+          "strongest_cochange_ratio": 0.0,
+          "top_cochange_paths": [],
+          "change_coupling_classification": "ISOLATED",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 1,
+          "test_files_referencing_component": [
+            "tests/test_engineering_governance.py"
+          ],
+          "component_referenced_by_tests": 1,
+          "test_relationship_confidence": 0.333,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 6,
+          "public_function_count": 7,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 4,
+          "breadth_score": 10,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-047",
+      "repository": "hermes-runtime",
+      "affected_path": "enterprise/routers/feedback.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "183cd31c749537ea",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "enterprise/routers/feedback.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 53,
+          "lines_deleted_history": 0,
+          "churn_score": 53.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 8,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "enterprise/migrations/versions/003_scan_hardening.py",
+            "enterprise/routers/proposals.py",
+            "enterprise/migrations/versions/002_scan_jobs.py",
+            "enterprise/routers/operations.py",
+            "enterprise/services/metrics_service.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 1,
+          "test_files_referencing_component": [
+            "tests/test_validation.py"
+          ],
+          "component_referenced_by_tests": 1,
+          "test_relationship_confidence": 0.333,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 2,
+          "public_function_count": 2,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 8,
+          "breadth_score": 10,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-096",
+      "repository": "faithtech-blueprint",
+      "affected_path": "scripts/add-church-assessments.js",
+      "category": "UNKNOWN",
+      "classification": "USEFUL",
+      "extraction_hash": "183f7ed97fe54a20",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "scripts/add-church-assessments.js",
+        "language": "javascript",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 564,
+          "lines_deleted_history": 0,
+          "churn_score": 564.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 0,
+          "strongest_cochange_ratio": 0.0,
+          "top_cochange_paths": [],
+          "change_coupling_classification": "ISOLATED",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 6,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 0,
+          "breadth_score": 0,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-063",
+      "repository": "hermes-runtime",
+      "affected_path": "enterprise/services/metrics_service.py",
+      "category": "UNKNOWN",
+      "classification": "USEFUL",
+      "extraction_hash": "363334e0f634e7c8",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "enterprise/services/metrics_service.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 123,
+          "lines_deleted_history": 0,
+          "churn_score": 123.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 8,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "enterprise/migrations/versions/003_scan_hardening.py",
+            "enterprise/routers/proposals.py",
+            "enterprise/migrations/versions/002_scan_jobs.py",
+            "enterprise/routers/operations.py",
+            "enterprise/routers/feedback.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 1,
+          "public_function_count": 2,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 6,
+          "breadth_score": 7,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-097",
+      "repository": "faithtech-blueprint",
+      "affected_path": "client/src/components/assessment/AssessmentBuilder.tsx",
+      "category": "UNKNOWN",
+      "classification": "USEFUL",
+      "extraction_hash": "7e43d1229b16f122",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "client/src/components/assessment/AssessmentBuilder.tsx",
+        "language": "typescript-react",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 612,
+          "lines_deleted_history": 0,
+          "churn_score": 612.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.01852,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 14,
+          "strongest_cochange_ratio": 3.0,
+          "top_cochange_paths": [
+            "client/src/components/subscription/SubscriptionAnalytics.js",
+            "client/src/pages/templates/TemplateList.js",
+            "client/src/providers/AccessibilityProvider.js",
+            "client/src/components/templates/TemplateGallery.tsx",
+            "client/src/pages/templates/TemplateCustomize.js"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 19,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 3,
+          "distinct_dependency_domains": 2,
+          "breadth_score": 5,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/faithtech-blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-038",
+      "repository": "hermes-runtime",
+      "affected_path": "enterprise/__init__.py",
+      "category": "UNKNOWN",
+      "classification": "NOT_ACTIONABLE",
+      "extraction_hash": "9a215e2e0eb9f5d4",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "enterprise/__init__.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 1,
+          "lines_deleted_history": 0,
+          "churn_score": 1.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 8,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "enterprise/migrations/versions/003_scan_hardening.py",
+            "enterprise/routers/proposals.py",
+            "enterprise/migrations/versions/002_scan_jobs.py",
+            "enterprise/routers/operations.py",
+            "enterprise/routers/feedback.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 6,
+          "test_files_referencing_component": [
+            "tests/test_engineering_journal.py",
+            "tests/test_evidence.py",
+            "tests/test_plan_cli.py",
+            "tests/test_repo_intelligence.py",
+            "tests/test_reviewer.py",
+            "tests/test_supervisor.py"
+          ],
+          "component_referenced_by_tests": 6,
+          "test_relationship_confidence": 1.0,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 0,
+          "public_function_count": 0,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 0,
+          "breadth_score": 0,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-056",
+      "repository": "hermes-runtime",
+      "affected_path": "enterprise/routers/scheduling.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "400b5b41846e1361",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "enterprise/routers/scheduling.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 37,
+          "lines_deleted_history": 0,
+          "churn_score": 37.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 8,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "enterprise/migrations/versions/003_scan_hardening.py",
+            "enterprise/routers/proposals.py",
+            "enterprise/migrations/versions/002_scan_jobs.py",
+            "enterprise/routers/operations.py",
+            "enterprise/routers/feedback.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 2,
+          "test_files_referencing_component": [
+            "tests/test_validation.py",
+            "tests/test_work_queue.py"
+          ],
+          "component_referenced_by_tests": 2,
+          "test_relationship_confidence": 0.667,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 2,
+          "public_function_count": 2,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 9,
+          "breadth_score": 11,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-061",
+      "repository": "hermes-runtime",
+      "affected_path": "enterprise/services/github_integration.py",
+      "category": "UNKNOWN",
+      "classification": "USEFUL",
+      "extraction_hash": "0e414a28295705a8",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "enterprise/services/github_integration.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 94,
+          "lines_deleted_history": 0,
+          "churn_score": 94.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 8,
+          "strongest_cochange_ratio": 1.0,
+          "top_cochange_paths": [
+            "enterprise/migrations/versions/003_scan_hardening.py",
+            "enterprise/routers/proposals.py",
+            "enterprise/migrations/versions/002_scan_jobs.py",
+            "enterprise/routers/operations.py",
+            "enterprise/routers/feedback.py"
+          ],
+          "change_coupling_classification": "HIGH_COUPLING",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 1,
+          "test_files_referencing_component": [
+            "tests/test_github_integration.py"
+          ],
+          "component_referenced_by_tests": 1,
+          "test_relationship_confidence": 0.333,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 4,
+          "public_function_count": 4,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 6,
+          "breadth_score": 10,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-083",
+      "repository": "hermes-runtime",
+      "affected_path": "hermes_v01/repo_cli.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "c98d521cbe0e14e1",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "hermes_v01/repo_cli.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 1,
+          "recent_change_count_30": 1,
+          "lines_added_history": 130,
+          "lines_deleted_history": 0,
+          "churn_score": 130.0,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.02326,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 0,
+          "strongest_cochange_ratio": 0.0,
+          "top_cochange_paths": [],
+          "change_coupling_classification": "ISOLATED",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 1,
+          "test_files_referencing_component": [
+            "tests/test_repo_intelligence.py"
+          ],
+          "component_referenced_by_tests": 1,
+          "test_relationship_confidence": 0.333,
+          "relationship_type": "STATIC_TEST_RELATIONSHIP",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 5,
+          "public_function_count": 5,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 5,
+          "breadth_score": 10,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    },
+    {
+      "finding_uuid": "MISSING",
+      "core_finding_id": "FINDING-086",
+      "repository": "hermes-runtime",
+      "affected_path": "hermes_v01/status_cli.py",
+      "category": "UNKNOWN",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "extraction_hash": "fe0df6f17f2dcbc9",
+      "enrichment_v2": {
+        "version": "2.0.0-experimental",
+        "affected_path": "hermes_v01/status_cli.py",
+        "language": "python",
+        "churn": {
+          "commits_touching_file": 2,
+          "recent_change_count_30": 2,
+          "lines_added_history": 35,
+          "lines_deleted_history": 0,
+          "churn_score": 17.5,
+          "file_age_days": null,
+          "days_since_last_change": null,
+          "change_frequency_rel_repo": 0.04651,
+          "available": true,
+          "source": "git_history:file"
+        },
+        "cochange": {
+          "cochange_partner_count": 0,
+          "strongest_cochange_ratio": 0.0,
+          "top_cochange_paths": [],
+          "change_coupling_classification": "ISOLATED",
+          "available": true,
+          "source": "git_history:cochange"
+        },
+        "structural_centrality": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "normalized_inbound_centrality": 0.0,
+          "normalized_outbound_centrality": 0.0,
+          "dependency_fan_in": 0,
+          "dependency_fan_out": 0,
+          "language_supported": true,
+          "available": true,
+          "source": "repository_file_graph"
+        },
+        "test_relationship": {
+          "directly_referencing_test_count": 0,
+          "test_files_referencing_component": [],
+          "component_referenced_by_tests": 0,
+          "test_relationship_confidence": 0.0,
+          "relationship_type": "NO_STATIC_TEST_REFERENCE",
+          "runtime_coverage": "NOT_AVAILABLE",
+          "available": true,
+          "source": "static_test_index"
+        },
+        "corroboration": {
+          "findings_on_same_component": 1,
+          "independent_finding_categories": null,
+          "corroborating_signal_count": 0,
+          "corroboration_strength": "WEAK",
+          "available": true,
+          "source": "cohort_component_count+parsed_breadth"
+        },
+        "responsibility_breadth": {
+          "exported_symbol_count": 1,
+          "public_function_count": 1,
+          "route_handler_count": 0,
+          "api_operation_count": 0,
+          "hook_count": 0,
+          "distinct_dependency_domains": 4,
+          "breadth_score": 5,
+          "experimental": true,
+          "available": true,
+          "source": "static_parse"
+        },
+        "repository_path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e"
+      }
+    }
+  ],
+  "signal_quality": {
+    "churn_commit_count": "NO_DISCRIMINATION",
+    "churn_score": "NO_DISCRIMINATION",
+    "cochange_partner_count": "NO_DISCRIMINATION",
+    "centrality_inbound": "NO_DISCRIMINATION",
+    "breadth_score": "NO_DISCRIMINATION",
+    "cochange_coupling_class": "NO_DISCRIMINATION",
+    "test_relationship_type": "NO_DISCRIMINATION",
+    "corroboration_strength": "NO_DISCRIMINATION"
+  }
+}

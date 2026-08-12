@@ -140,13 +140,20 @@ _EVIDENCE_WEIGHTS = {
     "none": 0.0,
 }
 
-# Governance decision weights
+# Governance decision weights — re-pointed (Post Cycle 8) to human
+# adjudication authority. The machine gate no longer emits APPROVED; the
+# authorization signal is the human 'ACTIONABLE' adjudication.
 _GOVERNANCE_WEIGHTS = {
-    "APPROVED": 2.0,
-    "APPROVED_WITH_NOTES": 1.0,
-    "NEEDS_MORE_EVIDENCE": 0.0,
+    "ACTIONABLE": 2.0,            # human-adjudicated actionable (authoritative)
+    "LEGACY_APPROVED": 0.0,       # advisory only; never selected
+    "APPROVED": 0.0,              # legacy alias treated advisory
+    "APPROVED_WITH_NOTES": 0.0,   # legacy alias treated advisory
+    "NEEDS_MORE_EVIDENCE": -2.0,
     "DEFERRED": -1.0,
     "REJECTED": -2.0,
+    "NOT_ACTIONABLE": -10.0,
+    "FALSE_POSITIVE": -10.0,
+    "DUPLICATE": -10.0,
     "UNKNOWN": 0.0,
 }
 

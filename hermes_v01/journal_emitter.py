@@ -121,6 +121,56 @@ class JournalEmitter:
         )
 
     # -----------------------------------------------------------------------
+    # Evidence & Risk Gate (Post Cycle 8)
+    # -----------------------------------------------------------------------
+
+    def emit_gate_evaluated(
+        self,
+        gate_summary: dict[str, Any],
+        *,
+        repository: str | None = None,
+    ) -> JournalEvent:
+        return self._emit("gate.evaluated", gate_summary, repository=repository)
+
+    def emit_gate_routed(
+        self,
+        gate: dict[str, Any],
+        *,
+        repository: str | None = None,
+    ) -> JournalEvent:
+        return self._emit("gate.routed", gate, repository=repository)
+
+    def emit_policy_suppression(
+        self,
+        suppression: dict[str, Any],
+        *,
+        repository: str | None = None,
+    ) -> JournalEvent:
+        return self._emit(
+            "policy.suppression", suppression, repository=repository
+        )
+
+    def emit_human_adjudication(
+        self,
+        adjudication: dict[str, Any],
+        *,
+        repository: str | None = None,
+    ) -> JournalEvent:
+        return self._emit(
+            "human.adjudication", adjudication, repository=repository
+        )
+
+    def emit_mission_eligibility(
+        self,
+        eligibility: dict[str, Any],
+        *,
+        repository: str | None = None,
+    ) -> JournalEvent:
+        return self._emit(
+            "mission.eligibility", eligibility, repository=repository
+        )
+
+    # -----------------------------------------------------------------------
     # Mission Recommendation
     # -----------------------------------------------------------------------
 

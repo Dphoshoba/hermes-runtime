@@ -158,6 +158,77 @@ class ApprovedCandidateMission:
         }
 
 
+# ---------------------------------------------------------------------------
+# Evidence & Risk Gate — machine-authority states (Post Cycle 8)
+# ---------------------------------------------------------------------------
+
+# Gate (machine) vocabulary. These states NEVER imply human actionability.
+GATE_OBSERVED = "OBSERVED"
+GATE_CORROBORATED = "CORROBORATED"
+GATE_REQUIRES_REVIEW = "REQUIRES_REVIEW"
+GATE_INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
+GATE_DEFERRED = "DEFERRED"
+GATE_DUPLICATE = "DUPLICATE"
+GATE_LEGACY_APPROVED = "LEGACY_APPROVED"
+GATE_LEGACY_REJECTED = "LEGACY_REJECTED"
+
+# Human-authority vocabulary (NEVER emitted by machine gate logic).
+HUMAN_ACTIONABLE = "ACTIONABLE"
+HUMAN_NOT_ACTIONABLE = "NOT_ACTIONABLE"
+HUMAN_NEEDS_MORE_EVIDENCE = "NEEDS_MORE_EVIDENCE"
+HUMAN_DUPLICATE = "DUPLICATE"
+
+# The machine gate may never produce these strings as a gate/decision state.
+_FORBIDDEN_MACHINE_STATES = frozenset({HUMAN_ACTIONABLE, HUMAN_NOT_ACTIONABLE})
+
+
+def assert_machine_state(state: str) -> None:
+    """Guard: machine gate logic must never emit human-actionability states."""
+    if state in _FORBIDDEN_MACHINE_STATES:
+        raise ValueError(
+            f"Machine gate may not emit human-authority state {state!r}. "
+            f"Actionability requires human adjudication."
+        )
+
+
+@dataclass(frozen=True)
+class FindingGate:
+    """Evidence & Risk Gate routing for a single finding (machine authority).
+
+    This is the replacement for automated APPROVED semantics. It records what
+    Hermes observed and whether human review is required — never whether a
+    human should act.
+    """
+
+    finding_id: str
+    observation_state: str     # OBSERVED | CORROBORATED
+    gate_state: str            # REQUIRES_REVIEW | INSUFFICIENT_EVIDENCE | DEFERRED | DUPLICATE
+    risk_band: str             # LOW | MODERATE | HIGH
+    evidence_sufficiency: str  # SUFFICIENT | INSUFFICIENT
+    review_rank: float         # evidence/risk ranking (uncertainty explicit)
+    uncertainty_note: str      # always present
+    evidence_references: tuple[dict[str, Any], ...] = ()
+    legacy_decision: str | None = None  # original APPROVED/REJECTED if from migration
+
+    def __post_init__(self) -> None:
+        assert_machine_state(self.gate_state)
+        assert_machine_state(self.observation_state)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "finding_id": self.finding_id,
+            "observation_state": self.observation_state,
+            "gate_state": self.gate_state,
+            "risk_band": self.risk_band,
+            "evidence_sufficiency": self.evidence_sufficiency,
+            "review_rank": round(self.review_rank, 4),
+            "uncertainty_note": self.uncertainty_note,
+            "evidence_references": [e for e in self.evidence_references],
+            "legacy_decision": self.legacy_decision,
+            "authority": "machine_gate",
+        }
+
+
 @dataclass(frozen=True)
 class GovernanceAssessment:
     """Complete governance evaluation of engineering recommendations."""
@@ -168,6 +239,7 @@ class GovernanceAssessment:
     duplicates: tuple[DuplicateRecommendation, ...]
     approved_missions: tuple[ApprovedCandidateMission, ...]
     summary: ApprovalSummary
+    gate_routings: tuple[FindingGate, ...] = ()  # Evidence & Risk Gate (Post Cycle 8)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -176,6 +248,7 @@ class GovernanceAssessment:
             "conflicts": [c.as_dict() for c in self.conflicts],
             "duplicates": [d.as_dict() for d in self.duplicates],
             "approved_missions": [m.as_dict() for m in self.approved_missions],
+            "gate_routings": [g.as_dict() for g in self.gate_routings],
             "summary": self.summary.as_dict(),
         }
 

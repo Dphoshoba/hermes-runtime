@@ -362,6 +362,12 @@ class FindingAdjudication(Base):
     related_mission_ids = Column(JSON, default=list)
     schema_version = Column(String(20), default="1.0")
 
+    # Deterministic policy suppression (Post Cycle 8) — kept distinct from human
+    # NOT_ACTIONABLE. Auditable and recoverable for review.
+    policy_suppressed = Column(Boolean, default=False, index=True)
+    suppression_rule_id = Column(String(100), nullable=True, index=True)
+    suppression_rule_version = Column(String(50), nullable=True)
+
     finding = relationship("Finding")
     repository = relationship("Repository")
 

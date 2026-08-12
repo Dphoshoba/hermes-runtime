@@ -16,6 +16,30 @@ from __future__ import annotations
 
 from typing import Any
 
+# Evidenced & Risk Gate (Post Cycle 8) — hard mission authorization boundary.
+# Human-authority vocabulary that MAY authorize a candidate mission.
+HUMAN_ACTIONABLE = "ACTIONABLE"
+
+# Machine gate states that must NEVER authorize a mission.
+_FORBIDDEN_GATE_DECISIONS = frozenset({
+    "OBSERVED", "CORROBORATED", "REQUIRES_REVIEW", "INSUFFICIENT_EVIDENCE",
+    "DEFERRED", "DUPLICATE", "LEGACY_APPROVED", "LEGACY_REJECTED",
+    "APPROVED", "APPROVED_WITH_NOTES", "NEEDS_MORE_EVIDENCE", "REJECTED",
+})
+
+
+def _is_human_actionable(fid: str, actionable_ids: set[str] | None) -> bool:
+    """Hard boundary: only a human ACTIONABLE adjudication authorizes a mission.
+
+    actionable_ids is the set of finding_ids with a human 'ACTIONABLE'
+    adjudication (from the Human Review Service). If None, no finding is
+    authorized (gate mode with no review store wired).
+    """
+    if actionable_ids is None:
+        return False
+    return fid in actionable_ids
+
+
 from .mission_recommendation_models import (
     DraftMission,
     GeneratedTask,
@@ -125,15 +149,32 @@ def _generate_traceability(
     )
 
 
-def generate_missions(governance: dict[str, Any]) -> MissionRecommendations:
+def generate_missions(
+    governance: dict[str, Any],
+    actionable_finding_ids: set[str] | None = None,
+    actionable_findings: list[dict[str, Any]] | None = None,
+) -> MissionRecommendations:
     """Main entry point. Consume governance dict, produce mission recommendations.
+
+    Hard authorization boundary (Evidence & Risk Gate): a candidate mission is
+    generated ONLY for a finding present in actionable_finding_ids (the set of
+    human 'ACTIONABLE' adjudications from the Human Review Service).
+
+    In gate mode governance["assessment"]["approved_missions"] is empty, so the
+    ONLY route to a mission is via actionable_findings built from human
+    adjudications. If actionable_finding_ids is None, NO missions are produced —
+    the machine gate can never authorize a mission. Legacy mode may still pass
+    approved_missions for frozen-history replay; the guard still applies.
 
     Uses evidence-based mission prioritization instead of arbitrary truncation.
     Applies 50-mission attention cap AFTER priority ranking.
     """
     repository = governance.get("repository", {})
     assessment = governance.get("assessment", {})
-    approved_missions = assessment.get("approved_missions", [])
+    approved_missions = list(assessment.get("approved_missions", []))
+    if actionable_findings:
+        # Human-reviewed actionable findings become candidate sources.
+        approved_missions = approved_missions + list(actionable_findings)
     approval_decisions = assessment.get("approval_decisions", [])
 
     # Build EI findings lookup from governance decisions
@@ -146,18 +187,24 @@ def generate_missions(governance: dict[str, Any]) -> MissionRecommendations:
 
     for i, approved in enumerate(approved_missions):
         fid = approved.get("finding_id", "")
+        # HARD BOUNDARY: no human ACTIONABLE adjudication => no candidate mission.
+        if not _is_human_actionable(fid, actionable_finding_ids):
+            continue
         rec = approved.get("recommendation", "")
         mtype = approved.get("mission_type", "repository_maintenance")
         effort = approved.get("effort", "small")
         priority = approved.get("priority_score", 5.0)
         affected = tuple(approved.get("affected_modules", []))
+        severity = approved.get("severity", "medium")
 
         # Generate mission
         mission_id = f"REC-MISSION-{i + 1:03d}"
         tasks = _generate_tasks(mtype, fid)
         traceability = _generate_traceability(approved, ei_findings)
 
-        # Find governance decision for this finding
+        # Find governance decision for this finding. In gate mode
+        # approval_decisions is empty, so the authorization signal is the human
+        # ACTIONABLE adjudication (actionable_finding_ids), not a machine gate.
         gov_ref = ""
         gov_decision = "UNKNOWN"
         for d in approval_decisions:
@@ -165,14 +212,18 @@ def generate_missions(governance: dict[str, Any]) -> MissionRecommendations:
                 gov_ref = f"GOV-{fid}"
                 gov_decision = d.get("decision", "UNKNOWN")
                 break
+        if not gov_ref and actionable_finding_ids is not None and fid in actionable_finding_ids:
+            # Authorized by human adjudication (Evidence & Risk Gate).
+            gov_ref = f"HUMAN-ADJUDICATION-{fid}"
+            gov_decision = HUMAN_ACTIONABLE
 
         # Build mission dict for prioritizer
         mission_dict = {
             "mission_id": mission_id,
             "originating_finding_id": fid,
             "finding_severity": approved.get("severity", "medium"),
-            "human_classification": approved.get("human_classification", "UNKNOWN"),
-            "governance_decision": gov_decision,
+            "human_classification": HUMAN_ACTIONABLE,  # authorized by human adjudication
+            "governance_decision": gov_decision,       # human authority (HUMAN_ACTIONABLE) or legacy
             "file_context": affected[0] if affected else "",
             "evidence_references": [],
             "recommendation": rec,

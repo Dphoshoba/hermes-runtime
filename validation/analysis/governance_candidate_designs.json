@@ -1,0 +1,115 @@
+[
+  {
+    "name": "Candidate A: Magnitude-Based Approval",
+    "description": "Approve findings with high structural magnitude in production context",
+    "positive_approval_conditions": [
+      "file_context == PRODUCTION",
+      "NOT is_test_file",
+      "NOT is_migration_file",
+      "NOT is_init_file",
+      "ANY of: line_count >= 500 OR hook_count >= 10 OR api_count >= 6"
+    ],
+    "negative_conditions": [
+      "is_test_file",
+      "is_migration_file",
+      "is_init_file"
+    ],
+    "insufficient_evidence_conditions": [
+      "file_context != PRODUCTION",
+      "magnitude below thresholds"
+    ],
+    "missing_data_semantics": "NEEDS_MORE_EVIDENCE when required features unavailable",
+    "explainability": "Decision based on file context and structural magnitude thresholds",
+    "estimated_performance": {
+      "useful_recall": "~79%",
+      "over_approval": "~17%",
+      "not_actionable_accuracy": "~50%"
+    },
+    "strengths": [
+      "Simple and explainable",
+      "High precision for high-magnitude findings",
+      "No repository-specific rules"
+    ],
+    "weaknesses": [
+      "Cannot identify moderate-magnitude USEFUL findings",
+      "Missing behavioral evidence",
+      "May over-approve large but unimportant modules"
+    ]
+  },
+  {
+    "name": "Candidate B: Multi-Signal Scoring",
+    "description": "Score findings based on multiple evidence signals",
+    "positive_approval_conditions": [
+      "file_context == PRODUCTION",
+      "composite_score >= threshold",
+      "score = magnitude_score + context_score + severity_score"
+    ],
+    "negative_conditions": [
+      "is_test_file",
+      "is_migration_file",
+      "is_init_file",
+      "composite_score < negative_threshold"
+    ],
+    "insufficient_evidence_conditions": [
+      "composite_score between negative_threshold and threshold",
+      "missing required features"
+    ],
+    "missing_data_semantics": "NEEDS_MORE_EVIDENCE when score indeterminate",
+    "explainability": "Decision based on weighted composite score with component breakdown",
+    "estimated_performance": {
+      "useful_recall": "~85%",
+      "over_approval": "~25%",
+      "not_actionable_accuracy": "~60%"
+    },
+    "strengths": [
+      "Can capture multiple evidence types",
+      "Adjustable thresholds",
+      "Better coverage of moderate-magnitude findings"
+    ],
+    "weaknesses": [
+      "More complex to implement",
+      "Requires threshold tuning",
+      "Still lacks behavioral evidence"
+    ]
+  },
+  {
+    "name": "Candidate C: Evidence-Gated Approval",
+    "description": "Require multiple independent evidence signals for approval",
+    "positive_approval_conditions": [
+      "file_context == PRODUCTION",
+      "NOT is_test_file",
+      "NOT is_migration_file",
+      "NOT is_init_file",
+      "magnitude_signal == True",
+      "context_signal == True",
+      "severity_signal == True"
+    ],
+    "negative_conditions": [
+      "is_test_file",
+      "is_migration_file",
+      "is_init_file",
+      "all_signals == False"
+    ],
+    "insufficient_evidence_conditions": [
+      "only 1 of 3 signals present",
+      "missing required features"
+    ],
+    "missing_data_semantics": "NEEDS_MORE_EVIDENCE when fewer than 2 signals present",
+    "explainability": "Decision based on convergence of multiple independent evidence signals",
+    "estimated_performance": {
+      "useful_recall": "~71%",
+      "over_approval": "~10%",
+      "not_actionable_accuracy": "~70%"
+    },
+    "strengths": [
+      "Higher precision through signal convergence",
+      "Lower over-approval",
+      "More conservative approach"
+    ],
+    "weaknesses": [
+      "Lower recall",
+      "May miss valid USEFUL findings",
+      "Requires multiple signals to be available"
+    ]
+  }
+]

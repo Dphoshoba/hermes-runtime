@@ -1,0 +1,3499 @@
+{
+  "milestone": "Evidence Enrichment v1 \u2014 Strict Cohort Replay",
+  "strict_cohort": {
+    "hermes-runtime": {
+      "commit": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+      "path": "/Users/david/Downloads/hermes-runtime-v0.3-runtime",
+      "identifier": "Dphoshoba/hermes-runtime"
+    },
+    "faithtech-blueprint": {
+      "commit": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+      "path": "/Users/david/faithtech-blueprint",
+      "identifier": "Dphoshoba/Faithtech-Blueprint"
+    }
+  },
+  "exploratory_cohort": {
+    "inspirevoice-backend": "PARTIALLY_RECONSTRUCTED \u2014 frozen paths are renamed; actual baseline path Frontend/src/App.js",
+    "cognikid_app": "COMMIT_UNKNOWN \u2014 candidate commit only; exact Cycle7 commit unproven"
+  },
+  "strict_item_count": 45,
+  "exploratory_item_count": 5,
+  "class_counts_strict": {
+    "NEEDS_MORE_EVIDENCE": 29,
+    "USEFUL": 10,
+    "NOT_ACTIONABLE": 6
+  },
+  "signal_distributions": {
+    "exceedance_ratio": {
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 1,
+        "min": 1.8967,
+        "max": 1.8967,
+        "mean": 1.8967
+      },
+      "USEFUL": {
+        "n": 4,
+        "min": 1.88,
+        "max": 3.85,
+        "mean": 2.4717
+      },
+      "NOT_ACTIONABLE": {
+        "n": 2,
+        "min": 1.7867,
+        "max": 2.76,
+        "mean": 2.2733
+      }
+    },
+    "file_context_enum": {
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 29,
+        "categories": {
+          "PRODUCTION": 29
+        }
+      },
+      "USEFUL": {
+        "n": 10,
+        "categories": {
+          "PRODUCTION": 10
+        }
+      },
+      "NOT_ACTIONABLE": {
+        "n": 6,
+        "categories": {
+          "TEST": 2,
+          "PRODUCTION": 4
+        }
+      }
+    },
+    "change_history_churn": {
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 29,
+        "categories": {
+          "LOW": 29
+        }
+      },
+      "USEFUL": {
+        "n": 10,
+        "categories": {
+          "LOW": 9,
+          "MODERATE": 1
+        }
+      },
+      "NOT_ACTIONABLE": {
+        "n": 6,
+        "categories": {
+          "LOW": 6
+        }
+      }
+    },
+    "ownership_concentration": {
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 29,
+        "categories": {
+          "HIGH": 29
+        }
+      },
+      "USEFUL": {
+        "n": 10,
+        "categories": {
+          "HIGH": 10
+        }
+      },
+      "NOT_ACTIONABLE": {
+        "n": 6,
+        "categories": {
+          "HIGH": 6
+        }
+      }
+    },
+    "structural_centrality": {
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 29,
+        "categories": {
+          "UNKNOWN": 29
+        }
+      },
+      "USEFUL": {
+        "n": 10,
+        "categories": {
+          "UNKNOWN": 10
+        }
+      },
+      "NOT_ACTIONABLE": {
+        "n": 6,
+        "categories": {
+          "UNKNOWN": 6
+        }
+      }
+    },
+    "evidence_strength": {
+      "NEEDS_MORE_EVIDENCE": {
+        "n": 29,
+        "categories": {
+          "WEAK": 29
+        }
+      },
+      "USEFUL": {
+        "n": 10,
+        "categories": {
+          "WEAK": 10
+        }
+      },
+      "NOT_ACTIONABLE": {
+        "n": 6,
+        "categories": {
+          "WEAK": 6
+        }
+      }
+    }
+  },
+  "signal_quality": {
+    "exceedance_ratio": "WEAK_DISCRIMINATOR",
+    "file_context_enum": "WEAK_DISCRIMINATOR",
+    "change_history_churn": "WEAK_DISCRIMINATOR",
+    "ownership_concentration": "WEAK_DISCRIMINATOR",
+    "structural_centrality": "WEAK_DISCRIMINATOR",
+    "evidence_strength": "WEAK_DISCRIMINATOR"
+  },
+  "missing_data_coverage": {
+    "change_history": {
+      "available": 45,
+      "eligible": 45,
+      "coverage": 1.0
+    },
+    "ownership_concentration": {
+      "available": 45,
+      "eligible": 45,
+      "coverage": 1.0
+    },
+    "structural_importance": {
+      "available": 0,
+      "eligible": 45,
+      "coverage": 0.0
+    },
+    "source_magnitude": {
+      "available": 7,
+      "eligible": 45,
+      "coverage": 0.1556
+    },
+    "file_context": {
+      "available": 45,
+      "eligible": 45,
+      "coverage": 1.0
+    },
+    "evidence_strength": {
+      "available": 45,
+      "eligible": 45,
+      "coverage": 1.0
+    }
+  },
+  "strict_items": [
+    {
+      "finding_id": "FINDING-042",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "services/marketing/src/services/CampaignManager.ts",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "services/marketing/src/services/CampaignManager.ts",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "729a18304282a2f25b7c024b01346d0ab1defe18",
+          "last_changed_at": "2025-06-25 16:45:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-041",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "services/marketing/src/services/CampaignService.ts",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "services/marketing/src/services/CampaignService.ts",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "729a18304282a2f25b7c024b01346d0ab1defe18",
+          "last_changed_at": "2025-06-25 16:45:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-072",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/pages/templates/TemplateList.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/pages/templates/TemplateList.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-018",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-058",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/providers/AccessibilityProvider.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/providers/AccessibilityProvider.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-040",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "services/beta-program/src/services/UserSurveys.ts",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "services/beta-program/src/services/UserSurveys.ts",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "729a18304282a2f25b7c024b01346d0ab1defe18",
+          "last_changed_at": "2025-06-25 16:45:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-024",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/components/templates/TemplateGallery.tsx",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/components/templates/TemplateGallery.tsx",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-073",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/pages/templates/TemplateCustomize.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/pages/templates/TemplateCustomize.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-080",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/hooks/useAuth.tsx",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/hooks/useAuth.tsx",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-047",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "services/user-service/src/routes/subscriptions.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "services/user-service/src/routes/subscriptions.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 2,
+          "recent_change_count": 2,
+          "last_changed_commit": "8f0ccac2f141f1610d944aca018af32360001716",
+          "last_changed_at": "2025-10-23 19:53:10 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-031",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/pages/AssessmentManagement.tsx",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/pages/AssessmentManagement.tsx",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-071",
+      "repository": "faithtech-blueprint",
+      "classification": "USEFUL",
+      "affected_path": "client/src/pages/profile/Profile.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/pages/profile/Profile.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-046",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "services/user-service/src/controllers/authController.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "services/user-service/src/controllers/authController.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "b930d331e6c9d4332cbca3b8610d82ddf12e307e",
+          "last_changed_at": "2025-05-29 19:49:29 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-027",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/components/analytics/KPIDashboard.tsx",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/components/analytics/KPIDashboard.tsx",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-067",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/pages/auth/ForgotPassword.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/pages/auth/ForgotPassword.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-076",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-078",
+      "repository": "faithtech-blueprint",
+      "classification": "USEFUL",
+      "affected_path": "client/src/hooks/useTemplates.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/hooks/useTemplates.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-031",
+      "repository": "hermes-runtime",
+      "classification": "NOT_ACTIONABLE",
+      "affected_path": "tests/test_mission_types.py",
+      "file_context": "TEST",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "tests/test_mission_types.py",
+        "file_context": {
+          "context": "TEST",
+          "classification": "TEST",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": 536,
+          "threshold_value": 300.0,
+          "exceedance_ratio": 1.7867,
+          "exceedance_tier": "MODERATE",
+          "available": true,
+          "source": "observed_vs_threshold",
+          "unit": "lines",
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "79ad5659abb3f4693ef47a66247d16213434a4e7",
+          "last_changed_at": "2026-08-08 07:02:58 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-082",
+      "repository": "faithtech-blueprint",
+      "classification": "USEFUL",
+      "affected_path": "client/src/hooks/useAssessments.ts",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/hooks/useAssessments.ts",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-016",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "hermes_v01/mission_report.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "hermes_v01/mission_report.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": 569,
+          "threshold_value": 300.0,
+          "exceedance_ratio": 1.8967,
+          "exceedance_tier": "MODERATE",
+          "available": true,
+          "source": "observed_vs_threshold",
+          "unit": "lines",
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 2,
+          "recent_change_count": 2,
+          "last_changed_commit": "c928d764712d4d556d2c9596f0dda7f8fdae7d75",
+          "last_changed_at": "2026-08-08 08:25:51 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-024",
+      "repository": "hermes-runtime",
+      "classification": "NOT_ACTIONABLE",
+      "affected_path": "tests/test_human_review.py",
+      "file_context": "TEST",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "tests/test_human_review.py",
+        "file_context": {
+          "context": "TEST",
+          "classification": "TEST",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": 828,
+          "threshold_value": 300.0,
+          "exceedance_ratio": 2.76,
+          "exceedance_tier": "HIGH",
+          "available": true,
+          "source": "observed_vs_threshold",
+          "unit": "lines",
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 2,
+          "recent_change_count": 2,
+          "last_changed_commit": "51bdb43656c5aa1a28390442a717d8c9c525cd24",
+          "last_changed_at": "2026-08-11 12:27:21 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-064",
+      "repository": "faithtech-blueprint",
+      "classification": "USEFUL",
+      "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/components/subscription/SubscriptionAnalytics.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-056",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "src/components/assessments/RecommendationsView.tsx",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "src/components/assessments/RecommendationsView.tsx",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "b930d331e6c9d4332cbca3b8610d82ddf12e307e",
+          "last_changed_at": "2025-05-29 19:49:29 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-013",
+      "repository": "faithtech-blueprint",
+      "classification": "NOT_ACTIONABLE",
+      "affected_path": "client/src/components/subscription/BillingHistory.tsx",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/components/subscription/BillingHistory.tsx",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-081",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "hermes_v01/python_scanner.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "hermes_v01/python_scanner.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "fa1d6e81fd9c9a2b0ffaa87706f203ab7586eccb",
+          "last_changed_at": "2026-08-09 02:07:41 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-073",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "hermes_v01/engineering_cli.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "hermes_v01/engineering_cli.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "0369bf0228dc4ebe2e709a0041cf967f135d3071",
+          "last_changed_at": "2026-08-08 19:48:31 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-071",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "hermes_v01/benchmark_cli.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "hermes_v01/benchmark_cli.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "b33643f18e6183757928c10787b5d1873a951307",
+          "last_changed_at": "2026-08-08 20:53:13 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-042",
+      "repository": "hermes-runtime",
+      "classification": "NOT_ACTIONABLE",
+      "affected_path": "enterprise/migrations/versions/003_scan_hardening.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "enterprise/migrations/versions/003_scan_hardening.py",
+        "file_context": {
+          "context": "VENDOR",
+          "classification": "VENDOR",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "87406b6a2768ec127b38517bc4acb0f9397700d3",
+          "last_changed_at": "2026-08-10 21:17:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-072",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "hermes_v01/capabilities_cli.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "hermes_v01/capabilities_cli.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 2,
+          "recent_change_count": 2,
+          "last_changed_commit": "c928d764712d4d556d2c9596f0dda7f8fdae7d75",
+          "last_changed_at": "2026-08-08 08:25:51 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-106",
+      "repository": "faithtech-blueprint",
+      "classification": "USEFUL",
+      "affected_path": "services/user-service/src/services/analyticsService.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "services/user-service/src/services/analyticsService.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": 642,
+          "threshold_value": 300.0,
+          "exceedance_ratio": 2.14,
+          "exceedance_tier": "HIGH",
+          "available": true,
+          "source": "observed_vs_threshold",
+          "unit": "lines",
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "8f0ccac2f141f1610d944aca018af32360001716",
+          "last_changed_at": "2025-10-23 19:53:10 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-052",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "enterprise/routers/proposals.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "enterprise/routers/proposals.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "87406b6a2768ec127b38517bc4acb0f9397700d3",
+          "last_changed_at": "2026-08-10 21:17:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-041",
+      "repository": "hermes-runtime",
+      "classification": "NOT_ACTIONABLE",
+      "affected_path": "enterprise/migrations/versions/002_scan_jobs.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "enterprise/migrations/versions/002_scan_jobs.py",
+        "file_context": {
+          "context": "VENDOR",
+          "classification": "VENDOR",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "87406b6a2768ec127b38517bc4acb0f9397700d3",
+          "last_changed_at": "2026-08-10 21:17:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-051",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "enterprise/routers/operations.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "enterprise/routers/operations.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "87406b6a2768ec127b38517bc4acb0f9397700d3",
+          "last_changed_at": "2026-08-10 21:17:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-001",
+      "repository": "hermes-runtime",
+      "classification": "USEFUL",
+      "affected_path": "hermes_v01/engineering_analyzer.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "hermes_v01/engineering_analyzer.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": 1155,
+          "threshold_value": 300.0,
+          "exceedance_ratio": 3.85,
+          "exceedance_tier": "EXTREME",
+          "available": true,
+          "source": "observed_vs_threshold",
+          "unit": "lines",
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 4,
+          "recent_change_count": 4,
+          "last_changed_commit": "a79c82ab1544502ce106ab66a9d89e088affefb3",
+          "last_changed_at": "2026-08-09 06:04:26 +0930",
+          "churn_classification": "MODERATE",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-060",
+      "repository": "faithtech-blueprint",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "client/src/components/assessment/CollaborativeAssessment.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/components/assessment/CollaborativeAssessment.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-076",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "hermes_v01/governance_cli.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "hermes_v01/governance_cli.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "8ef0593ee903c5090c8939d11d43252b3d8948f7",
+          "last_changed_at": "2026-08-08 19:59:25 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-047",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "enterprise/routers/feedback.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "enterprise/routers/feedback.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "87406b6a2768ec127b38517bc4acb0f9397700d3",
+          "last_changed_at": "2026-08-10 21:17:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-096",
+      "repository": "faithtech-blueprint",
+      "classification": "USEFUL",
+      "affected_path": "scripts/add-church-assessments.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "scripts/add-church-assessments.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": 564,
+          "threshold_value": 300.0,
+          "exceedance_ratio": 1.88,
+          "exceedance_tier": "MODERATE",
+          "available": true,
+          "source": "observed_vs_threshold",
+          "unit": "lines",
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "0329019babb9b318af2bff6a72e74f4039e03577",
+          "last_changed_at": "2025-10-23 22:49:33 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-063",
+      "repository": "hermes-runtime",
+      "classification": "USEFUL",
+      "affected_path": "enterprise/services/metrics_service.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "enterprise/services/metrics_service.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "87406b6a2768ec127b38517bc4acb0f9397700d3",
+          "last_changed_at": "2026-08-10 21:17:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-097",
+      "repository": "faithtech-blueprint",
+      "classification": "USEFUL",
+      "affected_path": "client/src/components/assessment/AssessmentBuilder.tsx",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/Faithtech-Blueprint",
+        "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+        "affected_path": "client/src/components/assessment/AssessmentBuilder.tsx",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": 605,
+          "threshold_value": 300.0,
+          "exceedance_ratio": 2.0167,
+          "exceedance_tier": "HIGH",
+          "available": true,
+          "source": "observed_vs_threshold",
+          "unit": "lines",
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "ec5919845e0d388b0e873e57c902ddc9b22b76cb",
+          "last_changed_at": "2026-01-16 19:58:45 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-038",
+      "repository": "hermes-runtime",
+      "classification": "NOT_ACTIONABLE",
+      "affected_path": "enterprise/__init__.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "enterprise/__init__.py",
+        "file_context": {
+          "context": "GENERATED",
+          "classification": "GENERATED",
+          "source": "path_pattern:init",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "87406b6a2768ec127b38517bc4acb0f9397700d3",
+          "last_changed_at": "2026-08-10 21:17:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-056",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "enterprise/routers/scheduling.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "enterprise/routers/scheduling.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "87406b6a2768ec127b38517bc4acb0f9397700d3",
+          "last_changed_at": "2026-08-10 21:17:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-061",
+      "repository": "hermes-runtime",
+      "classification": "USEFUL",
+      "affected_path": "enterprise/services/github_integration.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "enterprise/services/github_integration.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "87406b6a2768ec127b38517bc4acb0f9397700d3",
+          "last_changed_at": "2026-08-10 21:17:50 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-083",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "hermes_v01/repo_cli.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "hermes_v01/repo_cli.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "d1d5076ce3ea0ac07b2ccb18c58f5c8a72d150dc",
+          "last_changed_at": "2026-08-08 18:17:09 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-086",
+      "repository": "hermes-runtime",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "hermes_v01/status_cli.py",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/hermes-runtime",
+        "commit_sha": "823a9d7e70a9fab8714c219ff52338ef696d3f9e",
+        "affected_path": "hermes_v01/status_cli.py",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 2,
+          "recent_change_count": 2,
+          "last_changed_commit": "29791b05f93d06807139ca29588108e3e7d204a9",
+          "last_changed_at": "2026-08-07 21:30:05 +0930",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    }
+  ],
+  "exploratory_items": [
+    {
+      "finding_id": "FINDING-023",
+      "repository": "inspirevoice-backend",
+      "classification": "NEEDS_MORE_EVIDENCE",
+      "affected_path": "frontend-old/frontend-old/src/App.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/inspirevoice-backend",
+        "commit_sha": "83f1c00959c728fb9ee59648c2af85d459c4c6b4",
+        "affected_path": "frontend-old/frontend-old/src/App.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 0,
+          "recent_change_count": 0,
+          "last_changed_commit": null,
+          "last_changed_at": null,
+          "churn_classification": "NOT_OBSERVED",
+          "available": false,
+          "source": "git_log:no_history:frontend-old/frontend-old/src/App.js"
+        },
+        "ownership_concentration": {
+          "contributor_count": 0,
+          "dominant_contributor_share": 0.0,
+          "ownership_concentration": "NOT_OBSERVED",
+          "available": false,
+          "source": "git_log:no_contributors"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-016",
+      "repository": "inspirevoice-backend",
+      "classification": "USEFUL",
+      "affected_path": "frontend-backend-temp/src/App.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/inspirevoice-backend",
+        "commit_sha": "83f1c00959c728fb9ee59648c2af85d459c4c6b4",
+        "affected_path": "frontend-backend-temp/src/App.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 0,
+          "recent_change_count": 0,
+          "last_changed_commit": null,
+          "last_changed_at": null,
+          "churn_classification": "NOT_OBSERVED",
+          "available": false,
+          "source": "git_log:no_history:frontend-backend-temp/src/App.js"
+        },
+        "ownership_concentration": {
+          "contributor_count": 0,
+          "dominant_contributor_share": 0.0,
+          "ownership_concentration": "NOT_OBSERVED",
+          "available": false,
+          "source": "git_log:no_contributors"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-019",
+      "repository": "cognikid_app",
+      "classification": "USEFUL",
+      "affected_path": "src/data/courses.ts",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/CogniKid_App",
+        "commit_sha": "ccd1fd51f84a28fab3ce90b302601f07fc875b16",
+        "affected_path": "src/data/courses.ts",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "3ccf7c992df81dde2adcc2830eea2f53cf677a8c",
+          "last_changed_at": "2025-11-12 18:53:15 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-019",
+      "repository": "inspirevoice-backend",
+      "classification": "USEFUL",
+      "affected_path": "frontend-backend-temp/src/App.js",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/inspirevoice-backend",
+        "commit_sha": "83f1c00959c728fb9ee59648c2af85d459c4c6b4",
+        "affected_path": "frontend-backend-temp/src/App.js",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": null,
+          "threshold_value": null,
+          "exceedance_ratio": null,
+          "exceedance_tier": "UNKNOWN",
+          "available": false,
+          "source": "no_observed_value",
+          "unit": null,
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 0,
+          "recent_change_count": 0,
+          "last_changed_commit": null,
+          "last_changed_at": null,
+          "churn_classification": "NOT_OBSERVED",
+          "available": false,
+          "source": "git_log:no_history:frontend-backend-temp/src/App.js"
+        },
+        "ownership_concentration": {
+          "contributor_count": 0,
+          "dominant_contributor_share": 0.0,
+          "ownership_concentration": "NOT_OBSERVED",
+          "available": false,
+          "source": "git_log:no_contributors"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    },
+    {
+      "finding_id": "FINDING-035",
+      "repository": "cognikid_app",
+      "classification": "USEFUL",
+      "affected_path": "src/services/TranscendentalQuantumNeuralSystem.ts",
+      "file_context": "PRODUCTION",
+      "enrichment": {
+        "version": "1.0.0",
+        "repository_identifier": "Dphoshoba/CogniKid_App",
+        "commit_sha": "ccd1fd51f84a28fab3ce90b302601f07fc875b16",
+        "affected_path": "src/services/TranscendentalQuantumNeuralSystem.ts",
+        "file_context": {
+          "context": "PRODUCTION",
+          "classification": "PRODUCTION",
+          "source": "path_pattern",
+          "available": true
+        },
+        "source_magnitude": {
+          "observed_value": 702,
+          "threshold_value": 300.0,
+          "exceedance_ratio": 2.34,
+          "exceedance_tier": "HIGH",
+          "available": true,
+          "source": "observed_vs_threshold",
+          "unit": "lines",
+          "signal": "source_magnitude"
+        },
+        "change_history": {
+          "commit_count": 1,
+          "recent_change_count": 1,
+          "last_changed_commit": "3ccf7c992df81dde2adcc2830eea2f53cf677a8c",
+          "last_changed_at": "2025-11-12 18:53:15 +1030",
+          "churn_classification": "LOW",
+          "available": true,
+          "source": "git_log:file_history"
+        },
+        "ownership_concentration": {
+          "contributor_count": 1,
+          "dominant_contributor_share": 1.0,
+          "ownership_concentration": "HIGH",
+          "available": true,
+          "source": "git_shortlog:contributor_emails"
+        },
+        "structural_importance": {
+          "inbound_dependency_count": 0,
+          "outbound_dependency_count": 0,
+          "total_degree": 0,
+          "centrality_classification": "UNKNOWN",
+          "available": false,
+          "source": "module_not_in_graph"
+        },
+        "evidence_strength": {
+          "evidence_reference_count": 1,
+          "independent_evidence_type_count": 1,
+          "distinct_reference_path_count": 1,
+          "evidence_strength": "WEAK",
+          "available": true,
+          "source": "finding_evidence_references"
+        },
+        "behavioral_evidence": {
+          "value": "NOT_OBSERVED",
+          "available": false,
+          "source": "policy:no_runtime_inference"
+        }
+      }
+    }
+  ],
+  "decision": "MORE_EVIDENCE_ENRICHMENT_REQUIRED",
+  "decision_rationale": "No enriched signal meaningfully separates USEFUL from NME/NOT_ACTIONABLE with acceptable coverage in the strict cohort. structural_importance=0% coverage; source_magnitude=15.6% coverage; change_history/ownership/evidence_strength constant across classes; file_context all PRODUCTION in strict cohort.",
+  "report": "EVIDENCE_ENRICHMENT_V1_REPORT.md",
+  "governance_unchanged": true,
+  "strict_cohort_size": 45
+}
