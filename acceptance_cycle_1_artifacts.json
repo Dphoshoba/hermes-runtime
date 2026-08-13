@@ -1,0 +1,76 @@
+{
+  "program": "Post-Promotion Controlled Beta Acceptance Program",
+  "acceptance_cycle": 1,
+  "hermes_version": "1.3.0",
+  "baseline_commit": "82229d83f45dcd2477a4a4c267dd200af4da77c7",
+  "promotion_commit": "dcf72aeb29b9c5a3f633b28a67dec842ff972f30",
+  "governance_baseline": "EVIDENCE_RISK_GATE",
+  "default_mode": "GATE",
+  "autonomous_execution": "DISABLED",
+  "repository_mutation": "DISABLED",
+  "cohort": [
+    {
+      "display_name": "cognikid-web",
+      "commit_sha": "4e9dfbde238602820f979729da88f073488cc584",
+      "branch": "main",
+      "provenance": "ESTABLISHED (matches controlled_beta_001.json baseline)"
+    },
+    {
+      "display_name": "faithtech-blueprint",
+      "commit_sha": "c5a792b1d6919f0c02f976ff435ec0f2859ccc06",
+      "branch": "main",
+      "provenance": "ESTABLISHED (matches controlled_beta_001.json baseline)"
+    },
+    {
+      "display_name": "inspirevoice-backend",
+      "commit_sha": "83f1c00959c728fb9ee59648c2af85d459c4c6b4",
+      "branch": "main",
+      "provenance": "ESTABLISHED (matches controlled_beta_001.json baseline)"
+    }
+  ],
+  "findings_total": 877,
+  "gate_state_distribution": {
+    "INSUFFICIENT_EVIDENCE": 694,
+    "DUPLICATE": 183
+  },
+  "machine_actionable_emitted": 0,
+  "machine_not_actionable_emitted": 0,
+  "review_queue_size": 877,
+  "batch1_reviewed": 25,
+  "adjudications": {
+    "ACTIONABLE": 1,
+    "NOT_ACTIONABLE": 9,
+    "NEEDS_MORE_EVIDENCE": 15,
+    "FALSE_POSITIVE": 0,
+    "DUPLICATE": 0,
+    "UNKNOWN": 0
+  },
+  "missions_eligible": 1,
+  "missions_selected": 1,
+  "missions_deferred": 0,
+  "mission_state": "DRAFT",
+  "originating_finding_id": "FINDING-001",
+  "governance_approval_reference": "HUMAN-ADJUDICATION-FINDING-001",
+  "mission_executions": 0,
+  "target_repository_mutations": 0,
+  "unsafe_automation_rate": 0.0,
+  "mission_traceability": "100%",
+  "non_actionable_leakage": 0,
+  "nme_leakage": 0,
+  "suppression_leakage": 0,
+  "legacy_only_leakage": 0,
+  "journal_integrity": "PASS",
+  "historical_mutation_count": 0,
+  "canonical_backend": "1434 passed, 0 failed, exit 0, 262.82s",
+  "frontend": "NOT_REQUIRED",
+  "clean_wheel": "NOT_REQUIRED",
+  "operator_burden": "NOT_OBSERVED",
+  "defects_found": 0,
+  "defects_resolved": 0,
+  "known_limitations": [
+    "Only Batch 1 (25/877) adjudicated; 852 findings pending future cycles",
+    "RI artifacts lacked recommendation_assessments; missions demonstrable only for the single ACTIONABLE (canonical pattern)",
+    "Review-time / total-burden metrics NOT_OBSERVED"
+  ],
+  "decision": "CONTROLLED_BETA_ACCEPTED_WITH_LIMITATIONS"
+}
