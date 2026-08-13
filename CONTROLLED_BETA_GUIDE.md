@@ -11,7 +11,7 @@
 
 Hermes Enterprise is in controlled beta. This guide defines the day-to-day operator workflow, safe operations, forbidden operations, and known limitations.
 
-**Critical principle:** During controlled beta, Governance is ADVISORY. Every governance decision requires human verification before action.
+**Critical principle:** The Controlled Beta governance baseline is the **Evidence & Risk Gate**. Governance is an evidence-and-risk *gate* — the machine routes findings (`OBSERVED`/`CORROBORATED`/`REQUIRES_REVIEW`/`INSUFFICIENT_EVIDENCE`/`DEFERRED`/`DUPLICATE`) but never authorizes actionability. Every actionability decision requires human adjudication (human `ACTIONABLE`) before a mission can be eligible; legacy Governance `APPROVED` is replay-only and advisory.
 
 ---
 

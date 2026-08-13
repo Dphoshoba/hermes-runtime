@@ -6,6 +6,7 @@
 **Evidence conclusion:** `STATIC_EVIDENCE_INSUFFICIENT_FOR_AUTOMATED_GOVERNANCE`
 **Operating mode:** CONTROLLED_BETA
 **Date:** 2026-08-12
+**Promotion (M-Cycle 8):** Evidence & Risk Gate promoted as the Controlled Beta governance baseline; gate mode is the default, legacy Governance is replay-only, human `ACTIONABLE` controls mission eligibility, autonomous execution/repository mutation remain disabled.
 
 ---
 

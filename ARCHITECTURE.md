@@ -71,8 +71,8 @@ hermes_v01/
   engineering_renderer.py    # JSON/Markdown rendering
 
   # Engineering Governance
-  governance_analyzer.py     # Recommendation validation
-  governance_intel_models.py # Governance data models
+  governance_analyzer.py     # Recommendation validation (gate + legacy replay modes)
+  governance_intel_models.py # Governance data models (FindingGate: machine routes, never authorizes actionability)
   governance_renderer.py     # JSON/Markdown rendering
 
   # Engineering Journal

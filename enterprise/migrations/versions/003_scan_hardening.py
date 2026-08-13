@@ -16,13 +16,16 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("scan_jobs", sa.Column("attempt", sa.Integer, server_default="1"))
-    op.add_column("scan_jobs", sa.Column("previous_scan_id", sa.String(36), sa.ForeignKey("scan_jobs.id")))
-    op.add_column("scan_jobs", sa.Column("requested_by", sa.String(255)))
-    op.add_column("scan_jobs", sa.Column("cancellation_requested_at", sa.DateTime))
-    op.add_column("scan_jobs", sa.Column("cancelled_at", sa.DateTime))
-    op.add_column("scan_jobs", sa.Column("failure_classification", sa.String(100)))
-    op.add_column("scan_jobs", sa.Column("stage_timings", sa.JSON, default=dict))
+    # SQLite cannot ALTER a table to add a column with a foreign-key
+    # constraint; wrap the additions in batch mode (table copy + rebuild).
+    with op.batch_alter_table("scan_jobs") as batch_op:
+        batch_op.add_column(sa.Column("attempt", sa.Integer, server_default="1"))
+        batch_op.add_column(sa.Column("previous_scan_id", sa.String(36), sa.ForeignKey("scan_jobs.id", name="fk_scan_jobs_previous_scan_id")))
+        batch_op.add_column(sa.Column("requested_by", sa.String(255)))
+        batch_op.add_column(sa.Column("cancellation_requested_at", sa.DateTime))
+        batch_op.add_column(sa.Column("cancelled_at", sa.DateTime))
+        batch_op.add_column(sa.Column("failure_classification", sa.String(100)))
+        batch_op.add_column(sa.Column("stage_timings", sa.JSON, default=dict))
 
 
 def downgrade() -> None:

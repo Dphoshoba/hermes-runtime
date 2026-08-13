@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "cycle": 7,
+    "created_at": "2026-08-12T10:27:47.997777+00:00",
+    "purpose": "Governance Promotion Readiness Validation",
+    "status": "COMPLETE"
+  },
+  "repositories_scanned": 12,
+  "total_findings_generated": 285,
+  "frozen_dataset": {
+    "hash": "dbdf8de1e76b2809949f887701edda576d9af30f418a4e2435eb27bf91c06eee",
+    "total_findings": 50,
+    "unique_finding_ids": 31,
+    "unique_finding_repo_pairs": 50
+  },
+  "human_labels": {
+    "USEFUL": 14,
+    "NOT_ACTIONABLE": 6,
+    "NEEDS_MORE_EVIDENCE": 30,
+    "FALSE_POSITIVE": 0,
+    "DUPLICATE": 0,
+    "UNKNOWN": 0
+  },
+  "governance_evaluation": {
+    "production": {
+      "exact_agreement": 9,
+      "over_approval_rate": 32,
+      "under_approval_rate": 5,
+      "useful_recall": 9,
+      "useful_recall_rate": 64.3,
+      "useful_preservation_rate": 64.3
+    },
+    "variant_i": {
+      "exact_agreement": 9,
+      "over_approval_rate": 0,
+      "under_approval_rate": 5,
+      "useful_recall": 0,
+      "useful_recall_rate": 0.0,
+      "useful_preservation_rate": 64.3
+    }
+  },
+  "decision": "MORE_GOVERNANCE_VALIDATION_REQUIRED",
+  "recommendation": "Do NOT promote Variant I",
+  "critical_finding": "Variant I's default \u2192 NEEDS_MORE_EVIDENCE semantics are TOO CONSERVATIVE for genuinely USEFUL findings"
+}

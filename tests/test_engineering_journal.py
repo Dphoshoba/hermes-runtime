@@ -164,9 +164,25 @@ class TestJournalEvent:
             assert event.stage == expected_stage
 
     def test_all_event_types_defined(self):
-        assert len(EVENT_TYPES) == 26
+        # Verify the actual registry contract: every registered event type must
+        # have a stage category, and the five Evidence & Risk Gate events must
+        # be present (31 total: 26 historical + 5 gate events).
+        EXPECTED_GATE_EVENTS = {
+            "gate.evaluated",
+            "gate.routed",
+            "human.adjudication",
+            "policy.suppression",
+            "mission.eligibility",
+        }
+        assert len(EVENT_TYPES) == 31
         for et in EVENT_TYPES:
-            assert et in STAGE_CATEGORIES
+            assert et in STAGE_CATEGORIES, f"event {et!r} missing stage category"
+        for ge in EXPECTED_GATE_EVENTS:
+            assert ge in EVENT_TYPES, f"gate event {ge!r} not registered"
+        # Historical event types must remain unchanged.
+        assert "readiness.assessed" in EVENT_TYPES
+        assert "mission.completed" in EVENT_TYPES
+        assert "github.materialized" in EVENT_TYPES
 
     def test_payload_sha256_deterministic(self):
         payload = {"a": 1, "b": [2, 3]}

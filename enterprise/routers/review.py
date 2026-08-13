@@ -66,6 +66,10 @@ class AdjudicationResponse(BaseModel):
     governance_decision_at_review: str | None
     related_mission_ids: list[str]
     schema_version: str
+    # Deterministic policy suppression (machine, distinct from human NOT_ACTIONABLE)
+    policy_suppressed: bool | None = None
+    suppression_rule_id: str | None = None
+    suppression_rule_version: str | None = None
 
     class Config:
         from_attributes = True
@@ -181,6 +185,7 @@ def get_review_finding(
         .first()
     )
 
+    supp = next((a for a in adjudications if getattr(a, "policy_suppressed", False)), None)
     return {
         "finding": {
             "id": finding.id,
@@ -200,9 +205,14 @@ def get_review_finding(
             "evidence_references": (finding.metadata_json or {}).get("evidence_references", []),
             "governance_decision": (finding.metadata_json or {}).get("governance_decision", {}).get("decision", "N/A"),
             "governance_rationale": (finding.metadata_json or {}).get("governance_decision", {}).get("rationale", ""),
-            "observation_status": infer_observation_status(finding),
-            "concern_status": infer_concern_status(finding, file_context),
-            "actionability_status": infer_actionability_status(finding, file_context, exceedance),
+            # Evidence & Risk Gate authority fields (Post Cycle 8)
+            "gate_state": finding.gate_state,
+            "risk_band": finding.risk_band,
+            "review_rank": finding.review_rank,
+            "legacy_decision": finding.legacy_decision,
+            "policy_suppressed": bool(supp.policy_suppressed) if supp else False,
+            # Mission eligibility tracks the CURRENT effective human classification.
+            "mission_eligible": (adjudications[-1].classification == "ACTIONABLE" if adjudications else False),
         },
         "adjudications": [
             {
@@ -215,6 +225,9 @@ def get_review_finding(
                 "operator": a.operator,
                 "operator_notes": a.operator_notes,
                 "reviewed_at": a.reviewed_at.isoformat(),
+                "policy_suppressed": bool(getattr(a, "policy_suppressed", False)),
+                "suppression_rule_id": getattr(a, "suppression_rule_id", None),
+                "suppression_rule_version": getattr(a, "suppression_rule_version", None),
             }
             for a in adjudications
         ],

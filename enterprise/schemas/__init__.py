@@ -133,6 +133,18 @@ class FindingResponse(BaseModel):
     effort: str | None
     status: str
     created_at: datetime
+    # Evidence & Risk Gate authority fields (Post Cycle 8) — client distinction.
+    # These are SEPARATE sources of authority and must never be overloaded.
+    gate_state: str | None = None            # machine routing: REQUIRES_REVIEW / etc.
+    risk_band: str | None = None
+    review_rank: float | None = None
+    legacy_decision: str | None = None       # historical APPROVED (advisory only)
+    policy_suppressed: bool | None = None    # deterministic suppression (machine, not human)
+    suppression_rule_id: str | None = None
+    suppression_rule_version: str | None = None
+    human_classification: str | None = None  # current effective human adjudication
+    human_operator: str | None = None
+    mission_eligible: bool = False           # True ONLY with human ACTIONABLE
 
     class Config:
         from_attributes = True

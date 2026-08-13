@@ -41,9 +41,51 @@ def get_finding(
     finding_id: str,
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
-) -> Finding:
+) -> dict:
     from fastapi import HTTPException
+    from ..models import FindingAdjudication
+
     finding = db.query(Finding).filter(Finding.id == finding_id).first()
     if not finding:
         raise HTTPException(status_code=404, detail="Finding not found")
-    return finding
+
+    # Evidence & Risk Gate authority enrichment (Post Cycle 8).
+    # Source the human / suppression authority from the adjudication table so
+    # clients can clearly distinguish machine gate vs human vs legacy vs policy.
+    adjudications = (
+        db.query(FindingAdjudication)
+        .filter(FindingAdjudication.finding_id == finding_id)
+        .order_by(FindingAdjudication.reviewed_at.asc())
+        .all()
+    )
+    supp = next((a for a in adjudications if getattr(a, "policy_suppressed", False)), None)
+    latest = adjudications[-1] if adjudications else None
+
+    enriched = {
+        "id": finding.id,
+        "repository_id": finding.repository_id,
+        "finding_type": finding.finding_type,
+        "severity": finding.severity,
+        "category": finding.category,
+        "title": finding.title,
+        "description": finding.description,
+        "module": finding.module,
+        "priority_score": finding.priority_score,
+        "effort": finding.effort,
+        "status": finding.status,
+        "created_at": finding.created_at,
+        "gate_state": finding.gate_state,
+        "risk_band": finding.risk_band,
+        "review_rank": finding.review_rank,
+        "legacy_decision": finding.legacy_decision,
+        "policy_suppressed": bool(supp.policy_suppressed) if supp else False,
+        "suppression_rule_id": supp.suppression_rule_id if supp else None,
+        "suppression_rule_version": supp.suppression_rule_version if supp else None,
+        "human_classification": latest.classification if latest else None,
+        "human_operator": latest.operator if latest else None,
+        # Mission eligibility tracks the CURRENT effective human classification
+        # (append-only history is preserved; reclassification to NOT_ACTIONABLE
+        # flips eligibility off).
+        "mission_eligible": (latest is not None and latest.classification == "ACTIONABLE"),
+    }
+    return enriched

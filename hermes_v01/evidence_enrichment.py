@@ -26,6 +26,8 @@ Every enrichment block carries provenance:
 
 from __future__ import annotations
 
+import functools
+import re
 import subprocess
 from dataclasses import dataclass, field
 from typing import Any
@@ -288,15 +290,79 @@ def compute_evidence_strength(finding: dict[str, Any]) -> dict[str, Any]:
 # Git history enrichment (read-only)
 # ---------------------------------------------------------------------------
 
-def _git(*args: str, cwd: str) -> tuple[int, str]:
+def _git(*args: str, cwd: str, timeout: int = 30) -> tuple[int, str]:
     try:
         r = subprocess.run(
             ["git", "-C", cwd, *args],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, text=True, timeout=timeout,
         )
         return r.returncode, r.stdout
     except Exception as exc:  # noqa: BLE001 - read-only best-effort
         return 1, f"error:{exc}"
+
+
+# Per-file git evidence is derived from ONE bounded repository-history
+# operation per (repository, commit) instead of one subprocess per finding.
+# git log emits commits newest-first; each commit block is:
+#   <SENTINEL><hash>|<committer-date>|<author-email>
+#   <changed-file-1>
+#   <changed-file-2>
+#   (blank line)
+# We parse this once into a per-file history map and reuse it across every
+# finding that references the same repository/commit.
+_GIT_CONTEXT_SENTINEL = "___COMMITSEP___"
+
+
+@dataclass(frozen=True)
+class _RepoGitContext:
+    # affected_path (repo-relative) -> list of (commit, date, email), newest first
+    file_history: dict[str, list[tuple[str, str, str]]]
+
+
+@functools.lru_cache(maxsize=16)
+def _build_repo_git_context(
+    repo_local_path: str, commit_sha: str
+) -> _RepoGitContext | None:
+    """One bounded git history parse for a repository at an exact commit.
+
+    Read-only: uses `git log <commit> --name-only`. Never checks out or
+    writes. Returns None when git is unavailable or history is empty so
+    callers fall back to NOT_OBSERVED / UNKNOWN semantics.
+    """
+    rc, out = _git(
+        "log", commit_sha, "--name-only",
+        f"--format={_GIT_CONTEXT_SENTINEL}%H|%ci|%ae",
+        cwd=repo_local_path, timeout=120,
+    )
+    if rc != 0 or not out.strip():
+        return None
+
+    file_history: dict[str, list[tuple[str, str, str]]] = {}
+    cur_commit = cur_date = cur_email = None
+    for raw in out.splitlines():
+        line = raw.rstrip("\n")
+        if line.startswith(_GIT_CONTEXT_SENTINEL):
+            body = line[len(_GIT_CONTEXT_SENTINEL):]
+            parts = body.split("|", 2)
+            cur_commit = parts[0] if parts else None
+            cur_date = parts[1] if len(parts) > 1 else None
+            cur_email = parts[2] if len(parts) > 2 else None
+            continue
+        if not line.strip():
+            continue
+        rel = line.strip()
+        if rel.startswith("/"):
+            rel = rel.lstrip("/")
+        file_history.setdefault(rel, []).append((cur_commit, cur_date, cur_email))
+
+    return _RepoGitContext(file_history=file_history)
+
+
+def _rel_path(affected_path: str) -> str:
+    rel = affected_path
+    if rel.startswith("/"):
+        rel = rel.lstrip("/")
+    return rel
 
 
 def compute_change_history(
@@ -304,7 +370,11 @@ def compute_change_history(
     commit_sha: str | None,
     affected_path: str,
 ) -> dict[str, Any]:
-    """Change history for the affected path at the exact commit (read-only)."""
+    """Change history for the affected path at the exact commit (read-only).
+
+    Derived in-memory from a single repository-history parse (see
+    _build_repo_git_context); no per-finding git subprocess.
+    """
     if not repo_local_path or not affected_path:
         return {
             "commit_count": None,
@@ -315,14 +385,9 @@ def compute_change_history(
             "available": False,
             "source": "no_repo_or_path",
         }
-    # Resolve path relative to repo root
-    rel = affected_path
-    if rel.startswith("/"):
-        # attempt to strip a known prefix (best-effort)
-        rel = rel.lstrip("/")
-
-    rc, out = _git("log", "--oneline", "--", rel, cwd=repo_local_path)
-    if rc != 0 or not out.strip():
+    rel = _rel_path(affected_path)
+    ctx = _build_repo_git_context(repo_local_path, commit_sha or "HEAD")
+    if ctx is None or rel not in ctx.file_history:
         return {
             "commit_count": 0,
             "recent_change_count": 0,
@@ -333,20 +398,11 @@ def compute_change_history(
             "source": f"git_log:no_history:{rel}",
         }
 
-    commits = [c for c in out.splitlines() if c.strip()]
-    commit_count = len(commits)
-
-    # last changed commit at-or-before the exact scanned commit
-    rc2, out2 = _git(
-        "log", "-1", "--format=%H|%ci",
-        commit_sha or "HEAD", "--", rel, cwd=repo_local_path,
-    )
-    last_changed_commit = None
-    last_changed_at = None
-    if rc2 == 0 and out2.strip():
-        parts = out2.strip().split("|", 1)
-        last_changed_commit = parts[0]
-        last_changed_at = parts[1] if len(parts) > 1 else None
+    entries = ctx.file_history[rel]
+    commit_count = len(entries)
+    # git log is newest-first; entries[0] is the most recent change at-or-before
+    # the exact scanned commit (git log <commit> already bounds the walk).
+    last_changed_commit, last_changed_at, _ = entries[0]
 
     if commit_count >= 10:
         churn = "HIGH"
@@ -373,10 +429,11 @@ def compute_ownership(
     commit_sha: str | None,
     affected_path: str,
 ) -> dict[str, Any]:
-    """Ownership / responsibility concentration from git shortlog (read-only).
+    """Ownership / responsibility concentration from git history (read-only).
 
-    contributor_count and dominant_contributor_share only. No organizational
-    ownership inference.
+    Derived in-memory from the same single repository-history parse used by
+    compute_change_history. contributor_count and dominant_contributor_share
+    only. No organizational ownership inference.
     """
     if not repo_local_path or not affected_path:
         return {
@@ -386,20 +443,18 @@ def compute_ownership(
             "available": False,
             "source": "no_repo_or_path",
         }
-    rel = affected_path
-    if rel.startswith("/"):
-        rel = rel.lstrip("/")
-
-    rc, out = _git("log", "--format=%ae", "--", rel, cwd=repo_local_path)
-    if rc != 0:
+    rel = _rel_path(affected_path)
+    ctx = _build_repo_git_context(repo_local_path, commit_sha or "HEAD")
+    if ctx is None or rel not in ctx.file_history:
         return {
-            "contributor_count": None,
-            "dominant_contributor_share": None,
-            "ownership_concentration": "UNKNOWN",
+            "contributor_count": 0,
+            "dominant_contributor_share": 0.0,
+            "ownership_concentration": "NOT_OBSERVED",
             "available": False,
-            "source": "git_log:error",
+            "source": "git_log:no_contributors",
         }
-    emails = [e.strip() for e in out.splitlines() if e.strip()]
+
+    emails = [e for (_, _, e) in ctx.file_history[rel] if e]
     if not emails:
         return {
             "contributor_count": 0,

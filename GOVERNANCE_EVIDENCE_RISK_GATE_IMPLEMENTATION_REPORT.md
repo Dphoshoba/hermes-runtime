@@ -4,6 +4,8 @@
 **Authorization:** IMPLEMENTATION PLAN APPROVED (CHECKPOINT)
 **Architecture:** `GOVERNANCE_SHOULD_BECOME_EVIDENCE_AND_RISK_GATE`
 **Operating mode:** Controlled Beta — gate mode is the default authorization path.
+**Hermes version after implementation:** `8b6050710f05bd0677498e16b4f081927f7c9163`
+(local commit on `main`; no push/PR — per safety constraints.)
 
 ---
 

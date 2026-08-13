@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 os.environ["HERMES_DATABASE_URL"] = "sqlite:///./test_enterprise.db"
 
 from enterprise.app import app
-from enterprise.database import Base, engine, SessionLocal
+from enterprise.database import Base, get_engine, SessionLocal
 from enterprise.models import User, Repository, JournalEvent, Finding, Mission, Report, ScanJob, ScanHistory
 from enterprise.services import hash_password, create_access_token
 from enterprise.services.scanner import SCAN_STAGES
@@ -25,10 +25,11 @@ from enterprise.services.scanner import SCAN_STAGES
 
 @pytest.fixture(autouse=True)
 def setup_db():
-    """Create fresh tables for each test."""
-    Base.metadata.create_all(bind=engine)
+    """Create fresh tables for each test on this suite's database engine."""
+    eng = get_engine(os.environ["HERMES_DATABASE_URL"])
+    Base.metadata.create_all(bind=eng)
     yield
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=eng)
 
 
 @pytest.fixture

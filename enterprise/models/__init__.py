@@ -115,6 +115,13 @@ class Finding(Base):
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
+    # Evidence & Risk Gate routing (machine authority) — Post Cycle 8.
+    # Additive; legacy rows remain untouched (these are nullable).
+    gate_state = Column(String(50), nullable=True)
+    risk_band = Column(String(20), nullable=True)
+    review_rank = Column(Float, nullable=True)
+    legacy_decision = Column(String(50), nullable=True)
+
     repository_rel = relationship("Repository", back_populates="findings")
 
 

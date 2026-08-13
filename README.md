@@ -2,9 +2,11 @@
 
 Autonomous engineering runtime for deterministic mission execution with full audit trails.
 
-**Version: 1.1.0**
+**Version: 1.3.0**
 
 > **Operational Maturity:** Hermes is now in an operational maturity phase. Future development is driven by real engineering experience — pilot results, benchmark evidence, and verified defects. See [ROADMAP.md](ROADMAP.md) for the evidence-driven evolution policy.
+
+> **Governance baseline:** The Controlled Beta governance baseline is the **Evidence & Risk Gate** — machine observes and routes, human `ACTIONABLE` adjudication controls mission eligibility, legacy Governance is replay-only, and autonomous mission execution / repository mutation are disabled.
 
 ## Installation
 

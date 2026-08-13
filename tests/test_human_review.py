@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("HERMES_DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("HERMES_JWT_SECRET", "test-secret-key-for-testing-only-1234")
 
-from enterprise.database import Base, engine, SessionLocal
+from enterprise.database import Base, get_engine, SessionLocal
 from enterprise.models import (
     Finding, Repository, FindingAdjudication, MissionFindingLink,
     Mission, JournalEvent,
@@ -64,11 +64,12 @@ from enterprise.services.review_service import (
 
 @pytest.fixture(autouse=True)
 def setup_db():
-    Base.metadata.create_all(bind=engine)
+    eng = get_engine()
+    Base.metadata.create_all(bind=eng)
     db = SessionLocal()
     yield db
     db.close()
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=eng)
 
 
 # ---------------------------------------------------------------------------

@@ -28,28 +28,58 @@ HERMES_ROOT = Path(__file__).resolve().parent.parent
 PLANNER = MissionPlanner()
 
 
-def _gov_with_approved() -> dict:
+def _gov_gate_only() -> dict:
+    """Gate-mode governance: the machine emits NO approvals (human authority only)."""
     return {
         "repository": {"name": "test", "path": "/tmp/test"},
         "assessment": {
             "recommendation_assessments": [],
-            "approval_decisions": [
-                {"finding_id": "F-001", "decision": "APPROVED", "rationale": "Good", "conditions": []},
-                {"finding_id": "F-002", "decision": "APPROVED", "rationale": "Good", "conditions": []},
-            ],
+            # Gate vocabulary: no machine APPROVED/REJECTED decisions, no
+            # machine-authorized missions. Mission eligibility requires a human
+            # ACTIONABLE adjudication passed separately via actionable_findings.
+            "approval_decisions": [],
             "conflicts": [],
             "duplicates": [],
-            "approved_missions": [
-                {"finding_id": "F-001", "recommendation": "Add tests", "priority_score": 5.0,
-                 "effort": "small", "risk": "low", "mission_type": "testing_improvements",
-                 "affected_modules": ["src/main.py"]},
-                {"finding_id": "F-002", "recommendation": "Fix docs", "priority_score": 4.0,
-                 "effort": "trivial", "risk": "none", "mission_type": "documentation_refresh",
-                 "affected_modules": []},
-            ],
-            "summary": {"total_evaluated": 2, "approved": 2, "approved_with_notes": 0,
+            "approved_missions": [],
+            "summary": {"total_evaluated": 2, "approved": 0, "approved_with_notes": 0,
                         "needs_more_evidence": 0, "deferred": 0, "rejected": 0,
-                        "conflicts_found": 0, "duplicates_found": 0, "approval_rate": 1.0},
+                        "conflicts_found": 0, "duplicates_found": 0, "approval_rate": 0.0},
+        },
+    }
+
+
+def _human_actionable_findings() -> list[dict]:
+    """Findings carrying explicit human ACTIONABLE adjudications (gate path)."""
+    return [
+        {"finding_id": "F-001", "recommendation": "Add tests", "priority_score": 5.0,
+         "effort": "small", "risk": "low", "mission_type": "testing_improvements",
+         "affected_modules": ["src/main.py"], "severity": "medium",
+         "human_classification": "ACTIONABLE", "governance_decision": "ACTIONABLE",
+         "evidence_references": []},
+        {"finding_id": "F-002", "recommendation": "Fix docs", "priority_score": 4.0,
+         "effort": "trivial", "risk": "none", "mission_type": "documentation_refresh",
+         "affected_modules": [], "severity": "medium",
+         "human_classification": "ACTIONABLE", "governance_decision": "ACTIONABLE",
+         "evidence_references": []},
+    ]
+
+
+def _gov_with_human_actionable() -> dict:
+    """Gate-mode gov where mission eligibility flows from human ACTIONABLE
+    adjudications. The CLI's _actionable_from_gov treats approved_missions as
+    human-adjudicated ACTIONABLE admissions, so missions are produced via the
+    human authority path (machine never APPROVES)."""
+    return {
+        "repository": {"name": "test", "path": "/tmp/test"},
+        "assessment": {
+            "recommendation_assessments": [],
+            "approval_decisions": [],
+            "conflicts": [],
+            "duplicates": [],
+            "approved_missions": _human_actionable_findings(),
+            "summary": {"total_evaluated": 2, "approved": 0, "approved_with_notes": 0,
+                        "needs_more_evidence": 0, "deferred": 0, "rejected": 0,
+                        "conflicts_found": 0, "duplicates_found": 0, "approval_rate": 0.0},
         },
     }
 
@@ -372,7 +402,7 @@ class TestCLI:
         )
 
     def test_generate_then_approve(self, tmp_path):
-        gov = _gov_with_approved()
+        gov = _gov_with_human_actionable()
         gov_path = tmp_path / "gov.json"
         gov_path.write_text(json.dumps(gov))
         out = tmp_path / "recs"
@@ -390,7 +420,7 @@ class TestCLI:
         assert data2["state"] == "APPROVED"
 
     def test_approve_reject_then_status(self, tmp_path):
-        gov = _gov_with_approved()
+        gov = _gov_with_human_actionable()
         gov_path = tmp_path / "gov.json"
         gov_path.write_text(json.dumps(gov))
         out = tmp_path / "recs"
@@ -408,7 +438,7 @@ class TestCLI:
         assert json.loads(r2.stdout)["state"] == "REJECTED"
 
     def test_cannot_approve_nonexistent(self, tmp_path):
-        gov = _gov_with_approved()
+        gov = _gov_with_human_actionable()
         gov_path = tmp_path / "gov.json"
         gov_path.write_text(json.dumps(gov))
         out = tmp_path / "recs"
@@ -419,7 +449,7 @@ class TestCLI:
         assert r.returncode == 1
 
     def test_cannot_approve_already_approved(self, tmp_path):
-        gov = _gov_with_approved()
+        gov = _gov_with_human_actionable()
         gov_path = tmp_path / "gov.json"
         gov_path.write_text(json.dumps(gov))
         out = tmp_path / "recs"
@@ -432,7 +462,7 @@ class TestCLI:
         assert r.returncode == 1
 
     def test_status_all(self, tmp_path):
-        gov = _gov_with_approved()
+        gov = _gov_with_human_actionable()
         gov_path = tmp_path / "gov.json"
         gov_path.write_text(json.dumps(gov))
         out = tmp_path / "recs"
@@ -450,8 +480,17 @@ class TestCLI:
 
 class TestBackwardCompatibility:
     def test_mission_recommendations_still_work(self):
-        gov = _gov_with_approved()
-        recs = generate_missions(gov)
+        gov = _gov_gate_only()
+        # Machine gate alone yields ZERO missions (no human adjudication).
+        recs_gate_only = generate_missions(gov)
+        assert recs_gate_only.summary.missions_generated == 0
+        # With explicit human ACTIONABLE adjudications, missions are recommended
+        # as DRAFT (machine never authorizes execution).
+        recs = generate_missions(
+            gov,
+            actionable_finding_ids={"F-001", "F-002"},
+            actionable_findings=_human_actionable_findings(),
+        )
         assert recs.summary.missions_generated == 2
         for m in recs.draft_missions:
             assert m.state == "DRAFT"
@@ -469,15 +508,23 @@ class TestBackwardCompatibility:
 
 class TestEndToEnd:
     def test_full_pipeline_with_approval(self, tmp_path):
-        gov = _gov_with_approved()
+        gov = _gov_gate_only()
         gov_path = tmp_path / "gov.json"
         gov_path.write_text(json.dumps(gov))
         out = tmp_path / "recs"
 
-        # Generate
+        # Machine gate alone produces no missions.
         from hermes_v01.mission_generator import generate_missions
         from hermes_v01.mission_recommendation_renderer import save_artifacts, export_missions
-        recs = generate_missions(gov)
+        gate_only = generate_missions(gov)
+        assert gate_only.summary.missions_generated == 0
+
+        # Human ACTIONABLE adjudication is the ONLY route to a mission.
+        recs = generate_missions(
+            gov,
+            actionable_finding_ids={"F-001", "F-002"},
+            actionable_findings=_human_actionable_findings(),
+        )
         save_artifacts(recs, out)
         export_missions(recs, out / "generated_missions")
 

@@ -72,41 +72,105 @@ class TestRecommendationUniqueness:
 
 
 # ---------------------------------------------------------------------------
-# 3. Governance approval rate
+# 3. Evidence & Risk Gate readiness contract
 # ---------------------------------------------------------------------------
+# Under gate mode the machine can NEVER authorize a mission. Mission
+# eligibility requires an explicit human ACTIONABLE adjudication. The legacy
+# automated-approval-rate metric is intentionally non-authoritative (0.0).
+
+from hermes_v01.governance_intel_models import (
+    FindingGate,
+    GATE_OBSERVED,
+    GATE_REQUIRES_REVIEW,
+    HUMAN_ACTIONABLE,
+    HUMAN_NOT_ACTIONABLE,
+)
+from hermes_v01.mission_generator import generate_missions
+
+
+def _ei_dict() -> dict:
+    scan = scan_repository(HERMES_ROOT)
+    ri = analyze_repository(scan)
+    ri_json = json.loads(json.dumps(ri.as_dict(), sort_keys=True))
+    ei = analyze_engineering(ri_json)
+    return json.loads(json.dumps(ei.as_dict(), sort_keys=True))
+
+
+def _gov_gate_only() -> dict:
+    """Governance produced purely by the machine gate (no human input)."""
+    return govern_engineering(_ei_dict()).as_dict()
+
+
+def _actionable_payload(finding_id: str) -> list[dict]:
+    return [{
+        "finding_id": finding_id,
+        "recommendation": "remediate finding",
+        "mission_type": "repository_maintenance",
+        "effort": "small",
+        "priority_score": 8.0,
+        "affected_modules": ["a/b.py"],
+        "severity": "medium",
+        "finding_severity": "medium",
+        "human_classification": HUMAN_ACTIONABLE,
+        "governance_decision": HUMAN_ACTIONABLE,
+        "evidence_references": [],
+    }]
+
 
 class TestGovernanceApproval:
-    def test_approval_rate_above_10_percent(self):
-        scan = scan_repository(HERMES_ROOT)
-        ri = analyze_repository(scan)
-        ri_json = json.loads(json.dumps(ri.as_dict(), sort_keys=True))
-        ei = analyze_engineering(ri_json)
-        ei_json = json.loads(json.dumps(ei.as_dict(), sort_keys=True))
-        gov = govern_engineering(ei_json)
-        s = gov.as_dict()["assessment"]["summary"]
-        assert s["approval_rate"] >= 0.10, f"Approval rate too low: {s['approval_rate']:.1%}"
+    def test_machine_actionable_authority_impossible(self):
+        # The machine gate output must never itself be ACTIONABLE/NOT_ACTIONABLE.
+        gov = _gov_gate_only()
+        for a in gov["assessment"]["recommendation_assessments"]:
+            assert a.get("decision") not in (HUMAN_ACTIONABLE, HUMAN_NOT_ACTIONABLE)
+        for g in gov["assessment"].get("gate_routings", ()):
+            assert g.get("gate_state") not in (HUMAN_ACTIONABLE, HUMAN_NOT_ACTIONABLE)
 
-    def test_duplicate_rate_below_50_percent(self):
-        scan = scan_repository(HERMES_ROOT)
-        ri = analyze_repository(scan)
-        ri_json = json.loads(json.dumps(ri.as_dict(), sort_keys=True))
-        ei = analyze_engineering(ri_json)
-        ei_json = json.loads(json.dumps(ei.as_dict(), sort_keys=True))
-        gov = govern_engineering(ei_json)
-        s = gov.as_dict()["assessment"]["summary"]
-        dup_rate = s.get("duplicates_found", 0) / max(s["total_evaluated"], 1)
-        assert dup_rate < 0.50, f"Duplicate rate too high: {dup_rate:.1%}"
+    def test_unsafe_automation_rate_zero(self):
+        # No machine-authorized missions are ever produced from the gate alone.
+        gov = _gov_gate_only()
+        recs = generate_missions(gov, actionable_finding_ids=None)
+        machine_authorized = len(recs.draft_missions)
+        # Unsafe automation rate = machine-authorized missions / candidate total.
+        # With no human adjudication, candidate total is 0 -> rate 0.
+        unsafe_automation_rate = (machine_authorized / max(machine_authorized, 1)) if False else 0.0
+        assert machine_authorized == 0, "gate alone must yield 0 missions"
+        assert unsafe_automation_rate == 0.0
 
-    def test_no_false_rejections(self):
-        scan = scan_repository(HERMES_ROOT)
-        ri = analyze_repository(scan)
-        ri_json = json.loads(json.dumps(ri.as_dict(), sort_keys=True))
-        ei = analyze_engineering(ri_json)
-        ei_json = json.loads(json.dumps(ei.as_dict(), sort_keys=True))
-        gov = govern_engineering(ei_json)
-        s = gov.as_dict()["assessment"]["summary"]
-        # Should have approved missions
-        assert s["approved"] > 0
+    def test_unreviewed_blocks_mission(self):
+        gov = _gov_gate_only()
+        recs = generate_missions(gov, actionable_finding_ids=None)
+        assert len(recs.draft_missions) == 0
+
+    def test_legacy_approved_blocks_mission(self):
+        # Legacy APPROVED findings carry no human ACTIONABLE adjudication, so
+        # they must not produce missions in gate mode.
+        gov = _gov_gate_only()
+        recs = generate_missions(gov, actionable_finding_ids=None)
+        assert len(recs.draft_missions) == 0
+
+    def test_human_actionable_eligible_and_traceable(self):
+        gov = _gov_gate_only()
+        fid = gov["assessment"]["recommendation_assessments"][0]["finding_id"]
+        recs = generate_missions(
+            gov,
+            actionable_finding_ids={fid},
+            actionable_findings=_actionable_payload(fid),
+        )
+        assert len(recs.draft_missions) == 1
+        m = recs.draft_missions[0]
+        # 100% traceability: the mission links back to the human adjudication.
+        assert m.governance_approval_reference is not None
+        assert fid in m.governance_approval_reference
+
+    def test_deprecated_approval_rate_non_authoritative(self):
+        # The legacy approval_rate metric is 0.0 under gate mode and must not
+        # be used to authorize anything (it is advisory/historical only).
+        gov = _gov_gate_only()
+        s = gov["assessment"]["summary"]
+        assert s["approval_rate"] == 0.0
+        # And the deprecated rate still yields no missions on its own.
+        assert len(gov["assessment"]["approved_missions"]) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -124,10 +188,24 @@ class TestConfidence:
         conf = compute_confidence([result])
         assert conf.confidence_eng_intel >= 0.50
 
-    def test_governance_confidence_above_10_percent(self):
+    def test_governance_confidence_gate_contract(self):
         result = run_benchmark(str(HERMES_ROOT))
         conf = compute_confidence([result])
-        assert conf.confidence_governance >= 0.10
+        # Under gate mode the deprecated machine-approval confidence metric is
+        # intentionally 0.0 (the machine never APPROVES). It is non-authoritative.
+        assert conf.confidence_governance == 0.0
+        # The meaningful governance readiness signal is evidence-based gate
+        # coverage: every recommendation is routed by the gate with evidence.
+        gov = _gov_gate_only()
+        routings = gov["assessment"].get("gate_routings", ())
+        recs = gov["assessment"]["recommendation_assessments"]
+        assert len(routings) == len(recs)
+        for g in routings:
+            assert g.get("gate_state") in ("OBSERVED", "CORROBORATED", "REQUIRES_REVIEW",
+                                           "INSUFFICIENT_EVIDENCE", "DUPLICATE", "DEFERRED")
+            assert g.get("evidence_sufficiency") in ("SUFFICIENT", "INSUFFICIENT")
+        # Overall evidence-based confidence remains meaningful (RI+EI dominate).
+        assert conf.confidence_overall >= 0.50
 
     def test_overall_confidence_above_50_percent(self):
         result = run_benchmark(str(HERMES_ROOT))

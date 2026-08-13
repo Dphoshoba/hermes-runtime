@@ -9,7 +9,7 @@
     "david"
   ],
   "policy_version": "1.0",
-  "governance_mode": "ADVISORY",
+  "governance_mode": "EVIDENCE_RISK_GATE",
   "execution_mode": "DISABLED",
   "human_review": "MANDATORY",
   "repository_mutation": "DISABLED",
@@ -288,8 +288,56 @@
       "decision": "MORE_GOVERNANCE_VALIDATION_REQUIRED",
       "recommendation": "Do NOT promote Variant I",
       "critical_finding": "Variant I's default \u2192 NEEDS_MORE_EVIDENCE semantics are TOO CONSERVATIVE for genuinely USEFUL findings"
+    },
+    {
+      "cycle": 8,
+      "started_at": "2026-08-13T21:13:20.253690+00:00",
+      "completed_at": "2026-08-13T21:13:20.253690+00:00",
+      "status": "COMPLETE",
+      "objective": "Evidence & Risk Gate promotion \u2014 Controlled Beta governance baseline",
+      "governance_baseline": "EVIDENCE_RISK_GATE",
+      "default_mode": "GATE",
+      "legacy_mode": "EXPLICIT_REPLAY_ONLY",
+      "backend_tests": "1434/1434 (x2)",
+      "frontend_tests": "36/36",
+      "typescript": "PASS",
+      "frontend_build": "PASS",
+      "clean_wheel_install": "PASS",
+      "migration_head": "004_evidence_risk_gate",
+      "unsafe_automation_rate": 0.0,
+      "mission_traceability": "100%",
+      "autonomous_execution": "DISABLED",
+      "repository_mutation": "DISABLED",
+      "baseline_freeze_event": {
+        "event_id": "evt-baseline-efaf00d9dd4e",
+        "timestamp": "2026-08-13T21:13:20.253690+00:00",
+        "event_type": "evidence_risk_gate_promoted",
+        "stage": "governance_baseline_freeze",
+        "actor": "operator:david",
+        "payload": {
+          "event_type": "evidence_risk_gate_promoted",
+          "hermes_version": "1.3.0",
+          "promotion_commit_sha": "dcf72aeb29b9c5a3f633b28a67dec842ff972f30",
+          "timestamp": "2026-08-13T21:13:20.253690+00:00",
+          "previous_governance_baseline": "ADVISORY",
+          "new_governance_baseline": "EVIDENCE_RISK_GATE",
+          "backend_tests": "1434/1434 (x2 repeat)",
+          "frontend_tests": "36/36",
+          "typescript": "PASS",
+          "frontend_build": "PASS",
+          "clean_wheel_install": "PASS",
+          "migration_head": "004_evidence_risk_gate",
+          "unsafe_automation_rate": 0.0,
+          "mission_traceability": "100%",
+          "autonomous_execution": "DISABLED",
+          "repository_mutation": "DISABLED",
+          "default_mode": "GATE",
+          "legacy_mode": "EXPLICIT_REPLAY_ONLY"
+        },
+        "payload_sha256": "11969592aef67ce3"
+      }
     }
   ],
-  "current_cycle": 7,
-  "last_updated": "2026-08-11T11:50:44.233487+00:00"
+  "current_cycle": 8,
+  "last_updated": "2026-08-13T21:13:20.253690+00:00"
 }

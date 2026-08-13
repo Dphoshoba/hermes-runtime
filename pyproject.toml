@@ -24,6 +24,26 @@ classifiers = [
 ]
 dependencies = []
 
+# Enterprise backend (FastAPI service) optional dependency group.
+# Declares the full runtime stack required for a clean Enterprise install
+# (the previous group declared only passlib/bcrypt and omitted FastAPI,
+# Pydantic, SQLAlchemy, Alembic, and the JWT dependency — a
+# PACKAGING_DEFENDENCY_DEFECT). passlib + bcrypt are pinned to a
+# tested-compatible combination: passlib 1.7.4's bcrypt scheme requires
+# bcrypt < 5.0.0 (bcrypt 5 changed the hash-encoding error contract passlib
+# 1.7.4 does not expect); bcrypt 4.x is compatible.
+[project.optional-dependencies]
+enterprise = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "pydantic[email]>=2.0",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "python-jose[cryptography]>=3.3",
+    "passlib==1.7.4",
+    "bcrypt>=4.0.1,<5.0.0",
+]
+
 [project.scripts]
 hermes-validate = "hermes_v01.__main__:main"
 hermes-supervise = "hermes_v01.supervisor_cli:main"
@@ -48,7 +68,22 @@ hermes-journal = "hermes_v01.journal_cli:main"
 hermes-human-review = "hermes_v01.human_review_cli:main"
 
 [tool.setuptools]
-packages = ["hermes_v01"]
+packages = [
+    "hermes_v01",
+    "enterprise",
+    "enterprise.models",
+    "enterprise.routers",
+    "enterprise.schemas",
+    "enterprise.services",
+]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["__pycache__/*", "*.pyc", "*.pyo"]
 
 [tool.setuptools.package-data]
 hermes_v01 = ["py.typed"]
+enterprise = [
+    "migrations/**/*",
+    "migrations/*",
+    "alembic.ini",
+]

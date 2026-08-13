@@ -18,14 +18,16 @@ from fastapi.testclient import TestClient
 os.environ["HERMES_DATABASE_URL"] = "sqlite:///./test_e2e_browser.db"
 
 from enterprise.app import app
-from enterprise.database import Base, engine
+from enterprise.database import Base, get_engine
 
 
 @pytest.fixture(autouse=True)
 def setup_db():
-    Base.metadata.create_all(bind=engine)
+    """Create fresh tables for each test on this suite's database engine."""
+    eng = get_engine(os.environ["HERMES_DATABASE_URL"])
+    Base.metadata.create_all(bind=eng)
     yield
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=eng)
 
 
 @pytest.fixture

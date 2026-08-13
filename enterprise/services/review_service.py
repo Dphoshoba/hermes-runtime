@@ -527,8 +527,12 @@ def _emit_journal_event(
     payload: dict[str, Any],
     actor: str = "operator",
 ) -> JournalEvent:
-    payload_json = json.dumps(payload, sort_keys=True, default=str)
-    payload_sha = hashlib.sha256(payload_json.encode()).hexdigest()
+    # Use the canonical payload hash from hermes_v01.journal_models so the
+    # stored payload_sha256 is verifiable by JournalEvent.verify_integrity()
+    # (which calls the same _canonical_payload_sha256). Mixing a different
+    # hash function/truncation here broke journal integrity verification.
+    from hermes_v01.journal_models import _canonical_payload_sha256
+    payload_sha = _canonical_payload_sha256(payload)
     import uuid as _uuid
     event = JournalEvent(
         event_id=f"evt-{_uuid.uuid4().hex[:12]}",

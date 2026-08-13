@@ -5,6 +5,8 @@ post-Cycle-8 Evidence & Risk Gate milestones.
 
 ## [Unreleased] — Evidence & Risk Gate (M-Cycle 8 Gate)
 
+- Evidence & Risk Gate promoted as the Controlled Beta governance baseline; gate mode is now the default, legacy Governance remains replay-only, human `ACTIONABLE` adjudication controls mission eligibility, and autonomous mission execution/repository mutation remain disabled.
+
 ### Added
 - **Evidence & Risk Gate** (`governance_intel_models.FindingGate`,
   `governance_analyzer.govern_engineering(mode="gate"|"legacy")`): machine

@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root -> 
 def _get_db():
     import os
     os.environ.setdefault("HERMES_DATABASE_URL", "sqlite:///./hermes_enterprise.db")
-    from database import SessionLocal
+    from enterprise.database import SessionLocal
     return SessionLocal()
 
 
@@ -90,11 +90,37 @@ def cmd_show(args: argparse.Namespace) -> int:
         print(f"Governance:    {meta.get('governance_decision', {}).get('decision', 'N/A')}")
         print(f"  Rationale:   {meta.get('governance_decision', {}).get('rationale', '')}")
 
-        from services.review_service import get_adjudications_for_finding
+        from enterprise.services.review_service import get_adjudications_for_finding
         adjs = get_adjudications_for_finding(db, finding.id)
-        if adjs:
-            print(f"\nAdjudications ({len(adjs)}):")
-            for a in adjs:
+        # Effective classification = most recent by reviewed_at (append-only
+        # history; reclassification appends, does not overwrite).
+        adjs_sorted = sorted(adjs, key=lambda a: a.reviewed_at) if adjs else []
+
+        # Evidence & Risk Gate authority distinction (Post Cycle 8) — kept
+        # SEPARATE so machine/legacy/suppression states never masquerade as
+        # human actionability.
+        print(f"Gate State:    {finding.gate_state or 'N/A (not yet gated)'}")
+        print(f"Legacy Dec.:   {finding.legacy_decision or 'N/A'}  (advisory only; not human ACTIONABLE)")
+        supp = next((a for a in adjs_sorted if getattr(a, 'policy_suppressed', False)), None)
+        if supp:
+            print(f"Suppressed:    YES  rule={getattr(supp, 'suppression_rule_id', None)} "
+                  f"v{getattr(supp, 'suppression_rule_version', None)} by={supp.operator}")
+            print(f"               (deterministic policy; distinct from human NOT_ACTIONABLE)")
+        else:
+            print("Suppressed:    no")
+        if adjs_sorted:
+            latest = adjs_sorted[-1]
+            eligible = (latest.classification == "ACTIONABLE")
+            print(f"Human Class.:  {latest.classification} (by {latest.operator})")
+            print(f"Mission Elig.: {'YES' if eligible else 'no'} "
+                  f"(true ONLY with human ACTIONABLE)")
+        else:
+            print("Human Class.:  none (pending human review)")
+            print("Mission Elig.: no")
+
+        if adjs_sorted:
+            print(f"\nAdjudications ({len(adjs_sorted)}):")
+            for a in adjs_sorted:
                 print(f"  [{a.classification}] by {a.operator} at {a.reviewed_at}")
                 if a.operator_notes:
                     print(f"    Note: {a.operator_notes}")
@@ -110,11 +136,12 @@ def cmd_classify(args: argparse.Namespace) -> int:
     from enterprise.services.review_service import create_adjudication, emit_finding_reviewed
     db = _get_db()
     try:
+        operator = args.operator  # required by argparse (--operator required=True)
         adj = create_adjudication(
             db,
             finding_id=args.finding_id,
             classification=args.classification,
-            operator=args.operator or "cli-operator",
+            operator=operator,
             notes=args.notes,
         )
         emit_finding_reviewed(
@@ -122,7 +149,7 @@ def cmd_classify(args: argparse.Namespace) -> int:
             finding_id=args.finding_id,
             repository_id=adj.repository_id,
             classification=args.classification,
-            operator=args.operator or "cli-operator",
+            operator=operator,
             notes=args.notes,
             adjudication_id=adj.id,
         )
@@ -198,7 +225,8 @@ def main() -> int:
                                      "NEEDS_MORE_EVIDENCE", "DUPLICATE", "UNKNOWN",
                                      "ACTIONABLE"])
     p_classify.add_argument("--notes", help="Operator notes")
-    p_classify.add_argument("--operator", help="Operator name (required for authority)")
+    p_classify.add_argument("--operator", required=True,
+                            help="Operator name (REQUIRED — human authority identity)")
 
     p_suppressions = sub.add_parser("suppressions", help="List deterministic policy suppressions")
     p_suppressions.add_argument("--repository", help="Filter by repository ID")
@@ -214,6 +242,7 @@ def main() -> int:
         "list": cmd_list,
         "show": cmd_show,
         "classify": cmd_classify,
+        "suppressions": cmd_suppressions,
         "summary": cmd_summary,
         "export": cmd_export,
     }

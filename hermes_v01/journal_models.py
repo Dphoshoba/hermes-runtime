@@ -68,6 +68,13 @@ EVENT_TYPES = (
     "github.pr_listed",
     "github.actions_checked",
     "github.materialized",
+    # Evidence & Risk Gate (Post Cycle 8) — machine authority, human
+    # adjudication, deterministic suppression, mission eligibility.
+    "gate.evaluated",
+    "gate.routed",
+    "human.adjudication",
+    "policy.suppression",
+    "mission.eligibility",
 )
 
 # Stage categories for summary grouping
@@ -98,6 +105,17 @@ STAGE_CATEGORIES: dict[str, str] = {
     "github.pr_listed": "github",
     "github.actions_checked": "github",
     "github.materialized": "github",
+    # Evidence & Risk Gate (Post Cycle 8) — machine authority, human
+    # adjudication, deterministic suppression, mission eligibility.
+    # New semantic categories (gate, policy) are introduced because these
+    # events are machine-authority/policy actions with no pre-existing
+    # category; human.adjudication reuses the existing "review" category and
+    # mission.eligibility reuses the existing "mission_planning" category.
+    "gate.evaluated": "gate",
+    "gate.routed": "gate",
+    "human.adjudication": "review",
+    "policy.suppression": "policy",
+    "mission.eligibility": "mission_planning",
 }
 
 
