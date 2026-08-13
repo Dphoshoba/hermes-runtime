@@ -1,0 +1,83 @@
+{
+  "program": "CONTROLLED_BETA_EXPANSION_PHASE_2",
+  "hermes_version": "1.3.0",
+  "baseline_commit": "82229d83f45dcd2477a4a4c267dd200af4da77c7",
+  "acceptance_commit": "3b6edf2844982a73423e184d6ac7fd6b8bbe39ef",
+  "governance_baseline": "EVIDENCE_RISK_GATE",
+  "autonomous_execution": "DISABLED",
+  "repository_mutation": "DISABLED",
+  "total_findings": 877,
+  "previously_reviewed": 25,
+  "newly_reviewed": 75,
+  "total_reviewed": 100,
+  "quality_combined": {
+    "ACTIONABLE": [
+      13,
+      13.0
+    ],
+    "NOT_ACTIONABLE": [
+      24,
+      24.0
+    ],
+    "NEEDS_MORE_EVIDENCE": [
+      62,
+      62.0
+    ],
+    "FALSE_POSITIVE": [
+      0,
+      0.0
+    ],
+    "DUPLICATE": [
+      1,
+      1.0
+    ],
+    "UNKNOWN": [
+      0,
+      0.0
+    ]
+  },
+  "actionable": 13,
+  "not_actionable": 24,
+  "needs_more_evidence": 62,
+  "duplicate": 1,
+  "false_positive": 0,
+  "unknown": 0,
+  "evidence_sufficiency_rate_pct": 37.0,
+  "burden": {
+    "total_reviewed": 100,
+    "total_operator_burden_minutes": 19.29,
+    "findings_per_minute": 3.89,
+    "median_batch_seconds": 249.5,
+    "p95_batch_seconds": 441.1,
+    "per_finding_timing": "NOT_OBSERVED"
+  },
+  "missions_eligible": 12,
+  "missions_selected": 12,
+  "missions_deferred": 0,
+  "mission_quality": {
+    "useful_missions": 12,
+    "total": 12,
+    "note": "objective: all derived from human ACTIONABLE, bounded scope"
+  },
+  "mission_executions": 0,
+  "target_repository_mutations": 0,
+  "unsafe_automation_rate": 0.0,
+  "mission_traceability": "100%",
+  "non_actionable_leakage": 0,
+  "nme_leakage": 0,
+  "suppression_leakage": 0,
+  "legacy_only_leakage": 0,
+  "journal_integrity": "PASS",
+  "historical_mutation_count": 0,
+  "canonical_backend": "1434 passed (prior cycle; no source change in Phase 2)",
+  "frontend": "NOT_REQUIRED",
+  "clean_wheel": "NOT_REQUIRED",
+  "defects_found": 0,
+  "defects_resolved": 0,
+  "known_limitations": [
+    "Per-finding microtiming NOT_OBSERVED (no UI capture hook)",
+    "NME rate high (62%) reflects thin source evidence + conservative operator; v2 enrichment would resolve",
+    "Cohort still 3 repositories"
+  ],
+  "decision": "CONTROLLED_BETA_EXPANSION_SUCCESSFUL_WITH_LIMITATIONS"
+}
