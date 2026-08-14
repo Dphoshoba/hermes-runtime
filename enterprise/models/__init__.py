@@ -395,3 +395,68 @@ class MissionFindingLink(Base):
     repository_id = Column(String(36), ForeignKey("repositories.id"), index=True)
     relationship_type = Column(String(30), default="PRIMARY")
     created_at = Column(DateTime, default=_utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Project Context Engine (Guided Mode)
+# ---------------------------------------------------------------------------
+
+class ProjectContext(Base):
+    __tablename__ = "project_context"
+    __table_args__ = (
+        UniqueConstraint("repository_id", "topic", "key", name="uq_context_item"),
+    )
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    repository_id = Column(String(36), ForeignKey("repositories.id"), index=True)
+    project_id = Column(String(100), index=True)
+
+    topic = Column(String(100), nullable=False, index=True)
+    key = Column(String(200), nullable=False)
+    value = Column(Text, nullable=False)
+
+    source = Column(String(50), default="human_confirmed")
+    actor = Column(String(255), nullable=False)
+    scope = Column(String(100), default="project")
+    confidence = Column(String(30), default="human_confirmed")
+
+    superseded_by = Column(String(36), ForeignKey("project_context.id"), nullable=True)
+    is_current = Column(Boolean, default=True, index=True)
+
+    provenance = Column(JSON, default=dict)
+    metadata_json = Column(JSON, default=dict)
+
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Prepared Change Sandbox (Guided Mode — M6)
+# ---------------------------------------------------------------------------
+
+class PreparedChange(Base):
+    __tablename__ = "prepared_changes"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    mission_id = Column(String(36), ForeignKey("missions.id"), nullable=False, index=True)
+    repository_id = Column(String(36), ForeignKey("repositories.id"), index=True)
+
+    title = Column(String(512), nullable=False)
+    description = Column(Text)
+    status = Column(String(50), default="preparing", index=True)
+
+    workspace_path = Column(String(1024))
+    affected_files = Column(JSON, default=list)
+    diff_content = Column(Text)
+    rollback_representation = Column(Text)
+
+    validation_status = Column(String(50), default="pending")
+    validation_output = Column(Text)
+
+    source_commit_sha = Column(String(40))
+    provenance = Column(JSON, default=dict)
+    metadata_json = Column(JSON, default=dict)
+
+    created_by = Column(String(255))
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)

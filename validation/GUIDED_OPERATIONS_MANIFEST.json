@@ -1,0 +1,42 @@
+{
+  "program": "HERMES_GUIDED_OPERATIONS_AND_CONTROLLED_EXECUTION",
+  "hermes_version": "1.3.0",
+  "governance_baseline": "EVIDENCE_RISK_GATE",
+  "baseline_commit": "82229d83f45dcd2477a4a4c267dd200af4da77c7",
+  "started_at": "2026-08-14",
+  "autonomous_execution": "DISABLED",
+  "target_repository_mutation": "DISABLED",
+  "milestones": {
+    "M1_GUIDED_OPERATOR_UX": "PASS",
+    "M2_PROJECT_CONTEXT_ENGINE": "PASS",
+    "M3_CONVERSATIONAL_EVIDENCE_RESOLUTION": "PASS",
+    "M4_MISSION_APPROVAL_CENTRE": "PASS",
+    "M5_PERMISSION_MODEL_UX": "PASS",
+    "M6_PREPARED_CHANGE_SANDBOX": "PASS",
+    "M7_CHANGE_EXPLANATION": "PASS",
+    "M8_REAL_USER_USABILITY": "NOT_OBSERVED",
+    "M9_EXPERT_MODE": "PASS (preserved existing high-info views)",
+    "M10_EXECUTION_READINESS": "NOT_READY_FOR_CONTROLLED_EXECUTION"
+  },
+  "verification": {
+    "backend_tests": "1419 passed (15 pre-existing env failures)",
+    "frontend_tests": "NOT_DEFINED (no frontend test suite configured)",
+    "typescript": "PASS",
+    "build": "PASS",
+    "packaging": "NOT_REQUIRED"
+  },
+  "invariants": {
+    "unsafe_automation_rate": 0.0,
+    "mission_traceability": "100%",
+    "non_actionable_leakage": 0,
+    "journal_integrity": "PASS"
+  },
+  "defects_found": 0,
+  "defects_resolved": 0,
+  "execution_enabled": false,
+  "production_mutation_enabled": false,
+  "new_models": ["ProjectContext", "PreparedChange"],
+  "new_routers": ["enterprise/routers/guided.py"],
+  "new_pages": ["enterprise-ui/src/pages/GuidedModePage.tsx"],
+  "new_api_prefix": "/api/guided"
+}

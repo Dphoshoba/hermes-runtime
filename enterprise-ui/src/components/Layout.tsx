@@ -10,6 +10,7 @@ const links = [
   { to: '/missions', label: 'Missions' },
   { to: '/reports', label: 'Reports' },
   { to: '/review', label: 'Human Review' },
+  { to: '/guided', label: 'Guided Mode' },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

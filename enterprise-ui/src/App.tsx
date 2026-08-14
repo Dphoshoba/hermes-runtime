@@ -1,18 +1,19 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect, createContext, useContext } from 'react'
-import { apiFetch, getToken, setToken, clearToken } from './lib/api'
-import type { User } from './lib/types'
-import Layout from './components/Layout'
-import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
-import RepositoriesPage from './pages/RepositoriesPage'
-import RepositoryDetailPage from './pages/RepositoryDetailPage'
-import ScansPage from './pages/ScansPage'
-import JournalPage from './pages/JournalPage'
-import FindingsPage from './pages/FindingsPage'
-import MissionsPage from './pages/MissionsPage'
-import ReportsPage from './pages/ReportsPage'
-import HumanReviewPage from './pages/HumanReviewPage'
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect, createContext, useContext } from 'react';
+import { apiFetch, getToken, setToken, clearToken } from './lib/api';
+import type { User } from './lib/types';
+import Layout from './components/Layout';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import RepositoriesPage from './pages/RepositoriesPage';
+import RepositoryDetailPage from './pages/RepositoryDetailPage';
+import ScansPage from './pages/ScansPage';
+import JournalPage from './pages/JournalPage';
+import FindingsPage from './pages/FindingsPage';
+import MissionsPage from './pages/MissionsPage';
+import ReportsPage from './pages/ReportsPage';
+import HumanReviewPage from './pages/HumanReviewPage';
+import GuidedModePage from './pages/GuidedModePage';
 
 interface AuthCtx {
   user: User | null;
@@ -76,6 +77,7 @@ export default function App() {
         <Route path="/missions" element={<ProtectedRoute><MissionsPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
         <Route path="/review" element={<ProtectedRoute><HumanReviewPage /></ProtectedRoute>} />
+        <Route path="/guided" element={<ProtectedRoute><GuidedModePage /></ProtectedRoute>} />
       </Routes>
     </AuthProvider>
   );
