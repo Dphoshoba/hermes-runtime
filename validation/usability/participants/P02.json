@@ -1,0 +1,94 @@
+{
+  "participant_id": "P02",
+  "test_timestamp": null,
+  "hermes_version": "1.3.0",
+  "hermes_commit": null,
+  "prior_hermes_experience": null,
+  "technical_experience": null,
+  "tasks": {
+    "task_1": {
+      "completed": null,
+      "assistance_required": null,
+      "duration_seconds": null,
+      "observed_behavior": null,
+      "participant_response": null
+    },
+    "task_2": {
+      "completed": null,
+      "assistance_required": null,
+      "duration_seconds": null,
+      "observed_behavior": null,
+      "participant_response": null
+    },
+    "task_3": {
+      "completed": null,
+      "assistance_required": null,
+      "duration_seconds": null,
+      "observed_behavior": null,
+      "participant_response": null
+    },
+    "task_4": {
+      "completed": null,
+      "assistance_required": null,
+      "duration_seconds": null,
+      "observed_behavior": null,
+      "participant_response": null
+    },
+    "task_5": {
+      "completed": null,
+      "assistance_required": null,
+      "duration_seconds": null,
+      "observed_behavior": null,
+      "participant_response": null
+    },
+    "task_6": {
+      "completed": null,
+      "assistance_required": null,
+      "duration_seconds": null,
+      "observed_behavior": null,
+      "participant_response": null
+    },
+    "task_7": {
+      "completed": null,
+      "assistance_required": null,
+      "duration_seconds": null,
+      "observed_behavior": null,
+      "participant_response": null
+    },
+    "task_8": {
+      "completed": null,
+      "assistance_required": null,
+      "duration_seconds": null,
+      "observed_behavior": null,
+      "participant_response": null
+    },
+    "task_9": {
+      "completed": null,
+      "assistance_required": null,
+      "duration_seconds": null,
+      "observed_behavior": null,
+      "participant_response": null
+    },
+    "task_10": {
+      "completed": null,
+      "assistance_required": null,
+      "duration_seconds": null,
+      "observed_behavior": null,
+      "participant_response": null
+    }
+  },
+  "time_to_first_analysis_seconds": null,
+  "technical_blockers": null,
+  "operator_interventions": null,
+  "user_confidence": null,
+  "usability_defects": null,
+  "critical_usability_failures": null,
+  "task_9_response_verbatim": null,
+  "task_10_response_verbatim": null,
+  "authority_comprehension": {
+    "understands_project_not_changed": null,
+    "understands_approval_not_execution": null,
+    "pass": null
+  },
+  "overall_result": null
+}

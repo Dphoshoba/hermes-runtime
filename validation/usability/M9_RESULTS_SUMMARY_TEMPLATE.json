@@ -1,0 +1,28 @@
+{
+  "real_users_tested": null,
+  "task_completion_rate": null,
+  "authority_comprehension_rate": null,
+  "median_time_to_first_analysis": null,
+  "technical_blockers": null,
+  "operator_interventions": null,
+  "usability_defects_found": null,
+  "usability_defects_resolved": null,
+  "critical_usability_failures": null,
+  "confidence_distribution": {
+    "high": null,
+    "medium": null,
+    "low": null
+  },
+  "authority_gate": {
+    "participants_correct_task_9": null,
+    "participants_correct_task_10": null,
+    "participants_passing_both": null,
+    "total_participants": null,
+    "rate": null
+  },
+  "decision": {
+    "REAL_USER_USABILITY": null,
+    "EXECUTION_AUTHORITY_COMPREHENSION": null,
+    "READY_FOR_M10": null
+  }
+}

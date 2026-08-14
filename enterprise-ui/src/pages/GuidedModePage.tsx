@@ -506,6 +506,45 @@ function EvidenceExhaustedView() {
   );
 }
 
+function UsabilityTestEntry() {
+  const [expanded, setExpanded] = useState(false);
+  // Dev-only affordance; does not compromise normal Guided Mode UX
+  const isDev = localStorage.getItem('hermes_dev') === '1';
+  if (!isDev) return null;
+
+  return (
+    <div className="usability-test-entry card" style={{ marginTop: 40 }}>
+      <button className="btn btn-sm" onClick={() => setExpanded(!expanded)}>
+        Beta Testing Tools
+      </button>
+      {expanded && (
+        <div style={{ marginTop: 16 }}>
+          <p className="muted">
+            M9 Usability Test — for facilitators running the real-user beta.
+          </p>
+          <ul>
+            <li>
+              <a href="/validation/usability/M9_REAL_USER_TEST_PROTOCOL.md">Test Protocol</a>
+            </li>
+            <li>
+              <a href="/validation/usability/M9_FACILITATOR_QUICK_CARD.md">Facilitator Quick Card</a>
+            </li>
+            <li>
+              <a href="/validation/usability/M9_PARTICIPANT_TEMPLATE.json">Participant Template</a>
+            </li>
+            <li>
+              <a href="/validation/usability/M9_RESULTS_SUMMARY_TEMPLATE.json">Results Summary Template</a>
+            </li>
+          </ul>
+          <p className="muted">
+            Enable: <code>localStorage.setItem('hermes_dev', '1')</code>
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PreparedChangeView() {
   return (
     <div className="prepared-change card">
