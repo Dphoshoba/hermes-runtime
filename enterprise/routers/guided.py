@@ -7,7 +7,7 @@ for Guided Mode consumption. No authority logic lives here.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -428,7 +428,7 @@ def approve_preparation(
     if mission.status not in ("DRAFT", "NEEDS_REFINEMENT"):
         raise HTTPException(status_code=409, detail="Mission is not in an approvable state")
     mission.status = "APPROVED_FOR_FUTURE_EXECUTION"
-    mission.updated_at = datetime.utcnow()
+    mission.updated_at = datetime.now(timezone.utc)
     db.commit()
     return {
         "mission_id": mission.id,
@@ -583,7 +583,7 @@ def prepare_change(
             "origin": "guided_mode",
             "mission_id": mission.id,
             "user_id": user.id,
-            "prepared_at": datetime.utcnow().isoformat(),
+            "prepared_at": datetime.now(timezone.utc).isoformat(),
         },
     )
     db.add(prepared)

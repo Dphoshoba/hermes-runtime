@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../App';
 import { guidedClient } from '../lib/api';
+import FirstRunOnboarding from '../components/FirstRunOnboarding';
 
 // Types matching the backend guided router responses
 interface GuidedSummary {

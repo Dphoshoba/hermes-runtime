@@ -663,3 +663,98 @@ tr:hover td {
   color: var(--text-muted);
   font-size: 13px;
 }
+
+/* ============================================================
+   First-Run Onboarding
+   ============================================================ */
+
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 24px;
+}
+
+.onboarding-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+}
+
+.onboarding-progress {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+
+.progress-dot.active {
+  background: var(--accent);
+}
+
+.progress-dot.done {
+  background: var(--green);
+}
+
+.onboarding-card h2 {
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.onboarding-body {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.onboarding-detail {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.onboarding-project {
+  font-size: 14px;
+  margin-bottom: 24px;
+  color: var(--text-muted);
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.btn-skip {
+  background: none;
+  color: var(--text-muted);
+}
+
+.onboarding-safety {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: #166534;
+  color: #86efac;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
