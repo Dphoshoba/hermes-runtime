@@ -1,0 +1,64 @@
+{
+  "program": "CONTROLLED_BETA_PHASE_6_DEEPER_CALLGRAPH_MINING",
+  "hermes_version": "1.3.0",
+  "baseline_commit": "82229d83f45dcd2477a4a4c267dd200af4da77c7",
+  "phase5_commit": "ed676aa6cae42ead5d7f4fb87e4c7af175f44389",
+  "governance_baseline": "EVIDENCE_RISK_GATE",
+  "autonomous_execution": "DISABLED",
+  "repository_mutation": "DISABLED",
+  "EVIDENCE_AVENUES_ATTEMPTED": [
+    "git-archive extraction at exact commits (read-only, /tmp)",
+    "real scan_repository call-graph (faithtech 570 src/3042 imports; inspirevoice 5; cognikid 20)",
+    "real import-graph inbound/outbound/route-reachability for 12 targets",
+    "repository-local architectural-intent docs + intent-comment grep",
+    "discriminating-subcohort scan of 829 remaining",
+    "bug/fix + test relationships (from Phase 5)"
+  ],
+  "MATERIAL_EVIDENCE_GAINED": {
+    "callgraph_targets": 12,
+    "high_fanin_confirmed": {
+      "FINDING-034": 27,
+      "FINDING-064": 1,
+      "FINDING-068": 1
+    },
+    "route_reachable": [
+      "FINDING-144"
+    ],
+    "mission6_resolved_path": "Frontend/src/App.js @ 83f1c009 (225 LOC, exists)",
+    "architectural_intent_comments_in_targets": 0,
+    "discriminating_subcohort_size": 5
+  },
+  "NME_CANDIDATES_FOR_HUMAN_READJUDICATION": [
+    "FINDING-125",
+    "FINDING-031",
+    "FINDING-052",
+    "FINDING-766",
+    "FINDING-103"
+  ],
+  "NME_REMAINING_CONTEXT_DEPENDENT": 824,
+  "DISPOSITIONS_CHANGED": 0,
+  "NME_CONVERTED": 0,
+  "EVIDENCE_RESOLUTION_RATE_pct": 64.5,
+  "MISSION_DISPOSITIONS": {
+    "FINDING-001": "APPROVE_FOR_FUTURE_EXECUTION (non-executable)",
+    "FINDING-040/034/144/059/129/149/065/064/068/074/078": "DEFER_MISSION",
+    "FINDING-048": "NEEDS_REFINEMENT (path resolved: Frontend/src/App.js)"
+  },
+  "UNSAFE_AUTOMATION_RATE": 0.0,
+  "MISSION_TRACEABILITY": "100%",
+  "LEAKAGE": 0,
+  "JOURNAL_INTEGRITY": "PASS",
+  "CANONICAL_TESTS": "1434 passed (no source change)",
+  "DEFECTS_FOUND": 0,
+  "DEFECTS_RESOLVED": 0,
+  "TARGET_REPO_MUTATIONS": 0,
+  "MISSION_EXECUTIONS": 0,
+  "OPERATOR_INTERVENTIONS_REQUIRED": 1,
+  "DECISION": "HUMAN_CONTEXT_REQUIRED_FOR_FURTHER_PROGRESS (re-affirmed with deeper evidence)",
+  "KNOWN_LIMITATIONS": [
+    "Architectural intent / runtime criticality / business impact not establishable from repo-local evidence",
+    "0 intent comments in sampled targets; docs do not give per-module rationale",
+    "824/829 remaining findings uniformly WEAK/ISOLATED (no discriminating signal)"
+  ],
+  "NEXT_RECOMMENDATION": "Surface 5 discriminating NME for human re-adjudication; supply human/business/runtime context or approved telemetry before broader expansion. Gate remains safe/correct/low-burden."
+}
