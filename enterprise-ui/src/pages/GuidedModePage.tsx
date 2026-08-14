@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../App';
 import { guidedClient } from '../lib/api';
 import FirstRunOnboarding from '../components/FirstRunOnboarding';
+import ProjectSelection from '../components/ProjectSelection';
+import AnalysisProgress from '../components/AnalysisProgress';
+import PreparedChangeView from '../components/PreparedChangeView';
 
 // Types matching the backend guided router responses
 interface GuidedSummary {
