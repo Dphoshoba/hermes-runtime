@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "cycle": 7,
+    "created_at": "2026-08-12",
+    "purpose": "Quantified evidence gaps analysis",
+    "total_nme_findings": 30
+  },
+  "evidence_gaps": {
+    "missing_runtime_importance": {
+      "count": 16,
+      "percentage": 53.3,
+      "description": "Whether the code is critical to system operation",
+      "collectible_readonly": true,
+      "collection_method": "Dependency fan-in analysis, API endpoint mapping"
+    },
+    "missing_failure_history": {
+      "count": 14,
+      "percentage": 46.7,
+      "description": "Whether the code has caused bugs or incidents",
+      "collectible_readonly": true,
+      "collection_method": "git log --grep='fix' --grep='bug' --grep='incident'"
+    },
+    "missing_ownership_evidence": {
+      "count": 11,
+      "percentage": 36.7,
+      "description": "Who is responsible for this code",
+      "collectible_readonly": true,
+      "collection_method": "git log --format='%an' <file>"
+    },
+    "missing_indirect_test_evidence": {
+      "count": 11,
+      "percentage": 36.7,
+      "description": "Whether the code is exercised by integration tests",
+      "collectible_readonly": true,
+      "collection_method": "Test coverage analysis, import graph analysis"
+    },
+    "missing_change_frequency": {
+      "count": 11,
+      "percentage": 36.7,
+      "description": "How often the file is modified",
+      "collectible_readonly": true,
+      "collection_method": "git log --follow --format='%H' <file>"
+    },
+    "missing_complexity_decomposition": {
+      "count": 11,
+      "percentage": 36.7,
+      "description": "Whether the module has too many responsibilities",
+      "collectible_readonly": true,
+      "collection_method": "AST analysis, responsibility count"
+    },
+    "missing_behavioral_evidence": {
+      "count": 8,
+      "percentage": 26.7,
+      "description": "Whether the observation actually causes problems",
+      "collectible_readonly": false,
+      "collection_method": "Requires human judgment or runtime data"
+    }
+  },
+  "collectibility_summary": {
+    "auto_collectible": 6,
+    "requires_human_judgment": 1,
+    "total_gaps": 7
+  },
+  "enrichment_priority": [
+    {
+      "gap": "missing_runtime_importance",
+      "priority": 1,
+      "impact": "HIGH",
+      "rationale": "Determines whether code is critical to system"
+    },
+    {
+      "gap": "missing_failure_history",
+      "priority": 2,
+      "impact": "HIGH",
+      "rationale": "Historical failures are strong actionability signal"
+    },
+    {
+      "gap": "missing_change_frequency",
+      "priority": 3,
+      "impact": "MEDIUM",
+      "rationale": "High churn indicates problematic code"
+    },
+    {
+      "gap": "missing_ownership_evidence",
+      "priority": 4,
+      "impact": "MEDIUM",
+      "rationale": "Unowned code may be less actionable"
+    },
+    {
+      "gap": "missing_indirect_test_evidence",
+      "priority": 5,
+      "impact": "MEDIUM",
+      "rationale": "Indirect coverage may make 'no test' less actionable"
+    },
+    {
+      "gap": "missing_complexity_decomposition",
+      "priority": 6,
+      "impact": "LOW",
+      "rationale": "Helps determine if size is actually problematic"
+    },
+    {
+      "gap": "missing_behavioral_evidence",
+      "priority": 7,
+      "impact": "LOW",
+      "rationale": "Requires human judgment, cannot be fully automated"
+    }
+  ]
+}
