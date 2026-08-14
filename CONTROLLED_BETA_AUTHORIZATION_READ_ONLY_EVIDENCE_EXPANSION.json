@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0.0",
+  "event_type": "authority.granted",
+  "timestamp": "2026-08-14T02:10:50.673814+00:00",
+  "payload_sha256": "ac19a62392c23c12",
+  "payload": {
+    "schema_version": "1.0.0",
+    "event_type": "authority.granted",
+    "authorization": "CONTINUOUS_READ_ONLY_EVIDENCE_EXPANSION_AUTHORIZED",
+    "timestamp": "2026-08-14T02:10:50.673814+00:00",
+    "hermes_version": "1.3.0",
+    "governance_baseline": "EVIDENCE_RISK_GATE",
+    "baseline_commit": "82229d83f45dcd2477a4a4c267dd200af4da77c7",
+    "latest_phase_commit": "d5c7a15ac5be6e88969a5925ec38f510a90875f8",
+    "authorized_operations": [
+      "read-only git archive at recorded commits",
+      "repository_intelligence scan (call-graph, modules, routes, components, hooks)",
+      "import-graph inbound/outbound/route-reachability analysis",
+      "repository-local architectural-intent doc and comment inspection",
+      "discriminating-subcohort scan of remaining findings",
+      "bug/fix/co-change/ownership history inspection",
+      "generate analysis artifacts",
+      "create artifact-only local acceptance commits"
+    ],
+    "prohibited_operations": [
+      "mission_execution",
+      "target_repository_mutation",
+      "commits_to_target_repositories",
+      "branches_in_target_repositories",
+      "pull_request",
+      "push",
+      "tag",
+      "merge",
+      "deployment",
+      "credential_rotation",
+      "external_writes",
+      "automatic_actionability",
+      "automatic_mission_execution_approval"
+    ],
+    "authority_invariants": {
+      "machine_actionable": "impossible",
+      "machine_not_actionable": "impossible",
+      "non_actionable_leakage_required": 0,
+      "unsafe_automation_rate_required": 0.0,
+      "mission_traceability_required": 1.0,
+      "journal_integrity": "PASS",
+      "historical_evidence_immutability": "preserved"
+    },
+    "execution_flags": {
+      "mission_execution": "DISABLED",
+      "target_repository_mutation": "DISABLED",
+      "push": "DISABLED",
+      "tag": "DISABLED",
+      "pull_request": "DISABLED",
+      "deployment": "DISABLED",
+      "external_writes": "DISABLED",
+      "automatic_actionability": "DISABLED"
+    },
+    "mission_1_status": {
+      "finding": "FINDING-001",
+      "disposition": "APPROVE_FOR_FUTURE_EXECUTION",
+      "execution_authorized": false,
+      "note": "APPROVE_FOR_FUTURE_EXECUTION is not execution authority; remains non-executable."
+    },
+    "mission_6_path_resolution": {
+      "finding": "FINDING-048",
+      "resolved_path": "Frontend/src/App.js",
+      "recorded_commit": "83f1c00959c728fb9ee59648c2af85d459c4c6b4",
+      "verified_at_commit": true,
+      "disposition": "NEEDS_REFINEMENT",
+      "must_not_be_automatically_approved": true,
+      "non_executable": true
+    },
+    "continuation_policy": "Phase/milestone completion is NOT a checkpoint. Continue autonomously through useful read-only work. Stop only at genuine authority/safety/completion conditions defined in this authorization.",
+    "stop_conditions": [
+      "all materially useful repository-local/read-only evidence avenues exhausted",
+      "genuinely new human/business/runtime information required",
+      "human re-adjudication required because materially new evidence could change an existing decision",
+      "mission execution or repository mutation authority required",
+      "governance/safety invariant fails",
+      "architectural defect prevents safe continuation",
+      "Controlled Beta completion criteria satisfied"
+    ],
+    "provenance": {
+      "authorized_by": "operator",
+      "authorization_channel": "CONTROLLED_BETA_READ_ONLY_EVIDENCE_EXPANSION directive",
+      "preceding_phase": "CONTROLLED_BETA_PHASE_6_DEEPER_CALLGRAPH_MINING",
+      "preceding_decision": "HUMAN_CONTEXT_REQUIRED_FOR_FURTHER_PROGRESS",
+      "evidence_sources": [
+        "git_archive",
+        "repository_intelligence_scan",
+        "import_graph",
+        "repo_local_docs"
+      ],
+      "no_target_repo_mutation": true
+    }
+  }
+}
