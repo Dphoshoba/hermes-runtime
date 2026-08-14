@@ -1,0 +1,40 @@
+{
+  "program": "CONTROLLED_BETA_PHASE_4_EVIDENCE_AND_MISSION_REFINEMENT",
+  "hermes_version": "1.3.0",
+  "baseline_commit": "82229d83f45dcd2477a4a4c267dd200af4da77c7",
+  "phase3_commit": "2106c79435c3193c942f173174f7adcd5340d1a5",
+  "governance_baseline": "EVIDENCE_RISK_GATE",
+  "autonomous_execution": "DISABLED",
+  "repository_mutation": "DISABLED",
+  "NME_TOTAL": 62,
+  "NME_MINED": 61,
+  "NME_WITH_MATERIAL_EVIDENCE_GAIN": 40,
+  "EVIDENCE_RESOLUTION_RATE_pct": 64.5,
+  "REMAINING_GAP_TAXONOMY": {
+    "REQUIRES_ARCHITECTURAL_INTENT": 55,
+    "REQUIRES_RUNTIME_EVIDENCE": 21,
+    "NOT_RESOLVABLE_BY_HERMES": 1
+  },
+  "MISSIONS_REFINED": 12,
+  "MISSIONS_WITH_EVIDENCE": 12,
+  "MISSIONS_STILL_NEEDS_REFINEMENT": 12,
+  "MISSIONS_DETERMINED_UNNECESSARY": 0,
+  "MISSION_TRACEABILITY": "100%",
+  "UNSAFE_AUTOMATION_RATE": 0.0,
+  "LEAKAGE": 0,
+  "JOURNAL_INTEGRITY": "PASS",
+  "CANONICAL_TESTS": "1434 passed (no source change in Phase 4)",
+  "DEFECTS_FOUND": 0,
+  "DEFECTS_RESOLVED": 0,
+  "OPERATOR_INTERVENTIONS_REQUIRED": 1,
+  "TARGET_REPO_MUTATIONS": 0,
+  "MISSION_EXECUTIONS": 0,
+  "DECISION": "CONTROLLED_BETA_CONTINUE_EVIDENCE_REFINEMENT",
+  "KNOWN_LIMITATIONS": [
+    "22 NME require human/business/architectural context (not Hermes-resolvable)",
+    "21 resolvable NME gained only partial evidence (single-commit/at-commit path mismatch)",
+    "All 12 refined missions OBSERVED ISOLATED/WEAK-evidence: refactor low-risk but not necessarily warranted",
+    "12 missions unchanged disposition (NEEDS_REFINEMENT) pending operator re-decision"
+  ],
+  "RECOMMENDED_PHASE_5": "Re-present 12 refined missions with OBSERVED evidence for operator re-decision; deepen git co-change/caller mining for 21 partial-yield NME; leave 22 architectural/runtime NME to human context. No execution without explicit authorization."
+}
