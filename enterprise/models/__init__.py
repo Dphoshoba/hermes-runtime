@@ -431,6 +431,37 @@ class ProjectContext(Base):
 
 
 # ---------------------------------------------------------------------------
+# Workspace / Tenant Isolation (Hosted Beta — M2)
+# ---------------------------------------------------------------------------
+
+class Workspace(Base):
+    __tablename__ = "workspaces"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    name = Column(String(255), nullable=False)
+    slug = Column(String(100), unique=True, nullable=False, index=True)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+
+class UserWorkspace(Base):
+    __tablename__ = "user_workspaces"
+    __table_args__ = (
+        UniqueConstraint("user_id", "workspace_id", name="uq_user_workspace"),
+    )
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    workspace_id = Column(String(36), ForeignKey("workspaces.id"), nullable=False, index=True)
+    role = Column(String(30), default="member")  # admin, member
+    created_at = Column(DateTime, default=_utcnow)
+
+    user = relationship("User")
+    workspace = relationship("Workspace")
+
+
+# ---------------------------------------------------------------------------
 # Prepared Change Sandbox (Guided Mode — M6)
 # ---------------------------------------------------------------------------
 
