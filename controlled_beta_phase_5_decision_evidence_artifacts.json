@@ -1,0 +1,50 @@
+{
+  "program": "CONTROLLED_BETA_PHASE_5_DECISION_CHANGING_EVIDENCE",
+  "hermes_version": "1.3.0",
+  "baseline_commit": "82229d83f45dcd2477a4a4c267dd200af4da77c7",
+  "phase4_commit": "ed4f8ef03f7222ffcb90b35a1af6d9ba129cb22b",
+  "governance_baseline": "EVIDENCE_RISK_GATE",
+  "autonomous_execution": "DISABLED",
+  "repository_mutation": "DISABLED",
+  "DECISION": "HUMAN_CONTEXT_REQUIRED_FOR_FURTHER_PROGRESS",
+  "M1_mission6_reconciled_path": "Frontend/src/App.js (inspirevoice, 225 LOC, verified at commit 83f1c009...)",
+  "M2_test_refs": {
+    "range": "0-6 per target",
+    "note": "low regression surface; #3=6 highest"
+  },
+  "M3_bugfix_commits_all_targets": 0,
+  "M4_debt_markers": "minor (#5=1, #9=3); no defect signal",
+  "M6_remaining_cohort": {
+    "total": 829,
+    "WEAK_evidence": 829,
+    "ISOLATED": 824,
+    "category": {
+      "Coupling": 644,
+      "Complexity": 130,
+      "TechnicalDebt": 45,
+      "other": 10
+    },
+    "expansion_justified": false
+  },
+  "MISSION_DISPOSITIONS": {
+    "FINDING-001": "APPROVE_FOR_FUTURE_EXECUTION (non-executable)",
+    "FINDING-040/034/144/059/129/149/065/064/068/074/078": "DEFER_MISSION",
+    "FINDING-048": "NEEDS_REFINEMENT (path now resolved: Frontend/src/App.js)"
+  },
+  "UNSAFE_AUTOMATION_RATE": 0.0,
+  "MISSION_TRACEABILITY": "100%",
+  "LEAKAGE": 0,
+  "JOURNAL_INTEGRITY": "PASS",
+  "CANONICAL_TESTS": "1434 passed (no source change)",
+  "DEFECTS_FOUND": 0,
+  "DEFECTS_RESOLVED": 0,
+  "TARGET_REPO_MUTATIONS": 0,
+  "MISSION_EXECUTIONS": 0,
+  "OPERATOR_INTERVENTIONS": 1,
+  "KNOWN_LIMITATIONS": [
+    "Remaining 829 findings uniformly WEAK/ISOLATED: expansion premature",
+    "Architectural-intent / runtime-criticality / business-impact require human context",
+    "No runtime/behavioral telemetry available under read-only envelope"
+  ],
+  "NEXT_RECOMMENDATION": "Pause automated expansion. Supply human/business/runtime context (or approve deeper read-only call-graph mining) before broader cohort review. Gate remains safe/correct/low-burden."
+}
