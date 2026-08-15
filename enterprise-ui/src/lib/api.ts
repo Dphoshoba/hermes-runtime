@@ -23,15 +23,15 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
 }
 
 export function getToken(): string | undefined {
-  return localStorage.getItem('hermes_token') ?? undefined;
+  return localStorage.getItem('evosia_token') ?? undefined;
 }
 
 export function setToken(token: string) {
-  localStorage.setItem('hermes_token', token);
+  localStorage.setItem('evosia_token', token);
 }
 
 export function clearToken() {
-  localStorage.removeItem('hermes_token');
+  localStorage.removeItem('evosia_token');
 }
 
 // ---------------------------------------------------------------------------

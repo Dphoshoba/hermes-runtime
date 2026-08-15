@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMode } from '../context/ModeContext';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -36,9 +37,15 @@ const STEPS = [
 export default function FirstRunOnboarding({ onComplete, projectName }: OnboardingProps) {
   const [step, setStep] = useState(0);
   const current = STEPS[step];
+  const { isDemo } = useMode();
 
   return (
     <div className="onboarding-overlay">
+      {isDemo && (
+        <div className="onboarding-demo-notice">
+          <span>Demo mode — sample onboarding only. This is not live EVOSIA evidence.</span>
+        </div>
+      )}
       <div className="onboarding-card">
         <div className="onboarding-progress">
           {STEPS.map((_, i) => (
@@ -80,6 +87,11 @@ export default function FirstRunOnboarding({ onComplete, projectName }: Onboardi
           <span className="safety-dot" aria-hidden="true" />
           No changes have been made
         </div>
+        {isDemo && (
+          <div className="onboarding-demo-footer">
+            Demo mode — sample onboarding only. Not live EVOSIA evidence.
+          </div>
+        )}
       </div>
     </div>
   );

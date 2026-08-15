@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import { apiFetch, getToken, setToken, clearToken } from './lib/api';
 import type { User } from './lib/types';
 import Layout from './components/Layout';
+import { ModeProvider } from './context/ModeContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import RepositoriesPage from './pages/RepositoriesPage';
@@ -65,20 +66,22 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path="/repositories" element={<ProtectedRoute><RepositoriesPage /></ProtectedRoute>} />
-        <Route path="/repositories/:repoId" element={<ProtectedRoute><RepositoryDetailPage /></ProtectedRoute>} />
-        <Route path="/scans" element={<ProtectedRoute><ScansPage /></ProtectedRoute>} />
-        <Route path="/journal" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
-        <Route path="/findings" element={<ProtectedRoute><FindingsPage /></ProtectedRoute>} />
-        <Route path="/missions" element={<ProtectedRoute><MissionsPage /></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-        <Route path="/review" element={<ProtectedRoute><HumanReviewPage /></ProtectedRoute>} />
-        <Route path="/guided" element={<ProtectedRoute><GuidedModePage /></ProtectedRoute>} />
-      </Routes>
-    </AuthProvider>
+    <ModeProvider>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/repositories" element={<ProtectedRoute><RepositoriesPage /></ProtectedRoute>} />
+          <Route path="/repositories/:repoId" element={<ProtectedRoute><RepositoryDetailPage /></ProtectedRoute>} />
+          <Route path="/scans" element={<ProtectedRoute><ScansPage /></ProtectedRoute>} />
+          <Route path="/journal" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
+          <Route path="/findings" element={<ProtectedRoute><FindingsPage /></ProtectedRoute>} />
+          <Route path="/missions" element={<ProtectedRoute><MissionsPage /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+          <Route path="/review" element={<ProtectedRoute><HumanReviewPage /></ProtectedRoute>} />
+          <Route path="/guided" element={<ProtectedRoute><GuidedModePage /></ProtectedRoute>} />
+        </Routes>
+      </AuthProvider>
+    </ModeProvider>
   );
 }

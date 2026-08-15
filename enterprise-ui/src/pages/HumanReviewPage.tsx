@@ -85,7 +85,7 @@ export default function HumanReviewPage() {
       if (filterSeverity) params.set('severity', filterSeverity)
       params.set('limit', '200')
       const queueRes = await apiFetch<{ items: ReviewItem[]; total: number }>(
-        `/review/findings?${params}`, { token: localStorage.getItem('hermes_token') || '' }
+        `/review/findings?${params}`, { token: localStorage.getItem('evosia_token') || '' }
       )
       let filtered = queueRes.items
       if (filterContext) filtered = filtered.filter(i => i.file_context === filterContext)
@@ -94,7 +94,7 @@ export default function HumanReviewPage() {
       setTotal(queueRes.total)
 
       const sumRes = await apiFetch<ReviewSummary>(
-        '/review/summary', { token: localStorage.getItem('hermes_token') || '' }
+        '/review/summary', { token: localStorage.getItem('evosia_token') || '' }
       )
       setSummary(sumRes)
     } catch (e: any) {
@@ -110,7 +110,7 @@ export default function HumanReviewPage() {
     try {
       await apiFetch(`/review/findings/${findingId}/adjudications`, {
         method: 'POST',
-        token: localStorage.getItem('hermes_token') || '',
+        token: localStorage.getItem('evosia_token') || '',
         body: JSON.stringify({
           classification,
           operator: user?.name || 'unknown',
