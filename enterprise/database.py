@@ -18,7 +18,7 @@ def _current_url() -> str:
     configured EVOSIA_DATABASE_URL last is authoritative, even when this module
     was first imported under a different URL.
     """
-    return os.environ.get("EVOSIA_DATABASE_URL") or os.environ.get("EVOSIA_DATABASE_URL", DEFAULT_DATABASE_URL)
+    return os.environ.get("EVOSIA_DATABASE_URL") or os.environ.get("HERMES_DATABASE_URL", DEFAULT_DATABASE_URL)
 
 
 def _make_engine(url: str):
