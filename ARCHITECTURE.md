@@ -1,8 +1,8 @@
-# Hermes Runtime Architecture
+# EVOSIA Runtime Architecture
 
 ## Overview
 
-Hermes Runtime is an autonomous engineering runtime that executes missions through a pipeline of evidence collection, independent review, and health monitoring. It is designed for deterministic, restart-safe operation with full audit trails.
+EVOSIA Runtime is an autonomous engineering runtime that executes missions through a pipeline of evidence collection, independent review, and health monitoring. It is designed for deterministic, restart-safe operation with full audit trails.
 
 ## Module Structure
 
@@ -253,7 +253,7 @@ Every approved mission retains references to its origin:
 
 ### Benchmark Engine
 
-The benchmark engine measures Hermes pipeline performance against real-world repositories:
+The benchmark engine measures EVOSIA pipeline performance against real-world repositories:
 
 ```
 hermes-benchmark run → BenchmarkResult
@@ -362,7 +362,7 @@ class JournalEvent:
 
 ## Engineering Command Center
 
-The first web application for Hermes Enterprise — a self-hosted observability platform.
+The first web application for EVOSIA Enterprise — a self-hosted observability platform.
 
 ### Architecture
 

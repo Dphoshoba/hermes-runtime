@@ -18,12 +18,12 @@ the beta can be run consistently.
 
 ### Scenario
 
-The participant is asked to operate Hermes on a real project (pre-loaded fixture).
+The participant is asked to operate EVOSIA on a real project (pre-loaded fixture).
 
 ### Task Sequence
 
 1. **Connect / open a project.**
-2. **Understand Hermes' project summary** — explain what Hermes found.
+2. **Understand EVOSIA' project summary** — explain what EVOSIA found.
 3. **Identify an issue needing attention.**
 4. **Answer a missing-context question.**
 5. **Understand a proposed mission.**
@@ -41,13 +41,13 @@ The participant is asked to operate Hermes on a real project (pre-loaded fixture
 | mission_decision_accuracy | % whose stated decision matches the actual control |
 | authority_comprehension_rate | % who correctly identify that approve != execute/deploy |
 | accidental_execution_assumption_rate | % who incorrectly believe a change was executed |
-| help_required_rate | % who needed facilitator explanation of Hermes itself |
+| help_required_rate | % who needed facilitator explanation of EVOSIA itself |
 | abandonment_rate | % who quit before completing all tasks |
 
 ### Acceptance Question
 
-Can a competent non-technical person operate Hermes safely without another
-person explaining Hermes itself?
+Can a competent non-technical person operate EVOSIA safely without another
+person explaining EVOSIA itself?
 
 - PASS: >= 80% task completion, 0% accidental-execution assumption.
 - NOT_OBSERVED: real users unavailable.

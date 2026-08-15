@@ -22,9 +22,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="Hermes Engineering Command Center",
+    title="EVOSIA Engineering Command Center",
     version="1.3.0",
-    description="Observability platform for Hermes Enterprise",
+    description="Observability platform for EVOSIA Enterprise",
     lifespan=lifespan,
 )
 

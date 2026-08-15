@@ -9,16 +9,16 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.mission import Mission, MissionPlanner, MissionTask, RetryPolicy
-from hermes_v01.mission_recommendation_models import (
+from evosia.mission import Mission, MissionPlanner, MissionTask, RetryPolicy
+from evosia.mission_recommendation_models import (
     DraftMission,
     GeneratedTask,
     MissionRecommendations,
     TraceabilityLink,
     _VALID_STATES,
 )
-from hermes_v01.mission_generator import generate_missions
-from hermes_v01.draft_mission_translator import (
+from evosia.mission_generator import generate_missions
+from evosia.draft_mission_translator import (
     translate_draft_to_mission,
     validate_draft_for_planning,
     is_approved_draft,
@@ -397,7 +397,7 @@ class TestMalformedMetadata:
 class TestCLI:
     def _run(self, args):
         return subprocess.run(
-            [sys.executable, "-m", "hermes_v01.mission_recommendation_cli", *args],
+            [sys.executable, "-m", "evosia.mission_recommendation_cli", *args],
             capture_output=True, text=True, timeout=30,
         )
 
@@ -514,8 +514,8 @@ class TestEndToEnd:
         out = tmp_path / "recs"
 
         # Machine gate alone produces no missions.
-        from hermes_v01.mission_generator import generate_missions
-        from hermes_v01.mission_recommendation_renderer import save_artifacts, export_missions
+        from evosia.mission_generator import generate_missions
+        from evosia.mission_recommendation_renderer import save_artifacts, export_missions
         gate_only = generate_missions(gov)
         assert gate_only.summary.missions_generated == 0
 
@@ -532,7 +532,7 @@ class TestEndToEnd:
         missions = []
         for p in sorted((out / "generated_missions").glob("*.json")):
             data = json.loads(p.read_text())
-            from hermes_v01.mission_recommendation_cli import _parse_mission
+            from evosia.mission_recommendation_cli import _parse_mission
             missions.append(_parse_mission(data))
 
         # Approve first

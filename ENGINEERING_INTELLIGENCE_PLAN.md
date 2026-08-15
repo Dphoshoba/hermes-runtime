@@ -349,7 +349,7 @@ Commands:
 - `test_empty_ri_json`
 - `test_missing_required_fields`
 
-### Hermes Self-Analysis (4 tests)
+### EVOSIA Self-Analysis (4 tests)
 - `test_hermes_self_analysis`
 - `test_hermes_findings_correspond_to_ri`
 - `test_hermes_no_fabricated_findings`
@@ -366,7 +366,7 @@ Commands:
 5. `pyproject.toml` — register entry point
 6. `tests/test_engineering_intelligence.py` — all tests
 7. Run tests, fix issues
-8. Dogfood against Hermes self-scan
+8. Dogfood against EVOSIA self-scan
 9. Schema documentation
 10. Changelog/roadmap updates
 11. Full regression

@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from hermes_v01.runtime import run_pipeline
+from evosia.runtime import run_pipeline
 
 
 def _write_executable(path: Path, content: str) -> None:

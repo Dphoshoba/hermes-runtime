@@ -1,6 +1,6 @@
 # Beta Deployment Documentation
 
-This directory documents the Hermes hosted beta and desktop distribution.
+This directory documents the EVOSIA hosted beta and desktop distribution.
 
 ## Status
 
@@ -13,7 +13,7 @@ This directory documents the Hermes hosted beta and desktop distribution.
 | M4 GitHub App | OPERATOR ACTION REQUIRED | See below |
 | M5 Demo Project | IN PROGRESS | Code changes required |
 | M6 Ephemeral Repo | DOCUMENTED | `M6_EPHEMERAL_REPO_ISOLATION.md` |
-| M7 PostgreSQL | SUPPORTED | Via `HERMES_DATABASE_URL` env var |
+| M7 PostgreSQL | SUPPORTED | Via `EVOSIA_DATABASE_URL` env var |
 | M8 Secrets | DOCUMENTED | `M8_SECRETS.md` |
 | M9 Dockerfile | DONE | `Dockerfile` |
 | M10-M16 Hosted Deployment | OPERATOR ACTION REQUIRED | See below |
@@ -33,7 +33,7 @@ Operator must:
 3. Grant permissions: Metadata (read), Contents (read).
 4. Generate a private key.
 5. Note the App ID, Client ID.
-6. Provide these to Hermes via Secret Manager.
+6. Provide these to EVOSIA via Secret Manager.
 
 ### Cloud Deployment (M10)
 

@@ -1,6 +1,6 @@
-"""Enterprise → Hermes Core integration bridge.
+"""Enterprise → EVOSIA Core integration bridge.
 
-Orchestrates real Hermes Core pipeline stages for Enterprise scan jobs.
+Orchestrates real EVOSIA Core pipeline stages for Enterprise scan jobs.
 Contains integration/orchestration logic only — no duplicate analysis rules.
 """
 
@@ -25,7 +25,7 @@ def materialize_repository(
 
     Returns (path, commit_sha).
     """
-    from hermes_v01.github_provider import GitHubRepositoryProvider
+    from evosia.github_provider import GitHubRepositoryProvider
 
     provider = GitHubRepositoryProvider()
     target = Path(tempfile.mkdtemp(prefix="hermes-materialize-"))
@@ -47,34 +47,34 @@ def dispose_materialized(path: Path) -> None:
 
 def run_readiness(repo_path: Path) -> dict[str, Any]:
     """Run real Repository Readiness assessment."""
-    from hermes_v01.readiness import assess_readiness
+    from evosia.readiness import assess_readiness
     result = assess_readiness(repo_path)
     return result.as_dict()
 
 
 def run_repository_intelligence(repo_root: Path) -> dict[str, Any]:
     """Run real Repository Intelligence scanner."""
-    from hermes_v01.repo_scanner import scan_repository
+    from evosia.repo_scanner import scan_repository
     return scan_repository(repo_root)
 
 
 def run_engineering_intelligence(ri: dict[str, Any]) -> dict[str, Any]:
     """Run real Engineering Intelligence analysis."""
-    from hermes_v01.engineering_analyzer import analyze_engineering
+    from evosia.engineering_analyzer import analyze_engineering
     result = analyze_engineering(ri)
     return result.as_dict()
 
 
 def run_governance(ei: dict[str, Any]) -> dict[str, Any]:
     """Run real Engineering Governance analysis."""
-    from hermes_v01.governance_analyzer import govern_engineering
+    from evosia.governance_analyzer import govern_engineering
     result = govern_engineering(ei)
     return result.as_dict()
 
 
 def run_mission_recommendation(governance: dict[str, Any]) -> dict[str, Any]:
     """Run real Mission Recommendation generation."""
-    from hermes_v01.mission_generator import generate_missions
+    from evosia.mission_generator import generate_missions
     result = generate_missions(governance)
     return result.as_dict()
 

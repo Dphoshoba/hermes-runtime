@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.capabilities import (
+from evosia.capabilities import (
     CapabilityMetadata,
     CapabilityRegistry,
     CapabilityState,
@@ -219,7 +219,7 @@ def test_capability_manager_discover_and_register(tmp_path: Path) -> None:
         "version": "1.0.0",
         "description": "Custom executor",
         "capability_type": "executor",
-        "entry_point": "hermes_v01.capabilities:LocalExecutorPlugin",
+        "entry_point": "evosia.capabilities:LocalExecutorPlugin",
         "required_runtime_version": "0.7.0",
     }))
 
@@ -246,7 +246,7 @@ def test_capability_manager_check_all(tmp_path: Path) -> None:
         "version": "1.0.0",
         "description": "Exec 1",
         "capability_type": "executor",
-        "entry_point": "hermes_v01.capabilities:LocalExecutorPlugin",
+        "entry_point": "evosia.capabilities:LocalExecutorPlugin",
         "required_runtime_version": "0.7.0",
     }))
     (plugin_dir / "validator1.json").write_text(json.dumps({
@@ -273,8 +273,8 @@ def test_capability_manager_check_all(tmp_path: Path) -> None:
 
 def test_runtime_with_custom_executor(tmp_path: Path) -> None:
     """Test that runtime can use a custom executor via capability manager."""
-    from hermes_v01.runtime import run_pipeline
-    from hermes_v01.capabilities import CapabilityManager, CapabilityRegistry
+    from evosia.runtime import run_pipeline
+    from evosia.capabilities import CapabilityManager, CapabilityRegistry
 
     registry = CapabilityRegistry(tmp_path / "registry.json")
     manager = CapabilityManager(registry, [])

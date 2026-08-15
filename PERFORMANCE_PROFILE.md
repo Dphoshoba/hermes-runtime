@@ -78,4 +78,4 @@ Governance evaluates evidence quality, detects duplicates, and makes approval de
 
 ## Conclusion
 
-Hermes processes typical Python repositories in under 1 second. Large repositories (1000+ files) may take 5-60 seconds. The primary bottleneck is repository scanning, which could be optimized with parallel processing.
+EVOSIA processes typical Python repositories in under 1 second. Large repositories (1000+ files) may take 5-60 seconds. The primary bottleneck is repository scanning, which could be optimized with parallel processing.

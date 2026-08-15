@@ -7,29 +7,29 @@ interface OnboardingProps {
 
 const STEPS = [
   {
-    title: 'Welcome to Hermes',
-    body: 'Hermes reviews your software, explains what deserves attention, and can prepare improvements for your approval.',
-    detail: 'Hermes will not change or deploy your software without additional permission.',
+    title: 'Welcome to EVOSIA',
+    body: 'EVOSIA reviews your software, explains what deserves attention, and can prepare improvements for your approval.',
+    detail: 'EVOSIA will not change or deploy your software without additional permission.',
   },
   {
-    title: 'What Hermes can see',
-    body: 'Hermes can inspect your project files, dependencies, and structure to identify potential concerns.',
-    detail: 'Hermes works read-only by default. It does not modify your project unless you explicitly approve a prepared change.',
+    title: 'What EVOSIA can see',
+    body: 'EVOSIA can inspect your project files, dependencies, and structure to identify potential concerns.',
+    detail: 'EVOSIA works read-only by default. It does not modify your project unless you explicitly approve a prepared change.',
   },
   {
-    title: 'What Hermes cannot do',
-    body: 'Hermes cannot deploy changes, merge code, or modify production systems without additional explicit permission.',
+    title: 'What EVOSIA cannot do',
+    body: 'EVOSIA cannot deploy changes, merge code, or modify production systems without additional explicit permission.',
     detail: 'Every action beyond inspection and recommendation requires your clear approval.',
   },
   {
     title: 'When your approval is needed',
-    body: 'Hermes may ask for context about your project and recommend work. You decide what to prepare.',
+    body: 'EVOSIA may ask for context about your project and recommend work. You decide what to prepare.',
     detail: 'No changes are made to your project until you review and approve a prepared change.',
   },
   {
     title: "Let's begin",
-    body: 'Hermes will now review your project and show you a plain-language summary.',
-    detail: "You'll always know exactly what Hermes can and cannot do.",
+    body: 'EVOSIA will now review your project and show you a plain-language summary.',
+    detail: "You'll always know exactly what EVOSIA can and cannot do.",
   },
 ];
 

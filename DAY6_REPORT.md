@@ -1,11 +1,11 @@
-# HERMES — 7-DAY OPERATIONAL VALIDATION
+# EVOSIA — 7-DAY OPERATIONAL VALIDATION
 
 ## DAY 6 — BLIND HOLDOUT EVALUATION
 
 **Trial:** Operational Validation Trial 001
 **Status:** ACTIVE
-**Hermes Version:** 1.3.0
-**Hermes Commit:** e3583c8
+**EVOSIA Version:** 1.3.0
+**EVOSIA Commit:** e3583c8
 **Completed:** 2026-08-11
 
 ---

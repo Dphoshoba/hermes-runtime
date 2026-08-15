@@ -10,7 +10,7 @@
 
 ## 1. Objective
 
-Determine whether Hermes can collect NEW evidence that meaningfully
+Determine whether EVOSIA can collect NEW evidence that meaningfully
 distinguishes USEFUL / NEEDS_MORE_EVIDENCE / NOT_ACTIONABLE, beyond what v1
 captured. Explicitly NOT tuning thresholds against frozen labels; NOT
 implementing a Governance rule.
@@ -163,7 +163,7 @@ category-specific semantics emerged that would let Governance separate classes.
 
 - Human actionability appears driven by factors NOT present in static/history
   evidence: runtime criticality, business impact, failure history, operational
-  context. Hermes possesses none of these (behavioral evidence is structurally
+  context. EVOSIA possesses none of these (behavioral evidence is structurally
   NOT_OBSERVED).
 - The intra-cohort graph is cohort-local (only the 20–25 strict paths), so
   fan-in/fan-out is a lower bound, not whole-repository centrality. Whole-repo
@@ -229,7 +229,7 @@ suites).
 No v2 signal — nor any v1 signal — separates USEFUL from
 NEEDS_MORE_EVIDENCE / NOT_ACTIONABLE with acceptable separation in the
 provenance-qualified strict cohort. The human actionability judgment is not
-recoverable from repository static + git-history evidence available to Hermes.
+recoverable from repository static + git-history evidence available to EVOSIA.
 This is a valid, conclusive result of the experiment; it does not warrant
 another enrichment cycle merely to avoid the conclusion.
 

@@ -1,7 +1,7 @@
 # Evidence & Risk Gate — Promotion Readiness Report
 
 **Status:** PROMOTED as Controlled Beta governance baseline (M-Cycle 8)
-**Hermes version:** 1.3.0
+**EVOSIA version:** 1.3.0
 **Promotion commit:** local commit on `main` (no push / no PR / no tag) — per safety constraints.
 **Authorization:** Operator promotion decision — gate model only.
 

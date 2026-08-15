@@ -3,7 +3,7 @@
 **Derived from:** `GOVERNANCE_ARCHITECTURE_DECISION.md` (Post Cycle 8)
 **Status:** IMPLEMENTATION PLAN — documentation only, no code changes in this step
 **Target pipeline:** `DETECT → ENRICH → EVIDENCE/RISK GATE → HUMAN REVIEW → PRIORITIZE → MISSION RECOMMENDATION`
-**Safety invariant:** Hermes never creates `ACTIONABLE`/`NOT_ACTIONABLE` adjudication without human authority. Legacy decisions stored immutably; re-labeled, never rewritten.
+**Safety invariant:** EVOSIA never creates `ACTIONABLE`/`NOT_ACTIONABLE` adjudication without human authority. Legacy decisions stored immutably; re-labeled, never rewritten.
 
 ---
 

@@ -1,6 +1,6 @@
 """Scanner Service — background scan execution for repositories.
 
-Uses the Enterprise-Core bridge to invoke real Hermes Core pipeline stages.
+Uses the Enterprise-Core bridge to invoke real EVOSIA Core pipeline stages.
 """
 
 from __future__ import annotations
@@ -158,7 +158,7 @@ def retry_scan(db: Session, job_id: str, requested_by: str | None = None) -> Sca
 
 
 def _run_scan(db: Session, job: ScanJob) -> None:
-    """Execute real Hermes Core pipeline stages with per-stage timing."""
+    """Execute real EVOSIA Core pipeline stages with per-stage timing."""
     repo = db.query(Repository).filter(Repository.id == job.repository_id).first()
     if not repo:
         raise ValueError("Repository not found")

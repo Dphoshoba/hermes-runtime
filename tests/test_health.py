@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from hermes_v01.health import FAILED, HEALTHY, UNKNOWN, build_health_report, write_health_reports
+from evosia.health import FAILED, HEALTHY, UNKNOWN, build_health_report, write_health_reports
 
 
 def _write_json(path: Path, data: dict) -> None:

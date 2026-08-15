@@ -1,4 +1,4 @@
-# Release Notes — Hermes Runtime v1.0.0-alpha
+# Release Notes — EVOSIA Runtime v1.0.0-alpha
 
 **Version:** 1.0.0a0
 **Date:** 2026-08-08
@@ -6,7 +6,7 @@
 
 ## What Is This?
 
-Hermes Runtime is an autonomous engineering runtime that executes missions through a pipeline of evidence collection, independent review, and health monitoring. It is designed for deterministic, restart-safe operation with full audit trails.
+EVOSIA Runtime is an autonomous engineering runtime that executes missions through a pipeline of evidence collection, independent review, and health monitoring. It is designed for deterministic, restart-safe operation with full audit trails.
 
 ## Highlights
 

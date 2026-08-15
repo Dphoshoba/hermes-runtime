@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.mission import (
+from evosia.mission import (
     Mission,
     MissionPlanner,
     MissionTask,
@@ -21,13 +21,13 @@ from hermes_v01.mission import (
     parse_mission,
     save_plan,
 )
-from hermes_v01.mission_runner import (
+from evosia.mission_runner import (
     MissionReport,
     MissionRunner,
     load_mission_report,
     save_mission_report,
 )
-from hermes_v01.work_queue import WorkQueueManager, WorkQueueStateStore
+from evosia.work_queue import WorkQueueManager, WorkQueueStateStore
 
 
 # ---------------------------------------------------------------------------

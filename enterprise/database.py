@@ -8,17 +8,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-DEFAULT_DATABASE_URL = "sqlite:///./hermes_enterprise.db"
+DEFAULT_DATABASE_URL = "sqlite:///./evosia_enterprise.db"
 
 
 def _current_url() -> str:
     """The database URL to use right now.
 
     Read live from the environment so that whichever test suite (or runtime)
-    configured HERMES_DATABASE_URL last is authoritative, even when this module
+    configured EVOSIA_DATABASE_URL last is authoritative, even when this module
     was first imported under a different URL.
     """
-    return os.environ.get("HERMES_DATABASE_URL", DEFAULT_DATABASE_URL)
+    return os.environ.get("EVOSIA_DATABASE_URL") or os.environ.get("EVOSIA_DATABASE_URL", DEFAULT_DATABASE_URL)
 
 
 def _make_engine(url: str):
@@ -37,7 +37,7 @@ def _make_engine(url: str):
     return create_engine(url, **kwargs)
 
 
-# URL-keyed engine cache. Different test suites set HERMES_DATABASE_URL to
+# URL-keyed engine cache. Different test suites set EVOSIA_DATABASE_URL to
 # different targets (e.g. `:memory:` vs `./test_enterprise.db`); keying by URL
 # gives each suite its own engine instead of reusing a stale/closed one.
 _ENGINES: dict[str, object] = {}
@@ -60,7 +60,7 @@ def SessionLocal():
     """Session factory bound to the currently-configured engine.
 
     Returned as a callable so the bound engine always reflects the live
-    HERMES_DATABASE_URL at call time (not the URL present at import).
+    EVOSIA_DATABASE_URL at call time (not the URL present at import).
     """
     return sessionmaker(autocommit=False, autoflush=False, bind=get_engine(), future=True)()
 

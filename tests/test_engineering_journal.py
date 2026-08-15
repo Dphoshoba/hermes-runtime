@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.journal_models import (
+from evosia.journal_models import (
     JournalEvent,
     create_event,
     _canonical_payload_sha256,
@@ -28,9 +28,9 @@ from hermes_v01.journal_models import (
     EVENT_TYPES,
     STAGE_CATEGORIES,
 )
-from hermes_v01.journal_store import JournalStore
-from hermes_v01.journal_emitter import JournalEmitter
-from hermes_v01.journal_summary import (
+from evosia.journal_store import JournalStore
+from evosia.journal_emitter import JournalEmitter
+from evosia.journal_summary import (
     OvernightSummary,
     StageSummary,
     generate_overnight_summary,
@@ -975,7 +975,7 @@ class TestStageSummary:
 class TestCLI:
     def _run_journal(self, args: list[str], repo: str) -> subprocess.CompletedProcess:
         return subprocess.run(
-            ["python", "-m", "hermes_v01.journal_cli", "--repo", repo] + args,
+            ["python", "-m", "evosia.journal_cli", "--repo", repo] + args,
             capture_output=True,
             text=True,
         )
@@ -1172,7 +1172,7 @@ class TestCLI:
         os.makedirs(repo, exist_ok=True)
 
         proc = subprocess.run(
-            ["python", "-m", "hermes_v01.journal_cli", "--repo", repo,
+            ["python", "-m", "evosia.journal_cli", "--repo", repo,
              "record", "readiness.assessed"],
             input='{"from_stdin": true}',
             capture_output=True,

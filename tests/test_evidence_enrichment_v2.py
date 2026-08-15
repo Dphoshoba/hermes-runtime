@@ -31,7 +31,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.evidence_enrichment_v2 import (
+from evosia.evidence_enrichment_v2 import (
     ENRICHMENT_V2_VERSION,
     build_repo_context,
     extract_v2,
@@ -245,8 +245,8 @@ def test_no_repo_mutation():
 def test_governance_unchanged_with_v2():
     if not HERMES_RI.exists():
         pytest.skip("RI artifact not present")
-    from hermes_v01.engineering_analyzer import analyze_engineering
-    from hermes_v01.governance_analyzer import govern_engineering, _decide
+    from evosia.engineering_analyzer import analyze_engineering
+    from evosia.governance_analyzer import govern_engineering, _decide
     import inspect
 
     ri = json.loads(HERMES_RI.read_text())
@@ -270,7 +270,7 @@ def test_governance_unchanged_with_v2():
 
 
 def test_scan_stages_unchanged():
-    import hermes_v01.engineering_analyzer as ea
+    import evosia.engineering_analyzer as ea
     for attr in ("SCAN_STAGES", "PIPELINE_STAGES", "STAGES"):
         if hasattr(ea, attr):
             s = " ".join(str(x) for x in getattr(ea, attr)).lower()
@@ -279,7 +279,7 @@ def test_scan_stages_unchanged():
 
 def test_v1_backward_compat():
     """v1 still attaches enrichment; v2 is optional and separate."""
-    from hermes_v01.engineering_analyzer import analyze_engineering
+    from evosia.engineering_analyzer import analyze_engineering
     ri = json.loads(HERMES_RI.read_text())
     ei = analyze_engineering(ri)
     assert any(f.enrichment for f in ei.findings)

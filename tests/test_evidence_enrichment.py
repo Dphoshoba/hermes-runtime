@@ -25,7 +25,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.evidence_enrichment import (
+from evosia.evidence_enrichment import (
     ENRICHMENT_VERSION,
     classify_file_context,
     compute_change_history,
@@ -258,8 +258,8 @@ def test_governance_receives_enrichment_but_unchanged():
     """End-to-end: EI produces enrichment; Governance still ignores it."""
     if not HERMES_RI_PATH.exists():
         pytest.skip("RI artifact not present")
-    from hermes_v01.engineering_analyzer import analyze_engineering
-    from hermes_v01.governance_analyzer import govern_engineering, _decide
+    from evosia.engineering_analyzer import analyze_engineering
+    from evosia.governance_analyzer import govern_engineering, _decide
     import inspect
 
     ei = analyze_engineering(json.loads(HERMES_RI_PATH.read_text()))
@@ -275,7 +275,7 @@ def test_governance_receives_enrichment_but_unchanged():
 
 def test_canonical_stages_unchanged():
     """Enrichment adds no canonical SCAN_STAGES entry."""
-    import hermes_v01.engineering_analyzer as ea
+    import evosia.engineering_analyzer as ea
     # If SCAN_STAGES exists in this module/system, it must not contain enrichment
     for attr in ("SCAN_STAGES", "PIPELINE_STAGES", "STAGES"):
         if hasattr(ea, attr):

@@ -1,18 +1,18 @@
-# HERMES — 7-DAY OPERATIONAL VALIDATION
+# EVOSIA — 7-DAY OPERATIONAL VALIDATION
 
 ## DAY 5 — GOVERNANCE CALIBRATION & EVIDENCE GAP ANALYSIS
 
 **Trial:** Operational Validation Trial 001
 **Status:** ACTIVE
-**Hermes Version:** 1.3.0
-**Hermes Commit:** 51bdb43
+**EVOSIA Version:** 1.3.0
+**EVOSIA Commit:** 51bdb43
 **Completed:** 2026-08-11
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-Day 5 diagnosed WHY Hermes Governance over-approves findings (83.3%) and what evidence is missing when human reviewers classify findings as NEEDS_MORE_EVIDENCE (53.3%) or NOT_ACTIONABLE (30.0%).
+Day 5 diagnosed WHY EVOSIA Governance over-approves findings (83.3%) and what evidence is missing when human reviewers classify findings as NEEDS_MORE_EVIDENCE (53.3%) or NOT_ACTIONABLE (30.0%).
 
 **Primary Finding:** `governance_analyzer.py` was built before v1.3 fields existed. It only sees 8 of 14 available fields. The 6 ignored fields (file_context, observation_status, concern_status, actionability_status, exceedance_ratio, repository_context) are exactly the fields that would enable governance to distinguish PRODUCTION from TEST, high-exceedance from near-threshold, and actionable from non-actionable findings.
 
@@ -27,7 +27,7 @@ Day 5 diagnosed WHY Hermes Governance over-approves findings (83.3%) and what ev
 | Check | Result |
 |-------|--------|
 | git HEAD | `51bdb43` ✅ |
-| Hermes version | 1.3.0 ✅ |
+| EVOSIA version | 1.3.0 ✅ |
 | Enterprise version | 1.3.0 ✅ |
 | Working tree | Clean ✅ |
 | Trial 001 | ACTIVE ✅ |
@@ -376,8 +376,8 @@ See Section 8b in the analysis output for all 27 individual explanations.
 | **Trial** | Operational Validation Trial 001 |
 | **Day** | 5 of 7 |
 | **Trial Status** | ACTIVE |
-| **Hermes Version** | 1.3.0 |
-| **Hermes Commit** | 51bdb43 |
+| **EVOSIA Version** | 1.3.0 |
+| **EVOSIA Commit** | 51bdb43 |
 | **Baseline Verification** | PASS |
 | **Governance Inputs Available** | 14 |
 | **Governance Inputs Passed to Governance** | 8 |

@@ -5,13 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.runtime_state import (
+from evosia.runtime_state import (
     RuntimeStateStore,
     load_projected_state,
     project_runtime_state,
 )
-from hermes_v01.supervisor import AtomicJsonStateStore, SupervisorState
-from hermes_v01.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
+from evosia.supervisor import AtomicJsonStateStore, SupervisorState
+from evosia.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
 
 
 def supervisor_state(tmp_path: Path, **overrides: object) -> SupervisorState:

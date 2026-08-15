@@ -1,8 +1,8 @@
-# Hermes Runtime Roadmap
+# EVOSIA Runtime Roadmap
 
 ## Evidence-Driven Evolution
 
-Hermes evolves only when operational evidence demonstrates a need.
+EVOSIA evolves only when operational evidence demonstrates a need.
 
 New capabilities require one or more of:
 
@@ -24,7 +24,7 @@ Every future feature proposal must include:
 4. **Pilot References** — Which pilots encountered this issue?
 5. **Benchmark References** — What benchmark data supports this?
 6. **Alternatives Considered** — What other approaches were evaluated?
-7. **Why Existing Capabilities Are Insufficient** — Why can't Hermes solve this today?
+7. **Why Existing Capabilities Are Insufficient** — Why can't EVOSIA solve this today?
 8. **Expected Benefit** — What measurable improvement is expected?
 9. **Success Criteria** — How will we know the fix works?
 10. **Rollback Strategy** — How do we revert if the fix causes problems?
@@ -48,7 +48,7 @@ If these sections are absent, the proposal should not be accepted.
 
 ## v1.3.x — Controlled Beta Validation 🔄 IN PROGRESS
 
-Hermes Enterprise is in controlled beta with mandatory human review. Governance is advisory.
+EVOSIA Enterprise is in controlled beta with mandatory human review. Governance is advisory.
 
 ### v1.3.1 — Governance Useful-Recall Validation (NEXT)
 
@@ -401,7 +401,7 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 - 5 representative mission definitions (repo-maintenance, doc-refresh, ci-verify, dep-review, release-readiness)
 - 3 end-to-end missions executed against validation/sample-repo
 - 8 friction findings documented in DOGFOOD_FINDINGS.md
-- All failures attributable to target repository (not Hermes defects)
+- All failures attributable to target repository (not EVOSIA defects)
 - Evidence, reviews, and mission reports verified
 - 593 tests still passing
 
@@ -427,7 +427,7 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 - `hermes-repo` CLI: scan, show, check, summary
 - Deterministic JSON output (identical scans produce byte-identical artifacts)
 - REPOSITORY_INTELLIGENCE_SCHEMA.md documentation
-- 68 tests covering scanner, analyzer, renderer, CLI, determinism, and Hermes self-scan
+- 68 tests covering scanner, analyzer, renderer, CLI, determinism, and EVOSIA self-scan
 - 661 total tests passing
 
 ## Engineering Intelligence v1.0 ✅ COMPLETE
@@ -443,7 +443,7 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 - `hermes-engineering` CLI: scan, show, summary, findings, missions
 - Deterministic JSON output (byte-identical for same RI input)
 - ENGINEERING_INTELLIGENCE_SCHEMA.md with scoring formulas and limitations
-- 57 tests covering models, findings, recommendations, missions, rendering, CLI, malformed input, Hermes self-analysis
+- 57 tests covering models, findings, recommendations, missions, rendering, CLI, malformed input, EVOSIA self-analysis
 - 718 total tests passing
 
 ## Engineering Governance v1.0 ✅ COMPLETE
@@ -460,12 +460,12 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 - `hermes-governance` CLI: scan, show, summary, approved, rejected
 - Deterministic JSON output
 - ENGINEERING_GOVERNANCE_SCHEMA.md documentation
-- 31 tests covering decisions, duplicates, conflicts, evidence, architecture, rendering, CLI, Hermes self-governance
+- 31 tests covering decisions, duplicates, conflicts, evidence, architecture, rendering, CLI, EVOSIA self-governance
 - 749 total tests passing
 
 ## Mission Recommendation Integration v1.0 ✅ COMPLETE
 
-- Governance-approved recommendations → draft Hermes Mission artifacts
+- Governance-approved recommendations → draft EVOSIA Mission artifacts
 - DraftMission supports DRAFT/APPROVED/REJECTED states with explicit transitions
 - approve()/reject() methods with timestamp and operator tracking
 - Only APPROVED missions accepted by MissionPlanner
@@ -500,7 +500,7 @@ Every milestone must improve: Correctness, Reliability, Maintainability, Observa
 - Evidence-based engineering confidence scoring
 - Drift detection between snapshots
 - Determinism verification across multiple runs
-- Hermes self-benchmarking validated
+- EVOSIA self-benchmarking validated
 - `BENCHMARKING.md` and `VALIDATION_GUIDE.md` documentation
 - 32 tests covering calculations, comparison, trend, golden validation, determinism, CLI, confidence, persistence
 - 856 total tests passing

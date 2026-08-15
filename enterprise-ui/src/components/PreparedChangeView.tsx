@@ -68,7 +68,7 @@ export default function PreparedChangeView({ change, onApprove }: PreparedChange
       <div className="authority-statement card highlight">
         <strong>Important:</strong> This change has been <strong>prepared</strong> but
         has <strong>not been applied</strong> to your project. Approving here permits
-        Hermes to prepare the change in an isolated workspace. It will{' '}
+        EVOSIA to prepare the change in an isolated workspace. It will{' '}
         <strong>not</strong> merge, deploy, or change production.
       </div>
 

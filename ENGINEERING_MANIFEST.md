@@ -1,8 +1,8 @@
-# Engineering Manifest — Hermes Runtime
+# Engineering Manifest — EVOSIA Runtime
 
 ## Purpose
 
-Hermes Runtime is an autonomous engineering runtime that executes missions through a pipeline of evidence collection, independent review, and health monitoring. It is designed for deterministic, restart-safe operation with full audit trails.
+EVOSIA Runtime is an autonomous engineering runtime that executes missions through a pipeline of evidence collection, independent review, and health monitoring. It is designed for deterministic, restart-safe operation with full audit trails.
 
 ## Design Philosophy
 
@@ -100,7 +100,7 @@ Hermes Runtime is an autonomous engineering runtime that executes missions throu
 
 ## Evidence-Driven Evolution
 
-Hermes evolves only when operational evidence demonstrates a need.
+EVOSIA evolves only when operational evidence demonstrates a need.
 
 New capabilities require one or more of:
 
@@ -122,7 +122,7 @@ Every future feature proposal must include:
 4. **Pilot References** — Which pilots encountered this issue?
 5. **Benchmark References** — What benchmark data supports this?
 6. **Alternatives Considered** — What other approaches were evaluated?
-7. **Why Existing Capabilities Are Insufficient** — Why can't Hermes solve this today?
+7. **Why Existing Capabilities Are Insufficient** — Why can't EVOSIA solve this today?
 8. **Expected Benefit** — What measurable improvement is expected?
 9. **Success Criteria** — How will we know the fix works?
 10. **Rollback Strategy** — How do we revert if the fix causes problems?

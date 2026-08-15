@@ -10,10 +10,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from hermes_v01.work_queue import WorkItem, WorkQueueManager, WorkQueueState, WorkQueueStateStore
-from hermes_v01.mission import Mission, MissionPlanner, MissionTask, Plan, parse_mission
-from hermes_v01.mission_runner import MissionRunner, MissionReport, save_mission_report, load_mission_report
-from hermes_v01.metrics import ConcurrentMissionMetrics, compute_concurrent_mission_metrics
+from evosia.work_queue import WorkItem, WorkQueueManager, WorkQueueState, WorkQueueStateStore
+from evosia.mission import Mission, MissionPlanner, MissionTask, Plan, parse_mission
+from evosia.mission_runner import MissionRunner, MissionReport, save_mission_report, load_mission_report
+from evosia.metrics import ConcurrentMissionMetrics, compute_concurrent_mission_metrics
 
 
 # ---------------------------------------------------------------------------
@@ -450,7 +450,7 @@ class TestRetryBehavior:
 class TestCLIConcurrencyFlag:
     def test_cli_accepts_concurrency(self, tmp_path: Path, capsys) -> None:
         from argparse import Namespace
-        from hermes_v01.mission_runner_cli import cmd_run
+        from evosia.mission_runner_cli import cmd_run
 
         mission_data = _minimal_plan()
         mission_file = tmp_path / "mission.json"

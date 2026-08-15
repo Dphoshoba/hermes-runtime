@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 import pytest
 
-from hermes_v01.work_queue import (
+from evosia.work_queue import (
     TERMINAL_TASK_STATES,
     TASK_STATES,
     WorkItem,
@@ -24,7 +24,7 @@ from hermes_v01.work_queue import (
     WorkQueueState,
     WorkQueueStateStore,
 )
-from hermes_v01.capabilities import (
+from evosia.capabilities import (
     CapabilityManager,
     CapabilityMetadata,
     CapabilityRegistry,
@@ -33,11 +33,11 @@ from hermes_v01.capabilities import (
     LocalExecutorPlugin,
     ExecutionResult,
 )
-from hermes_v01.health import (
+from evosia.health import (
     build_health_report,
     write_health_reports,
 )
-from hermes_v01.metrics import (
+from evosia.metrics import (
     classify_failure,
     compute_queue_metrics,
 )
@@ -321,7 +321,7 @@ class TestPartialWrites:
         # Simulate a failed write: corrupt the temp file path
         # The save method creates a temp file then os.replace.
         # If os.replace fails, the original should remain.
-        with patch("hermes_v01.utils.os.replace", side_effect=OSError("disk full")):
+        with patch("evosia.utils.os.replace", side_effect=OSError("disk full")):
             with pytest.raises(OSError, match="disk full"):
                 mgr.transition("t1", "RUNNING", increment_attempts=True)
 
@@ -579,7 +579,7 @@ class TestHealthFailures:
 
     def test_write_health_reports_creates_files(self, tmp_path: Path) -> None:
         """Health report writing works even with minimal data."""
-        from hermes_v01.health import HealthReport
+        from evosia.health import HealthReport
 
         report = HealthReport(
             runtime_version="0.7.6",
@@ -1034,7 +1034,7 @@ class TestChaos:
         original = (tmp_path / "queue.json").read_text()
 
         # Force a write failure
-        with patch("hermes_v01.utils.os.replace", side_effect=OSError("crash")):
+        with patch("evosia.utils.os.replace", side_effect=OSError("crash")):
             with pytest.raises(OSError):
                 mgr.transition("t1", "RUNNING", increment_attempts=True)
 

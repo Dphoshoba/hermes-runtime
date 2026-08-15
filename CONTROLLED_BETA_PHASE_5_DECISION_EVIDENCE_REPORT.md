@@ -2,7 +2,7 @@
 
 **Program:** CONTROLLED_BETA_PHASE_5_DECISION_CHANGING_EVIDENCE
 **Prior:** Phase 4 operator re-decision persisted (commit `ed4f8ef…`)
-**Governance baseline:** EVIDENCE_RISK_GATE · **Hermes version:** 1.3.0
+**Governance baseline:** EVIDENCE_RISK_GATE · **EVOSIA version:** 1.3.0
 **Autonomous execution:** DISABLED · **Repository mutation:** DISABLED
 
 ## Phase 5 decision
@@ -16,7 +16,7 @@ except #3 with 6), (c) only minor debt markers, and (d) a broader cohort that is
 **uniformly WEAK-evidence and 824/829 ISOLATED**. These are OBSERVED, and they
 reinforce DEFER — but they do not supply the missing architectural-intent /
 runtime-criticality / business-impact context. That context is human/business
-dependent and cannot be obtained by Hermes read-only analysis. Per the Continuous
+dependent and cannot be obtained by EVOSIA read-only analysis. Per the Continuous
 Autonomy Contract, this is a genuine STOP condition (no further material read-only
 evidence obtainable without crossing the authority boundary).
 

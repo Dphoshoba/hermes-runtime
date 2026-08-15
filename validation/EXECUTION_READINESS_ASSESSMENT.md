@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Evaluate whether Hermes is ready for future controlled execution, WITHOUT enabling
+Evaluate whether EVOSIA is ready for future controlled execution, WITHOUT enabling
 execution by passing M1–M9. Execution remains DISABLED by default.
 
 ## Assessment Date

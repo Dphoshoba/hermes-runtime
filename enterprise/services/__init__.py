@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User
 
-SECRET_KEY = os.environ.get("HERMES_JWT_SECRET", "hermes-enterprise-dev-secret-change-in-production")
+SECRET_KEY = os.environ.get("EVOSIA_JWT_SECRET", "hermes-enterprise-dev-secret-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 

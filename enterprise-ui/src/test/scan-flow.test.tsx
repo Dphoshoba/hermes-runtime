@@ -51,7 +51,7 @@ describe('Login page', () => {
         </AuthContext.Provider>
       </MemoryRouter>
     )
-    expect(screen.getByText('Hermes Enterprise')).toBeInTheDocument()
+    expect(screen.getByText('EVOSIA Enterprise')).toBeInTheDocument()
     expect(screen.getByRole('textbox')).toBeInTheDocument()
     expect(pwInput()).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()

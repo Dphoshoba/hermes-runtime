@@ -11,11 +11,11 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.js_scanner import JavaScriptScanner
-from hermes_v01.language_detector import detect_languages, detect_project_type
-from hermes_v01.repo_analyzer import analyze_repository
-from hermes_v01.repo_scanner import scan_repository
-from hermes_v01.scanner_registry import ScannerRegistry, get_registry
+from evosia.js_scanner import JavaScriptScanner
+from evosia.language_detector import detect_languages, detect_project_type
+from evosia.repo_analyzer import analyze_repository
+from evosia.repo_scanner import scan_repository
+from evosia.scanner_registry import ScannerRegistry, get_registry
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 JS_REPO = FIXTURES / "js-repo"
@@ -431,7 +431,7 @@ class TestZeroPythonFindings:
 
     def _get_engineering_intel(self):
         """Run full pipeline to get engineering intelligence with findings."""
-        from hermes_v01.engineering_analyzer import analyze_engineering
+        from evosia.engineering_analyzer import analyze_engineering
         scan = scan_repository(JS_REPO)
         return analyze_engineering(scan)
 
@@ -508,7 +508,7 @@ class TestGitignoreDetection:
 
     def test_no_false_missing_gitignore_when_present(self):
         """Engineering Intelligence should not flag .gitignore when it exists."""
-        from hermes_v01.engineering_analyzer import analyze_engineering
+        from evosia.engineering_analyzer import analyze_engineering
         scan = scan_repository(JS_REPO)
         ei = analyze_engineering(scan)
         gitignore_findings = [
@@ -522,7 +522,7 @@ class TestGitignoreDetection:
 
     def test_missing_gitignore_generates_finding(self, tmp_path):
         """When .gitignore is absent, a finding should be generated."""
-        from hermes_v01.engineering_analyzer import analyze_engineering
+        from evosia.engineering_analyzer import analyze_engineering
         repo = tmp_path / "no-gitignore-repo"
         repo.mkdir()
         (repo / "package.json").write_text('{"name": "test"}')
@@ -541,7 +541,7 @@ class TestGitignoreDetection:
 
     def test_python_scanner_still_detects_gitignore(self):
         """Python scanner behavior unchanged — still detects .gitignore."""
-        from hermes_v01.repo_scanner import _scan_configuration
+        from evosia.repo_scanner import _scan_configuration
         from pathlib import Path
         # Use a temp dir with .gitignore
         import tempfile
@@ -561,7 +561,7 @@ class TestFrontendEvidenceReferences:
     """Verify complexity findings have non-empty evidence references."""
 
     def test_complexity_findings_have_evidence(self):
-        from hermes_v01.engineering_analyzer import analyze_engineering
+        from evosia.engineering_analyzer import analyze_engineering
         scan = scan_repository(JS_REPO)
         ei = analyze_engineering(scan)
         complexity_findings = [f for f in ei.findings if f.category == "Complexity"]
@@ -579,7 +579,7 @@ class TestFrontendEvidenceReferences:
 
     def test_hook_concentration_evidence_has_component(self):
         """high_hook_concentration evidence should mention component name."""
-        from hermes_v01.engineering_analyzer import analyze_engineering
+        from evosia.engineering_analyzer import analyze_engineering
         scan = scan_repository(JS_REPO)
         ei = analyze_engineering(scan)
         hook_findings = [
@@ -594,7 +594,7 @@ class TestFrontendEvidenceReferences:
 
     def test_api_concentration_evidence_has_fetch_count(self):
         """api_concentration evidence should mention fetch/API call count."""
-        from hermes_v01.engineering_analyzer import analyze_engineering
+        from evosia.engineering_analyzer import analyze_engineering
         scan = scan_repository(JS_REPO)
         ei = analyze_engineering(scan)
         api_findings = [
@@ -627,8 +627,8 @@ class TestGovernanceTraceability:
     """Verify governance preserves evidence quality for frontend findings."""
 
     def test_governance_receives_evidence_quality(self):
-        from hermes_v01.engineering_analyzer import analyze_engineering
-        from hermes_v01.governance_analyzer import govern_engineering
+        from evosia.engineering_analyzer import analyze_engineering
+        from evosia.governance_analyzer import govern_engineering
         scan = scan_repository(JS_REPO)
         ei = analyze_engineering(scan)
         gov = govern_engineering(ei.as_dict())
@@ -643,8 +643,8 @@ class TestGovernanceTraceability:
 
     def test_approved_findings_have_evidence(self):
         """Every APPROVED frontend recommendation must have non-empty evidence."""
-        from hermes_v01.engineering_analyzer import analyze_engineering
-        from hermes_v01.governance_analyzer import govern_engineering
+        from evosia.engineering_analyzer import analyze_engineering
+        from evosia.governance_analyzer import govern_engineering
         scan = scan_repository(JS_REPO)
         ei = analyze_engineering(scan)
         gov = govern_engineering(ei.as_dict())

@@ -8,14 +8,14 @@ from typing import Any
 
 import pytest
 
-from hermes_v01.mission import (
+from evosia.mission import (
     Mission,
     MissionPlanner,
     MissionTask,
     RetryPolicy,
     parse_mission,
 )
-from hermes_v01.mission_types import (
+from evosia.mission_types import (
     CITask,
     DependencyUpgrade,
     DocumentationRefresh,
@@ -431,7 +431,7 @@ class TestBuiltInTypeValidation:
 
 class TestMissionTypeCLI:
     def test_types_list(self, capsys) -> None:
-        from hermes_v01.mission_runner_cli import cmd_types
+        from evosia.mission_runner_cli import cmd_types
 
         class Args:
             category = None
@@ -442,7 +442,7 @@ class TestMissionTypeCLI:
         assert "repository-maintenance" in output
 
     def test_types_json(self, capsys) -> None:
-        from hermes_v01.mission_runner_cli import cmd_types
+        from evosia.mission_runner_cli import cmd_types
 
         class Args:
             category = None
@@ -456,7 +456,7 @@ class TestMissionTypeCLI:
         assert "repository-maintenance" in names
 
     def test_types_filter_category(self, capsys) -> None:
-        from hermes_v01.mission_runner_cli import cmd_types
+        from evosia.mission_runner_cli import cmd_types
 
         class Args:
             category = "security"
@@ -469,7 +469,7 @@ class TestMissionTypeCLI:
         assert data[0]["name"] == "security-audit"
 
     def test_type_show(self, capsys) -> None:
-        from hermes_v01.mission_runner_cli import cmd_type_show
+        from evosia.mission_runner_cli import cmd_type_show
 
         class Args:
             type_name = "security-audit"
@@ -481,7 +481,7 @@ class TestMissionTypeCLI:
         assert data["category"] == "security"
 
     def test_type_show_nonexistent(self, capsys) -> None:
-        from hermes_v01.mission_runner_cli import cmd_type_show
+        from evosia.mission_runner_cli import cmd_type_show
 
         class Args:
             type_name = "nonexistent-type"
@@ -495,7 +495,7 @@ class TestMissionTypeCLI:
 
 class TestRunnerMissionTypeIntegration:
     def test_runner_accepts_mission_type(self) -> None:
-        from hermes_v01.mission_runner import MissionRunner
+        from evosia.mission_runner import MissionRunner
         runner = MissionRunner(
             runtime_root=Path("/tmp/r"),
             repository=Path("/tmp/r"),
@@ -506,7 +506,7 @@ class TestRunnerMissionTypeIntegration:
         assert runner.mission_type_name == "security-audit"
 
     def test_runner_default_mission_type(self) -> None:
-        from hermes_v01.mission_runner import MissionRunner
+        from evosia.mission_runner import MissionRunner
         runner = MissionRunner(
             runtime_root=Path("/tmp/r"),
             repository=Path("/tmp/r"),
@@ -516,7 +516,7 @@ class TestRunnerMissionTypeIntegration:
         assert runner.mission_type_name is None
 
     def test_report_includes_mission_type(self, tmp_path: Path, monkeypatch) -> None:
-        from hermes_v01.mission_runner import MissionRunner
+        from evosia.mission_runner import MissionRunner
         from tests.test_mission_runner import _mock_hermes_binaries, _setup_runner_env
 
         _mock_hermes_binaries(tmp_path, monkeypatch)

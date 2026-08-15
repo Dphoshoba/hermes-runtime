@@ -7,13 +7,13 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from hermes_v01.github_provider import (
+from evosia.github_provider import (
     GitHubRepositoryProvider,
     GitHubAuthenticationError,
     GitHubNotFoundError,
     GitHubRateLimitError,
 )
-from hermes_v01.providers import RepositoryMetadata
+from evosia.providers import RepositoryMetadata
 
 from ..models import Repository
 

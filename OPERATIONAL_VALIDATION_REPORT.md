@@ -13,7 +13,7 @@
 
 ## Executive Summary
 
-Hermes Enterprise completed a 7-day Operational Validation Trial across 3 repositories (hermes-runtime, flask, express). The trial validated the full pipeline from scanning through governance, with emphasis on human review and governance decision quality.
+EVOSIA Enterprise completed a 7-day Operational Validation Trial across 3 repositories (hermes-runtime, flask, express). The trial validated the full pipeline from scanning through governance, with emphasis on human review and governance decision quality.
 
 **Key Finding:** Production Governance defaults to APPROVED when no rule matches. This produces 81.5%–100% over-approval across all validation samples. A candidate fix (Variant I: default → NEEDS_MORE_EVIDENCE) eliminates over-approval but defers 1 of 1 USEFUL findings. USEFUL recall remains weakly validated.
 
@@ -26,7 +26,7 @@ Hermes Enterprise completed a 7-day Operational Validation Trial across 3 reposi
 
 ## Trial Objective
 
-Validate Hermes Enterprise for safe operation by:
+Validate EVOSIA Enterprise for safe operation by:
 1. Verifying the full pipeline from scanning through governance
 2. Measuring finding quality and governance decision accuracy
 3. Identifying operational defects and safety issues

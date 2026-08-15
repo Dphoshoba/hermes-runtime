@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root -> 
 
 def _get_db():
     import os
-    os.environ.setdefault("HERMES_DATABASE_URL", "sqlite:///./hermes_enterprise.db")
+    os.environ.setdefault("EVOSIA_DATABASE_URL", "sqlite:///./hermes_enterprise.db")
     from enterprise.database import SessionLocal
     return SessionLocal()
 

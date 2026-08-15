@@ -1,6 +1,6 @@
 {
-  "program": "HERMES_GUIDED_OPERATIONS_AND_CONTROLLED_EXECUTION",
-  "hermes_version": "1.3.0",
+  "program": "EVOSIA_GUIDED_OPERATIONS_AND_CONTROLLED_EXECUTION",
+  "evosia_version": "1.3.0",
   "governance_baseline": "EVIDENCE_RISK_GATE",
   "baseline_commit": "82229d83f45dcd2477a4a4c267dd200af4da77c7",
   "started_at": "2026-08-14",

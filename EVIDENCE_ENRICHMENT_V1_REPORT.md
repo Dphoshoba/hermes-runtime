@@ -137,7 +137,7 @@ with acceptable coverage in the strict cohort.**
 - `structural_importance` (0%) and `source_magnitude` (15.6%) have insufficient
   coverage to act as Governance inputs. Per the enrichment contract, signals
   with poor coverage are explicitly flagged and must not drive decisions.
-- Behavioral evidence is structurally `NOT_OBSERVED` for every finding — Hermes
+- Behavioral evidence is structurally `NOT_OBSERVED` for every finding — EVOSIA
   possesses no runtime/incident/usage data, so no such signal exists to enrich.
 
 ---
@@ -184,7 +184,7 @@ Governance emits+receives enrichment while `_decide()` ignores it (decisions
 | `structural_importance` 0% coverage in strict replay | Cannot evaluate centrality as a discriminator until live RI is used |
 | `source_magnitude` 15.6% coverage | Only line-count findings carry magnitude; hook/API/coverage findings do not |
 | Exploratory cohort excluded from strict metrics | InspireVoice/CogniKid cannot contribute to accuracy claims (provenance) |
-| Behavioral evidence absent by design | No runtime signal exists to enrich; governance cannot use what Hermes lacks |
+| Behavioral evidence absent by design | No runtime signal exists to enrich; governance cannot use what EVOSIA lacks |
 
 ---
 

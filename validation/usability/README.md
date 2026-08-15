@@ -1,6 +1,6 @@
 # Usability Testing
 
-This directory contains protocols, templates, and results for Hermes
+This directory contains protocols, templates, and results for EVOSIA
 usability testing.
 
 ## Structure

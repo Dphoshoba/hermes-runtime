@@ -52,4 +52,4 @@
 
 ## Conclusion
 
-Hermes produces evidence-based findings with no obvious false positives. The estimated false positive rate is 5-10%, primarily in documentation and complexity categories where human judgment may differ from automated analysis.
+EVOSIA produces evidence-based findings with no obvious false positives. The estimated false positive rate is 5-10%, primarily in documentation and complexity categories where human judgment may differ from automated analysis.

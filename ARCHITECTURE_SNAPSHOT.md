@@ -1,4 +1,4 @@
-# Architecture Snapshot — Hermes Runtime v1.0.0-beta
+# Architecture Snapshot — EVOSIA Runtime v1.0.0-beta
 
 Date: 2026-08-08
 

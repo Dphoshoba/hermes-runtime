@@ -527,11 +527,11 @@ def _emit_journal_event(
     payload: dict[str, Any],
     actor: str = "operator",
 ) -> JournalEvent:
-    # Use the canonical payload hash from hermes_v01.journal_models so the
+    # Use the canonical payload hash from evosia.journal_models so the
     # stored payload_sha256 is verifiable by JournalEvent.verify_integrity()
     # (which calls the same _canonical_payload_sha256). Mixing a different
     # hash function/truncation here broke journal integrity verification.
-    from hermes_v01.journal_models import _canonical_payload_sha256
+    from evosia.journal_models import _canonical_payload_sha256
     payload_sha = _canonical_payload_sha256(payload)
     import uuid as _uuid
     event = JournalEvent(

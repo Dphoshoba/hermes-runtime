@@ -2,7 +2,7 @@
 
 **Program:** CONTROLLED_BETA_PHASE_4_EVIDENCE_AND_MISSION_REFINEMENT
 **Prior result:** EVIDENCE_RESOLUTION_SUCCESSFUL_WITH_LIMITATIONS (commit `2106c79435c3193c942f173174f7adcd5340d1a5`)
-**Governance baseline:** EVIDENCE_RISK_GATE · **Hermes version:** 1.3.0
+**Governance baseline:** EVIDENCE_RISK_GATE · **EVOSIA version:** 1.3.0
 **Baseline commit:** `82229d83f45dcd2477a4a4c267dd200af4da77c7`
 **Autonomous execution:** DISABLED · **Repository mutation:** DISABLED
 
@@ -11,7 +11,7 @@
 **CONTROLLED_BETA_CONTINUE_EVIDENCE_REFINEMENT**
 
 Rationale: 40/62 NEEDS_MORE_EVIDENCE findings gained material OBSERVED
-evidence (resolution rate 64.5%), but 22 NME remain non-Hermes-resolvable
+evidence (resolution rate 64.5%), but 22 NME remain non-EVOSIA-resolvable
 (architectural intent / runtime / human context) and the 12 NEEDS_REFINEMENT
 missions now have implementation-specific evidence that requires a human
 re-decision before any future-execution authorization. The gate is stable and
@@ -24,9 +24,9 @@ New taxonomy counts (a finding may span several):
 - REQUIRES_ARCHITECTURAL_INTENT: 55
 - RESOLVABLE_STATIC: 46
 - REQUIRES_RUNTIME_EVIDENCE: 21
-- NOT_RESOLVABLE_BY_HERMES: 1
+- NOT_RESOLVABLE_BY_EVOSIA: 1
 
-61/62 NME have >=1 resolvable class; 1 is NOT_RESOLVABLE_BY_HERMES.
+61/62 NME have >=1 resolvable class; 1 is NOT_RESOLVABLE_BY_EVOSIA.
 
 ## M2 — Real git/static mining (61 resolvable NME)
 
@@ -47,7 +47,7 @@ runtime/business/architectural gaps (never fabricated).
 Non-resolvable after mining (require human/business/runtime/architectural):
 - REQUIRES_ARCHITECTURAL_INTENT: 55
 - REQUIRES_RUNTIME_EVIDENCE: 21
-- NOT_RESOLVABLE_BY_HERMES: 1
+- NOT_RESOLVABLE_BY_EVOSIA: 1
 
 These are deliberately NOT inferred. The operator's conservative NME calls are
 corroborated: isolation/concentration "may be by design" cannot be confirmed

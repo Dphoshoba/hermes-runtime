@@ -1,6 +1,6 @@
-Absolutely. Here is the kind of manual I would give to a new operator who has never used Hermes before.
+Absolutely. Here is the kind of manual I would give to a new operator who has never used EVOSIA before.
 
-# Hermes Operator Manual
+# EVOSIA Operator Manual
 
 ## Day-to-Day Use of the Evidence-Governed Engineering Platform
 
@@ -9,15 +9,15 @@ Absolutely. Here is the kind of manual I would give to a new operator who has ne
 
 The most important rule is simple:
 
-> **Hermes does not begin by changing code. Hermes begins by deciding whether it is safe and sensible to change code at all.**
+> **EVOSIA does not begin by changing code. EVOSIA begins by deciding whether it is safe and sensible to change code at all.**
 
 ---
 
-# 1. What Hermes is
+# 1. What EVOSIA is
 
-Think of Hermes as a careful engineering team living inside one platform.
+Think of EVOSIA as a careful engineering team living inside one platform.
 
-Different parts of Hermes play different roles:
+Different parts of EVOSIA play different roles:
 
 ```text
 Repository Readiness
@@ -98,7 +98,7 @@ Use this sequence whenever you begin work on a repository.
 
 1. Open the target repository.
 2. Check its Git status manually.
-3. Run Hermes Readiness.
+3. Run EVOSIA Readiness.
 4. If safe, run Repository Intelligence.
 5. Generate Engineering Intelligence.
 6. Run Engineering Governance.
@@ -107,12 +107,12 @@ Use this sequence whenever you begin work on a repository.
 9. Approve **one** mission.
 10. Execute it on an isolated branch or worktree.
 11. Run tests/build/lint.
-12. Review Hermes' evidence and independent review.
+12. Review EVOSIA' evidence and independent review.
 13. Inspect the Git diff yourself.
 14. Merge only if you agree.
 15. Record what happened in an operations log.
 
-That is the standard Hermes operating cycle.
+That is the standard EVOSIA operating cycle.
 
 ---
 
@@ -140,7 +140,7 @@ Which branch am I on?
 Does the repository contain uncommitted work?
 ```
 
-If you see modified or untracked files, **do not panic**. Hermes can still analyze the repository, but execution may need to be blocked or isolated.
+If you see modified or untracked files, **do not panic**. EVOSIA can still analyze the repository, but execution may need to be blocked or isolated.
 
 ---
 
@@ -158,7 +158,7 @@ For machine-readable output:
 hermes-ready --json /Users/david/Desktop/inspirevoice-frontend
 ```
 
-Hermes should tell you whether autonomous execution is allowed.
+EVOSIA should tell you whether autonomous execution is allowed.
 
 A healthy result might conceptually say:
 
@@ -188,7 +188,7 @@ Analyze only or use an isolated worktree.
 ### Exact OpenCode prompt
 
 ```text
-Run Hermes Repository Readiness against the current repository.
+Run EVOSIA Repository Readiness against the current repository.
 
 Do not modify anything.
 
@@ -229,7 +229,7 @@ hermes-repo summary \
   --repo /Users/david/Desktop/inspirevoice-frontend
 ```
 
-Hermes is now answering:
+EVOSIA is now answering:
 
 > "What is actually here?"
 
@@ -266,7 +266,7 @@ Complexity signals
 ### Exact OpenCode prompt
 
 ```text
-Run Hermes Repository Intelligence against the current repository.
+Run EVOSIA Repository Intelligence against the current repository.
 
 This stage is observational only.
 
@@ -322,7 +322,7 @@ or:
 hermes-engineering summary ...
 ```
 
-Now Hermes may produce:
+Now EVOSIA may produce:
 
 ```text
 Finding:
@@ -364,7 +364,7 @@ Reject any finding that cannot be traced to actual repository evidence.
 
 # 8. Step Four: Engineering Governance
 
-This is where Hermes critiques its own recommendations.
+This is where EVOSIA critiques its own recommendations.
 
 Run:
 
@@ -378,7 +378,7 @@ Then:
 hermes-governance approved ...
 ```
 
-Hermes may decide:
+EVOSIA may decide:
 
 ```text
 APPROVED
@@ -419,7 +419,7 @@ Only recommendations with sufficient evidence should be eligible for mission gen
 
 # 9. Step Five: Generate candidate missions
 
-Now Hermes converts approved recommendations into possible engineering jobs.
+Now EVOSIA converts approved recommendations into possible engineering jobs.
 
 Run:
 
@@ -492,7 +492,7 @@ Ask yourself:
 ```text
 Do I actually want this change?
 
-Do I understand why Hermes wants it?
+Do I understand why EVOSIA wants it?
 
 Is the evidence convincing?
 
@@ -510,7 +510,7 @@ hermes-recommend approve <mission-id>
 ### Exact OpenCode prompt
 
 ```text
-Review the proposed Hermes missions as a human engineering lead.
+Review the proposed EVOSIA missions as a human engineering lead.
 
 Do not approve anything automatically.
 
@@ -531,7 +531,7 @@ NO SAFE MISSION AVAILABLE.
 
 # 11. Planning the approved mission
 
-Now Hermes Planner decides how the mission should be performed.
+Now EVOSIA Planner decides how the mission should be performed.
 
 Conceptually:
 
@@ -565,7 +565,7 @@ depends on Task B
 ### Exact prompt
 
 ```text
-Take the approved Hermes mission and run Mission Planner.
+Take the approved EVOSIA mission and run Mission Planner.
 
 Do not execute yet.
 
@@ -590,7 +590,7 @@ Stop if the mission plan exceeds its approved scope.
 
 This is critical.
 
-Do not let Hermes experiment directly on `main`.
+Do not let EVOSIA experiment directly on `main`.
 
 Use:
 
@@ -608,7 +608,7 @@ git worktree add \
   -b hermes/mission-001
 ```
 
-Hermes should then work inside:
+EVOSIA should then work inside:
 
 ```text
 /tmp/my-project-hermes
@@ -622,7 +622,7 @@ not your original working directory.
 
 One of the most important safety improvements we built was **diff scope validation**.
 
-Before Hermes edits anything, say:
+Before EVOSIA edits anything, say:
 
 ```text
 Allowed existing files:
@@ -672,7 +672,7 @@ Do not execute if the mission cannot remain inside this scope.
 
 # 14. Execute the mission
 
-Now—and only now—Hermes may work.
+Now—and only now—EVOSIA may work.
 
 The execution pipeline becomes:
 
@@ -697,7 +697,7 @@ Report
 ### Exact prompt
 
 ```text
-Execute the approved Hermes mission using the existing Hermes execution pipeline.
+Execute the approved EVOSIA mission using the existing EVOSIA execution pipeline.
 
 Do not broaden scope.
 
@@ -738,7 +738,7 @@ git show --stat HEAD
 git show HEAD
 ```
 
-If Hermes says:
+If EVOSIA says:
 
 ```text
 2 lines changed
@@ -758,7 +758,7 @@ Do not merge.
 
 # 16. Testing your application
 
-Hermes tests are only one part of the story.
+EVOSIA tests are only one part of the story.
 
 For the target project, use whatever tests the project already provides.
 
@@ -786,9 +786,9 @@ Only use commands actually supported by the project.
 
 ---
 
-# 17. Testing Hermes itself
+# 17. Testing EVOSIA itself
 
-When you change Hermes, go to the Hermes repository:
+When you change EVOSIA, go to the EVOSIA repository:
 
 ```bash
 cd ~/Downloads/hermes-runtime-v0.3-runtime
@@ -830,7 +830,7 @@ based on the latest operating milestone you've shared.
 
 ---
 
-# 18. How to use Hermes with a log file
+# 18. How to use EVOSIA with a log file
 
 This is where things get especially useful.
 
@@ -850,7 +850,7 @@ Fix this error.
 Use:
 
 ```text
-Analyze the attached log using Hermes engineering principles.
+Analyze the attached log using EVOSIA engineering principles.
 
 Stage 1:
 Identify the observed error only.
@@ -888,13 +888,13 @@ Then approve if it makes sense.
 
 ---
 
-# 19. Can Hermes automatically fix every log error?
+# 19. Can EVOSIA automatically fix every log error?
 
 **No—and it shouldn't.**
 
 There are three broad cases.
 
-### Case A — Hermes can probably fix it
+### Case A — EVOSIA can probably fix it
 
 For example:
 
@@ -912,9 +912,9 @@ Small code defect
 Invalid function usage
 ```
 
-If Hermes can observe the code, prove the cause, propose a narrow fix, and validate it, then yes—it can potentially fix it.
+If EVOSIA can observe the code, prove the cause, propose a narrow fix, and validate it, then yes—it can potentially fix it.
 
-### Case B — Hermes may help but cannot fully fix it
+### Case B — EVOSIA may help but cannot fully fix it
 
 Example:
 
@@ -928,9 +928,9 @@ API key expired
 third-party endpoint down
 ```
 
-Hermes can identify the cause and possibly change configuration, but it may need human credentials or access.
+EVOSIA can identify the cause and possibly change configuration, but it may need human credentials or access.
 
-### Case C — Hermes should refuse
+### Case C — EVOSIA should refuse
 
 Example:
 
@@ -946,7 +946,7 @@ The repository is not ready.
 The proposed repair exceeds the allowed scope.
 ```
 
-The correct Hermes outcome is then:
+The correct EVOSIA outcome is then:
 
 ```text
 NEEDS_MORE_EVIDENCE
@@ -965,11 +965,11 @@ That is success.
 If you want one prompt you can paste most mornings, use this:
 
 ```text
-Act as the Hermes operator for this repository.
+Act as the EVOSIA operator for this repository.
 
 Use the repository as the source of truth.
 
-Follow the full Hermes operating sequence:
+Follow the full EVOSIA operating sequence:
 
 1. Repository Readiness
 2. Repository Intelligence
@@ -1064,7 +1064,7 @@ DO NOT MERGE.
 At the end of the day, ask:
 
 ```text
-Prepare today's Hermes Operations Log entry.
+Prepare today's EVOSIA Operations Log entry.
 
 Include:
 
@@ -1083,12 +1083,12 @@ Blocked:
 Safety Intervention:
 False Positives:
 Lessons Learned:
-Potential Hermes Improvement:
+Potential EVOSIA Improvement:
 
-Do not propose a new Hermes feature unless the same need has appeared repeatedly or is supported by verified operational evidence.
+Do not propose a new EVOSIA feature unless the same need has appeared repeatedly or is supported by verified operational evidence.
 ```
 
-That creates the evidence base that should guide future Hermes development.
+That creates the evidence base that should guide future EVOSIA development.
 
 ---
 
@@ -1143,7 +1143,7 @@ Sometimes the entire correct result will instead be:
 ```text
 09:00 Repository assessed
 
-09:03 Hermes says:
+09:03 EVOSIA says:
 
 NO SAFE MISSION AVAILABLE.
 
@@ -1157,11 +1157,11 @@ That's perfectly healthy.
 # 24. Three rules I would print beside the computer
 
 ```text
-1. Never let Hermes touch code before readiness and governance.
+1. Never let EVOSIA touch code before readiness and governance.
 
 2. Never trust a mission report without checking the actual Git diff.
 
-3. Hermes refusing to act is sometimes the best possible result.
+3. EVOSIA refusing to act is sometimes the best possible result.
 ```
 
 That's the core operating philosophy of the platform you've built.

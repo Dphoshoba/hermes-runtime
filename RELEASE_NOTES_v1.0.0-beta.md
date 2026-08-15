@@ -1,4 +1,4 @@
-# Release Notes — Hermes Runtime v1.0.0-beta
+# Release Notes — EVOSIA Runtime v1.0.0-beta
 
 **Version:** 1.0.0b0
 **Date:** 2026-08-09
@@ -6,13 +6,13 @@
 
 ## What Is This?
 
-Hermes Runtime is an autonomous engineering runtime that executes missions through a pipeline of evidence collection, independent review, and health monitoring. It is designed for deterministic, restart-safe operation with full audit trails.
+EVOSIA Runtime is an autonomous engineering runtime that executes missions through a pipeline of evidence collection, independent review, and health monitoring. It is designed for deterministic, restart-safe operation with full audit trails.
 
 ## What's New in This Release
 
 ### Multi-Language Scanning
 
-Hermes now supports **Python** and **JavaScript/TypeScript** repositories:
+EVOSIA now supports **Python** and **JavaScript/TypeScript** repositories:
 
 - **File extensions:** `.py`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`
 - **Manifest detection:** `pyproject.toml`, `package.json`, `tsconfig.json`
@@ -65,7 +65,7 @@ A new `ScannerRegistry` abstraction enables pluggable language scanners:
 
 | Repository | Time | Files | Modules | Findings | Approved | Missions |
 |------------|------|-------|---------|----------|----------|----------|
-| Hermes | 0.67s | 107 | 107 | 527 | 325 | 50 |
+| EVOSIA | 0.67s | 107 | 107 | 527 | 325 | 50 |
 | requests | 0.19s | 37 | 37 | 165 | 111 | 50 |
 | click | 0.54s | 77 | 77 | 624 | 553 | 50 |
 | flask | 0.35s | 83 | 83 | 560 | 460 | 50 |
@@ -163,4 +163,4 @@ hermes-mission run mission.json \
 
 - **Breaking change:** None from alpha. API may change before 1.0.0.
 - **Migration:** No migration required. Queue files from v1.0.0-alpha load without changes.
-- **New dependencies:** None. Hermes remains dependency-free.
+- **New dependencies:** None. EVOSIA remains dependency-free.

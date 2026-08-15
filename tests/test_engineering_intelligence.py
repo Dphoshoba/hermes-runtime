@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.engineering_intel_models import (
+from evosia.engineering_intel_models import (
     AffectedComponent,
     CandidateMission,
     ConfidenceScore,
@@ -26,10 +26,10 @@ from hermes_v01.engineering_intel_models import (
     Recommendation,
     RiskAssessment,
 )
-from hermes_v01.engineering_analyzer import analyze_engineering
-from hermes_v01.engineering_renderer import render_json, render_markdown, save_artifacts
-from hermes_v01.repo_scanner import scan_repository
-from hermes_v01.repo_analyzer import analyze_repository
+from evosia.engineering_analyzer import analyze_engineering
+from evosia.engineering_renderer import render_json, render_markdown, save_artifacts
+from evosia.repo_scanner import scan_repository
+from evosia.repo_analyzer import analyze_repository
 
 
 # ---------------------------------------------------------------------------
@@ -543,7 +543,7 @@ class TestDeterminism:
 class TestCLI:
     def _run(self, args: list[str]) -> subprocess.CompletedProcess:
         return subprocess.run(
-            [sys.executable, "-m", "hermes_v01.engineering_cli", *args],
+            [sys.executable, "-m", "evosia.engineering_cli", *args],
             capture_output=True,
             text=True,
             timeout=30,
@@ -551,9 +551,9 @@ class TestCLI:
 
     def test_scan(self, sample_repo_path: Path, tmp_output: Path):
         # First generate RI
-        from hermes_v01.repo_scanner import scan_repository as sr
-        from hermes_v01.repo_analyzer import analyze_repository as ar
-        from hermes_v01.repo_renderer import save_artifacts as sa
+        from evosia.repo_scanner import scan_repository as sr
+        from evosia.repo_analyzer import analyze_repository as ar
+        from evosia.repo_renderer import save_artifacts as sa
         ri_dir = tmp_output / "ri"
         ri_dir.mkdir()
         scan = sr(sample_repo_path)
@@ -573,9 +573,9 @@ class TestCLI:
         assert data["findings"] >= 0
 
     def test_summary(self, sample_repo_path: Path, tmp_output: Path):
-        from hermes_v01.repo_scanner import scan_repository as sr
-        from hermes_v01.repo_analyzer import analyze_repository as ar
-        from hermes_v01.repo_renderer import save_artifacts as sa
+        from evosia.repo_scanner import scan_repository as sr
+        from evosia.repo_analyzer import analyze_repository as ar
+        from evosia.repo_renderer import save_artifacts as sa
         ri_dir = tmp_output / "ri"
         ri_dir.mkdir()
         scan = sr(sample_repo_path)

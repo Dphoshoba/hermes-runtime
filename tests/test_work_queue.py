@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
+from evosia.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
 
 
 def manager(tmp_path: Path) -> WorkQueueManager:
@@ -280,7 +280,7 @@ def test_recover_incomplete_tasks_after_crash(tmp_path: Path) -> None:
         ),
     )
     # Manually set states to simulate crash mid-execution
-    from hermes_v01.work_queue import WorkQueueState
+    from evosia.work_queue import WorkQueueState
     items = list(queue.state.items)
     items[0] = replace(items[0], state="RUNNING", attempts=1)
     items[1] = replace(items[1], state="OBSERVED", attempts=1)
@@ -311,7 +311,7 @@ def test_recover_incomplete_tasks_respects_retry_limits(tmp_path: Path) -> None:
             WorkItem("exhausted-task", "Exhausted Task", max_retries=1, retryable=True),
         ),
     )
-    from hermes_v01.work_queue import WorkQueueState
+    from evosia.work_queue import WorkQueueState
     items = list(queue.state.items)
     items[0] = replace(items[0], state="RUNNING", attempts=1)  # already at max
     new_state = WorkQueueState(schema_version="1", revision=1, items=tuple(items))

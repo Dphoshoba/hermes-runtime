@@ -68,7 +68,7 @@ These fields are included when set (non-default). They are omitted from JSON out
 | `health_summary` | `{string: any} \| null` | `null` | Runtime health details |
 | `repository` | `string \| null` | `null` | Repository path |
 | `git_revision` | `string \| null` | `null` | 40-char hex SHA of HEAD at execution time |
-| `runtime_version` | `string` | `""` | Hermes Runtime version |
+| `runtime_version` | `string` | `""` | EVOSIA Runtime version |
 
 ## Status Semantics
 

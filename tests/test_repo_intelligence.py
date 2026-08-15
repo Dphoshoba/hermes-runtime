@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.repo_intel_models import (
+from evosia.repo_intel_models import (
     ArchitectureSummary,
     ClassInfo,
     CLIEntryPoint,
@@ -29,9 +29,9 @@ from hermes_v01.repo_intel_models import (
     RepositoryIntelligence,
     TestModuleInfo,
 )
-from hermes_v01.repo_scanner import scan_repository
-from hermes_v01.repo_analyzer import analyze_repository
-from hermes_v01.repo_renderer import render_json, render_markdown, save_artifacts
+from evosia.repo_scanner import scan_repository
+from evosia.repo_analyzer import analyze_repository
+from evosia.repo_renderer import render_json, render_markdown, save_artifacts
 
 
 # ---------------------------------------------------------------------------
@@ -440,7 +440,7 @@ class TestDeterminism:
 class TestCLI:
     def _run(self, args: list[str]) -> subprocess.CompletedProcess:
         return subprocess.run(
-            [sys.executable, "-m", "hermes_v01.repo_cli", *args],
+            [sys.executable, "-m", "evosia.repo_cli", *args],
             capture_output=True,
             text=True,
             timeout=30,
@@ -527,7 +527,7 @@ class TestHermesSelfScan:
 
         # Must find core modules by path
         module_paths = {m.path for m in intel.modules}
-        assert any("hermes_v01" in p for p in module_paths)
+        assert any("evosia" in p for p in module_paths)
 
         # Must find core classes
         class_names = {cls.name for cls in intel.public_api.classes}

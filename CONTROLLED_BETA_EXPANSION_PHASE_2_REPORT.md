@@ -3,7 +3,7 @@
 **Program:** CONTROLLED_BETA_EXPANSION_PHASE_2
 **Prior acceptance:** CONTROLLED_BETA_ACCEPTED_WITH_LIMITATIONS (commit `3b6edf2844982a73423e184d6ac7fd6b8bbe39ef`)
 **Governance baseline:** EVIDENCE_RISK_GATE
-**Hermes version:** 1.3.0
+**EVOSIA version:** 1.3.0
 **Baseline commit:** `82229d83f45dcd2477a4a4c267dd200af4da77c7`
 **Autonomous execution:** DISABLED · **Repository mutation:** DISABLED
 
@@ -92,7 +92,7 @@ finding. No duplicated or scope-inappropriate missions detected.
 
 ## Canonical regression (M9)
 
-**NOT_REQUIRED** — no Hermes source code changed during Phase 2 (only /tmp
+**NOT_REQUIRED** — no EVOSIA source code changed during Phase 2 (only /tmp
 scripts and acceptance artifacts). The canonical backend suite remains green at
 **1434 passed** from the prior acceptance cycle; frontend and packaging were
 untouched.

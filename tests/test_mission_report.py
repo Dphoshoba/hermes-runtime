@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.mission_runner import MissionReport, MissionRunner
-from hermes_v01.mission_state import MissionState, create_initial_state, transition_state, update_counts
-from hermes_v01.mission import Mission, MissionPlanner, parse_mission
-from hermes_v01.mission_report import (
+from evosia.mission_runner import MissionReport, MissionRunner
+from evosia.mission_state import MissionState, create_initial_state, transition_state, update_counts
+from evosia.mission import Mission, MissionPlanner, parse_mission
+from evosia.mission_report import (
     MissionReportGenerator,
     report_to_json,
     save_report_json,
@@ -802,7 +802,7 @@ class TestCLIReportGeneration:
     def test_cli_has_generate_report(self) -> None:
         import subprocess
         result = subprocess.run(
-            ["python", "-m", "hermes_v01.mission_runner_cli", "generate-report", "--help"],
+            ["python", "-m", "evosia.mission_runner_cli", "generate-report", "--help"],
             capture_output=True, text=True, cwd=str(Path(__file__).parent.parent),
         )
         assert result.returncode == 0

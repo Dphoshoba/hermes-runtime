@@ -1,1 +1,1 @@
-"""Hermes Enterprise — Engineering Command Center backend."""
+"""EVOSIA Enterprise — Engineering Command Center backend."""

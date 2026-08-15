@@ -9,19 +9,19 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.mission_recommendation_models import (
+from evosia.mission_recommendation_models import (
     DraftMission,
     GeneratedTask,
     MissionRecommendationSummary,
     MissionRecommendations,
     TraceabilityLink,
 )
-from hermes_v01.mission_generator import generate_missions
-from hermes_v01.mission_recommendation_renderer import render_json, render_markdown, save_artifacts, export_missions
-from hermes_v01.repo_scanner import scan_repository
-from hermes_v01.repo_analyzer import analyze_repository
-from hermes_v01.engineering_analyzer import analyze_engineering
-from hermes_v01.governance_analyzer import govern_engineering
+from evosia.mission_generator import generate_missions
+from evosia.mission_recommendation_renderer import render_json, render_markdown, save_artifacts, export_missions
+from evosia.repo_scanner import scan_repository
+from evosia.repo_analyzer import analyze_repository
+from evosia.engineering_analyzer import analyze_engineering
+from evosia.governance_analyzer import govern_engineering
 
 
 HERMES_ROOT = Path(__file__).resolve().parent.parent
@@ -311,7 +311,7 @@ class TestDeterminism:
 
 class TestCLI:
     def _run(self, args):
-        return subprocess.run([sys.executable, "-m", "hermes_v01.mission_recommendation_cli", *args],
+        return subprocess.run([sys.executable, "-m", "evosia.mission_recommendation_cli", *args],
                               capture_output=True, text=True, timeout=30)
 
     def test_generate(self, tmp_output):

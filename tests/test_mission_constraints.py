@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.mission import Mission, MissionPlanner, MissionTask, parse_mission
-from hermes_v01.mission_constraints import (
+from evosia.mission import Mission, MissionPlanner, MissionTask, parse_mission
+from evosia.mission_constraints import (
     ConstraintEngine,
     ConstraintResult,
     DependencyPolicyConstraint,
@@ -514,7 +514,7 @@ class TestPlannerConstraintIntegration:
 class TestConstraintsCLI:
     def test_constraints_json(self, tmp_path: Path, capsys) -> None:
         from argparse import Namespace
-        from hermes_v01.mission_runner_cli import cmd_constraints
+        from evosia.mission_runner_cli import cmd_constraints
 
         mission_file = tmp_path / "mission.json"
         mission_file.write_text(json.dumps(_minimal_mission()), encoding="utf-8")
@@ -529,7 +529,7 @@ class TestConstraintsCLI:
 
     def test_constraints_text(self, tmp_path: Path, capsys) -> None:
         from argparse import Namespace
-        from hermes_v01.mission_runner_cli import cmd_constraints
+        from evosia.mission_runner_cli import cmd_constraints
 
         mission_file = tmp_path / "mission.json"
         mission_file.write_text(json.dumps(_minimal_mission()), encoding="utf-8")
@@ -542,7 +542,7 @@ class TestConstraintsCLI:
 
     def test_constraints_with_repository(self, tmp_path: Path, capsys) -> None:
         from argparse import Namespace
-        from hermes_v01.mission_runner_cli import cmd_constraints
+        from evosia.mission_runner_cli import cmd_constraints
 
         mission_file = tmp_path / "mission.json"
         mission_file.write_text(json.dumps(_constrained_mission()), encoding="utf-8")
@@ -558,7 +558,7 @@ class TestConstraintsCLI:
 
     def test_constraints_invalid_file(self, tmp_path: Path, capsys) -> None:
         from argparse import Namespace
-        from hermes_v01.mission_runner_cli import cmd_constraints
+        from evosia.mission_runner_cli import cmd_constraints
 
         args = Namespace(mission_file=str(tmp_path / "nonexistent.json"), repository=None, cwd=None, json=True)
         result = cmd_constraints(args)

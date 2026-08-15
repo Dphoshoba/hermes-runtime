@@ -3,8 +3,8 @@
 import os, json, re
 from sqlalchemy import create_engine, text
 
-os.environ['HERMES_DATABASE_URL'] = 'sqlite:////tmp/day3.db'
-os.environ['HERMES_JWT_SECRET'] = 'day3run'
+os.environ['EVOSIA_DATABASE_URL'] = 'sqlite:////tmp/day3.db'
+os.environ['EVOSIA_JWT_SECRET'] = 'day3run'
 engine = create_engine('sqlite:////tmp/day3.db')
 TRIAL_ID = "fa292ba5-321c-4d3f-a370-a33b0cce29c1"
 

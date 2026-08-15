@@ -3,7 +3,7 @@
 **Program:** CONTROLLED_BETA_PHASE_3_EVIDENCE_RESOLUTION
 **Prior result:** CONTROLLED_BETA_EXPANSION_SUCCESSFUL_WITH_LIMITATIONS (commit `18ac0b4563a4fe6595621d4a95dd7d0c5b970011`)
 **Governance baseline:** EVIDENCE_RISK_GATE
-**Hermes version:** 1.3.0
+**EVOSIA version:** 1.3.0
 **Baseline commit:** `82229d83f45dcd2477a4a4c267dd200af4da77c7`
 **Autonomous execution:** DISABLED · **Repository mutation:** DISABLED
 
@@ -13,7 +13,7 @@
 ## Objective
 
 Resolve the 62 NEEDS_MORE_EVIDENCE findings (why evidence was insufficient),
-selectively acquire real evidence where Hermes can supply it, and reconstruct
+selectively acquire real evidence where EVOSIA can supply it, and reconstruct
 the exact mission-authorized set for operator disposition — without weakening
 the human authority boundary or enabling any execution.
 
@@ -54,7 +54,7 @@ Availability mapping:
 - EVIDENCE_RESOLUTION_POTENTIAL_RATE (realized material evidence): **33.9%**.
   Higher potential exists via git-history mining for usage/criticality gaps,
   but that was not exhaustively run (selective per runbook).
-- 41 NME findings have only human/business-context gaps (not Hermes-resolvable).
+- 41 NME findings have only human/business-context gaps (not EVOSIA-resolvable).
 
 ## M6 — Governance value (honest)
 
@@ -100,7 +100,7 @@ authorization. Missions #2–13 remain DRAFT / NEEDS_REFINEMENT and non-executab
 
 ## M11 — Regression / audit
 
-**NOT_REQUIRED** — no Hermes source code changed during Phase 3 (only /tmp
+**NOT_REQUIRED** — no EVOSIA source code changed during Phase 3 (only /tmp
 scripts + acceptance artifacts). Canonical backend suite remains green at
 **1434 passed** from the prior acceptance cycle; frontend and packaging untouched.
 
@@ -123,7 +123,7 @@ not exhaustively run; 41 NME remain human/business-context dependent.
 
 1. EVIDENCE_RESOLUTION_POTENTIAL_RATE realized = 33.9% (security subset actually
    enriched); git-history mining for usage/criticality gaps not exhaustively run.
-2. 41/62 NME findings require human/business context (not Hermes-resolvable).
+2. 41/62 NME findings require human/business context (not EVOSIA-resolvable).
 3. 12 missions remain NEEDS_REFINEMENT (awaiting implementation-specific evidence
    before any future execution authorization).
 4. No mission executed; Phase 3 stayed strictly within read-only + disposition.

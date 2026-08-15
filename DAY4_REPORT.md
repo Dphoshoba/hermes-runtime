@@ -2,7 +2,7 @@
 
 **Trial ID:** `fa292ba5-321c-4d3f-a370-a33b0cce29c1`
 **Completed:** 2026-08-10
-**Hermes Version:** 1.3.0
+**EVOSIA Version:** 1.3.0
 
 ---
 

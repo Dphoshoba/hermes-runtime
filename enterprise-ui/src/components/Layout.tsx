@@ -18,7 +18,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="layout">
       <aside className="sidebar">
-        <div className="sidebar-title">Hermes Enterprise</div>
+        <div className="sidebar-title">EVOSIA Enterprise</div>
         <nav>
           {links.map(l => (
             <NavLink key={l.to} to={l.to} end={l.to === '/'}>

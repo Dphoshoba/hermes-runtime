@@ -1,4 +1,4 @@
-# HERMES — CONTROLLED BETA 001
+# EVOSIA — CONTROLLED BETA 001
 
 # CYCLE 6 — IMPLEMENT EVIDENCE-BASED MISSION PRIORITIZATION
 
@@ -371,7 +371,7 @@ Includes:
 | GitHub settings changes | ✓ NONE |
 | Mission execution | ✓ NONE |
 
-**Hermes source changes:** Permitted (approved implementation)
+**EVOSIA source changes:** Permitted (approved implementation)
 **Target repository mutation:** NOT permitted
 
 ---

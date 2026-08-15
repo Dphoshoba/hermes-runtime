@@ -3,7 +3,7 @@
 ## Trust Boundaries
 
 ```
-[Browser] ←HTTPS→ [CDN/Load Balancer] ←→ [Hermes FastAPI]
+[Browser] ←HTTPS→ [CDN/Load Balancer] ←→ [EVOSIA FastAPI]
                                                       |
                                               [Tenant Auth Layer]
                                                       |

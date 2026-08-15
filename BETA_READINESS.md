@@ -56,7 +56,7 @@ All 7 golden repositories benchmarked successfully:
 
 ### ISSUE 6: Performance Profile
 
-**Hermes self-analysis:**
+**EVOSIA self-analysis:**
 | Phase | Time |
 |-------|------|
 | Repository Scan | 0.58s |
@@ -90,13 +90,13 @@ All 7 golden repositories benchmarked successfully:
 
 - 880 tests passing
 - 7 golden repositories validated
-- Hermes self-dogfood successful
+- EVOSIA self-dogfood successful
 - Determinism verified (CV = 0.0145)
 - Pipeline completes in < 1s for typical repos
 
 ## Performance Summary
 
-| Metric | Hermes | requests | click | flask | fastapi | django | numpy | pandas |
+| Metric | EVOSIA | requests | click | flask | fastapi | django | numpy | pandas |
 |--------|--------|----------|-------|-------|---------|--------|-------|--------|
 | Time | 0.67s | 0.19s | 0.54s | 0.35s | 4.87s | 23.88s | 7.65s | 61.40s |
 | Files | 107 | 37 | 77 | 83 | 1136 | 2918 | 495 | 1512 |
@@ -105,7 +105,7 @@ All 7 golden repositories benchmarked successfully:
 
 ## Repository Coverage
 
-Hermes successfully analyzes Python repositories of varying sizes:
+EVOSIA successfully analyzes Python repositories of varying sizes:
 - Small (< 100 files): requests, click, flask
 - Medium (100-1000 files): fastapi, numpy
 - Large (1000+ files): django, pandas

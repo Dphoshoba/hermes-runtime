@@ -2,11 +2,11 @@
 
 ## Overview
 
-Hermes includes a benchmark engine for measuring pipeline performance, validating correctness, and tracking engineering confidence over time.
+EVOSIA includes a benchmark engine for measuring pipeline performance, validating correctness, and tracking engineering confidence over time.
 
 ## Quick Start
 
-### Benchmark Hermes Itself
+### Benchmark EVOSIA Itself
 
 ```bash
 hermes-benchmark run --repo .
@@ -34,7 +34,7 @@ hermes-benchmark report
 
 ### `hermes-benchmark run`
 
-Run the full Hermes pipeline against a repository and measure performance.
+Run the full EVOSIA pipeline against a repository and measure performance.
 
 ```bash
 # Benchmark a single repository

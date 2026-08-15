@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.safety import (
+from evosia.safety import (
     DiffScopeCheck,
     WorktreeIsolationCheck,
     check_diff_scope,

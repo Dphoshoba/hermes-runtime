@@ -8,9 +8,9 @@
 
 ## Executive Summary
 
-Day 2R produced the first real human-review sample from Hermes operational scanning. Thirty findings across three repositories (flask, hermes-runtime, express) were reviewed by an external human operator. The review exposed three systemic problems that this milestone addresses:
+Day 2R produced the first real human-review sample from EVOSIA operational scanning. Thirty findings across three repositories (flask, hermes-runtime, express) were reviewed by an external human operator. The review exposed three systemic problems that this milestone addresses:
 
-1. **Observation ≠ Actionability** — Hermes treated factually-supported observations as automatically actionable.
+1. **Observation ≠ Actionability** — EVOSIA treated factually-supported observations as automatically actionable.
 2. **Test-Code Context Blindness** — Production-code thresholds were applied to test files, generating false-positive-equivalent signals.
 3. **Implicit Mission Traceability** — Missions were associated with findings by sequential ordering, not explicit persisted linkage.
 
@@ -45,7 +45,7 @@ This milestone implements first-class adjudication, context-aware interpretation
 
 ### Important Distinction
 
-FALSE_POSITIVE = 0 does **not** mean Hermes finding quality is 100%. The key metric is **Actionability Rate = 13.3%**. Many factually-correct observations (test file sizes, threshold-edge cases) are not actionable engineering concerns.
+FALSE_POSITIVE = 0 does **not** mean EVOSIA finding quality is 100%. The key metric is **Actionability Rate = 13.3%**. Many factually-correct observations (test file sizes, threshold-edge cases) are not actionable engineering concerns.
 
 ---
 

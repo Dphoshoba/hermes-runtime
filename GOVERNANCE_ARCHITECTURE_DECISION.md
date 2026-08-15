@@ -48,7 +48,7 @@ pure pass-through.
 | Cycle 7 production-vs-Variant-I eval | **Production Governance APPROVED 41/50 (82%).** Of those, **10 were human-labeled NOT_ACTIONABLE** and **32 were human-labeled ≠ USEFUL** → systematic over-approval confirmed. |
 | Evidence Enrichment v1 (strict cohort 45) | No signal meaningfully separates USEFUL vs NME/NOT_ACTIONABLE; structural_importance 0% coverage, source_magnitude 15.6% coverage; change/ownership/evidence_strength constant across classes. |
 | Evidence Enrichment v2 (strict cohort 45) | All 8 new signal families (churn, co-change, centrality, test-relationship, corroboration, breadth) classified **NO_DISCRIMINATION**; label firewall verified; all signals HIGH coverage. Human actionability is not recoverable from static/history evidence. |
-| MissionPrioritizer v1 (post-human-evidence) | 100% USEFUL retention, 0% NOT_ACTIONABLE leakage, 100% traceability, materially reduced operator burden — i.e., Hermes excels at prioritization *after* human evidence exists, not at producing that evidence. |
+| MissionPrioritizer v1 (post-human-evidence) | 100% USEFUL retention, 0% NOT_ACTIONABLE leakage, 100% traceability, materially reduced operator burden — i.e., EVOSIA excels at prioritization *after* human evidence exists, not at producing that evidence. |
 
 **Conclusion accepted as established:** `STATIC_EVIDENCE_INSUFFICIENT_FOR_AUTOMATED_GOVERNANCE`.
 
@@ -58,7 +58,7 @@ pure pass-through.
 
 The USEFUL/NME/NOT_ACTIONABLE distinction is not a function of code structure.
 The strict cohort is uniformly "large, coupled, under-tested infrastructure."
-Actionability depends on evidence Hermes does not possess and must not infer:
+Actionability depends on evidence EVOSIA does not possess and must not infer:
 
 - runtime behavior and actual failures
 - production incidents and their linkage
@@ -99,7 +99,7 @@ This minimizes, per the objective:
 
 ## 5. Observation / Concern / Actionability Boundary
 
-### A. OBSERVATION — "What does Hermes detect?"
+### A. OBSERVATION — "What does EVOSIA detect?"
 Machine-determinable from static + enriched evidence:
 - module exceeds repository norm (percentile)
 - high hook concentration, API concentration
@@ -108,20 +108,20 @@ Machine-determinable from static + enriched evidence:
 - structural centrality / fan-in-out
 - corroborating independent signals
 
-→ Hermes **CAN** assert these with quantified confidence.
+→ EVOSIA **CAN** assert these with quantified confidence.
 
 ### B. ENGINEERING CONCERN — "Plausibly worth investigating?"
 Uses severity, corroboration, repository context, evidence quality,
-structural/history evidence. Hermes **MAY rank/qualify** this, but **uncertainty
+structural/history evidence. EVOSIA **MAY rank/qualify** this, but **uncertainty
 must remain explicit** (no false precision).
 
 ### C. ACTIONABILITY — "Should an engineer actually do something?"
 Depends on evidence outside static repository analysis (runtime, failures,
 business weight, usage, measured coverage, ownership, roadmap, trade-offs,
-operator judgment). Hermes **MUST NOT infer** these when unavailable; the call
+operator judgment). EVOSIA **MUST NOT infer** these when unavailable; the call
 is **human authority** during Controlled Beta.
 
-**Documented split:** Hermes supports A (full) and B (ranked, uncertain). C is
+**Documented split:** EVOSIA supports A (full) and B (ranked, uncertain). C is
 out of scope for automation.
 
 ---
@@ -162,18 +162,18 @@ LEGACY_APPROVED ──(migration)──> REQUIRES_REVIEW (re-adjudicated)
 
 ## 7. Human Authority Boundary (Controlled Beta)
 
-| Decision | Hermes may… | Authority |
+| Decision | EVOSIA may… | Authority |
 |---|---|---|
 | Declare a finding ACTIONABLE | RECOMMEND, RANK | **Human** |
-| Suppress a finding | `SUPPRESS_WITH_POLICY` (deterministic, logged) | Hermes (policy only) / Human override |
+| Suppress a finding | `SUPPRESS_WITH_POLICY` (deterministic, logged) | EVOSIA (policy only) / Human override |
 | Mission approval | RECOMMEND | **Human** |
 | Mission execution | — | **Human** (autonomous execution DISABLED) |
 | Repository mutation | — | **Human** (mutation DISABLED) |
-| Request more evidence | `REQUEST_EVIDENCE` | Hermes |
-| Rank / cluster / defer | `RANK`, `DEFER` | Hermes |
-| Generate mission *recommendation* | yes (post-human) | Hermes (advisory) |
+| Request more evidence | `REQUEST_EVIDENCE` | EVOSIA |
+| Rank / cluster / defer | `RANK`, `DEFER` | EVOSIA |
+| Generate mission *recommendation* | yes (post-human) | EVOSIA (advisory) |
 
-Hermes operates as **RECOMMEND / RANK / DEFER / REQUEST_EVIDENCE /
+EVOSIA operates as **RECOMMEND / RANK / DEFER / REQUEST_EVIDENCE /
 SUPPRESS_WITH_POLICY** within a governed boundary; it does **not** hold authority
 over actionability, mission approval, execution, or mutation.
 
@@ -216,14 +216,14 @@ classifier; ranking only):
 - **Low-risk deterministic suppression** — only explicit, logged rules.
 
 **Critical distinction:** `AUTOMATED REVIEW PRIORITIZATION` (allowed, evidence-
-based ranking) ≠ `AUTOMATED ACTIONABILITY JUDGMENT` (forbidden). Hermes ranks;
+based ranking) ≠ `AUTOMATED ACTIONABILITY JUDGMENT` (forbidden). EVOSIA ranks;
 humans judge.
 
 ---
 
 ## 10. MissionPrioritizer Integration
 
-MissionPrioritizer v1 already proves Hermes can prioritize *after* human
+MissionPrioritizer v1 already proves EVOSIA can prioritize *after* human
 evidence exists (100% USEFUL retention, 0% NOT_ACTIONABLE leakage, 100%
 traceability, reduced burden). The architecture therefore places PRIORITIZE
 **after HUMAN REVIEW**, not after automated governance. Governance's job is to
@@ -248,7 +248,7 @@ Future evidence that could *legitimately* reopen automated Governance research:
 | Ownership information | Med | High (org data) | High | Low | No | Enterprise |
 | Change-risk history | Med | Medium | Low | Medium | No | Enterprise |
 
-None are required for Controlled Beta. All belong in **Enterprise** (not Hermes
+None are required for Controlled Beta. All belong in **Enterprise** (not EVOSIA
 Core), collected only with explicit authorization, and must never be inferred
 when absent. Research reopens only when ≥1 high-value source is available with
 acceptable privacy posture.
@@ -334,7 +334,7 @@ Stop optimizing around raw "Governance approval rate." Recommend:
   implemented in a later, separately-authorized milestone).
 - All `APPROVED` outputs treated as `LEGACY_APPROVED` / advisory.
 - Actionability remains a human authority.
-- Hermes may RANK / RECOMMEND / DEFER / REQUEST_EVIDENCE / SUPPRESS_WITH_POLICY
+- EVOSIA may RANK / RECOMMEND / DEFER / REQUEST_EVIDENCE / SUPPRESS_WITH_POLICY
   only.
 
 ---

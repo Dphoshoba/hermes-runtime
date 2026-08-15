@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.mission_state import (
+from evosia.mission_state import (
     MissionState,
     MissionStateStore,
     create_initial_state,
@@ -18,7 +18,7 @@ from hermes_v01.mission_state import (
     update_counts,
     TERMINAL_MISSION_STATES,
 )
-from hermes_v01.mission_control import (
+from evosia.mission_control import (
     MissionControlCommand,
     MissionControlStore,
     write_control_command,
@@ -686,8 +686,8 @@ class TestStateStoreAtomicity:
 # Runner integration — lifecycle with real execution
 # ===================================================================
 
-from hermes_v01.mission_runner import MissionRunner
-from hermes_v01.mission import Mission, MissionPlanner, parse_mission
+from evosia.mission_runner import MissionRunner
+from evosia.mission import Mission, MissionPlanner, parse_mission
 
 
 def _make_runner(tmp_path: Path) -> MissionRunner:
@@ -828,7 +828,7 @@ class TestRunnerLifecycleIntegration:
 
     def test_failed_plan_persists_failed_state(self, tmp_path: Path) -> None:
         runner = _make_runner(tmp_path)
-        from hermes_v01.mission import Plan as PlanCls
+        from evosia.mission import Plan as PlanCls
         plan = PlanCls(
             schema_version="1",
             mission_id="bad-001",

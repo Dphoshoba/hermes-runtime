@@ -22,7 +22,7 @@ router = APIRouter()
 
 # Plain-language label mapping (read-only presentation; not authority)
 GATE_LABELS = {
-    "INSUFFICIENT_EVIDENCE": "Hermes needs more context",
+    "INSUFFICIENT_EVIDENCE": "EVOSIA needs more context",
     "ACTIONABLE": "Worth addressing",
     "NOT_ACTIONABLE": "No action needed",
     "DUPLICATE": "Already covered",
@@ -39,9 +39,9 @@ MISSION_STATUS_LABELS = {
 }
 
 AUTHORITY_LEVEL_LABELS = {
-    0: "Observe — Hermes inspects and explains",
-    1: "Recommend — Hermes proposes work",
-    2: "Prepare — Hermes creates changes in an isolated workspace",
+    0: "Observe — EVOSIA inspects and explains",
+    1: "Recommend — EVOSIA proposes work",
+    2: "Prepare — EVOSIA creates changes in an isolated workspace",
 }
 
 
@@ -157,7 +157,7 @@ def _why_it_matters(finding: Finding) -> str:
         return "This may affect how the project is set up or deployed."
     if "public api" in cat or "api" in title:
         return "This may affect how other parts of the project interact with this area."
-    return "Hermes observed something worth your awareness."
+    return "EVOSIA observed something worth your awareness."
 
 
 def _build_headline(total: int, attn: int, ctx: int, important: int, proposed: int) -> str:
@@ -324,17 +324,17 @@ def _question_for_topic(topic: str) -> str:
 def _why_ask_for_topic(topic: str) -> str:
     reasons = {
         "Intentionally separate modules": (
-            "This helps Hermes understand whether separation is deliberate, "
+            "This helps EVOSIA understand whether separation is deliberate, "
             "so it doesn't suggest unnecessary changes."
         ),
-        "Large or complex areas": "This helps Hermes know whether complexity is intentional or a sign of a problem.",
-        "Concentrated responsibilities": "This helps Hermes judge whether a refactor is wanted or the design is intentional.",
-        "Dependency choices": "This helps Hermes judge whether unpinned dependencies are a risk or an accepted trade-off.",
-        "Configuration setup": "This helps Hermes judge whether missing configuration is a real gap or intentional.",
-        "Security-sensitive code": "This helps Hermes treat security-relevant code with appropriate caution.",
-        "Other observations": "Your context helps Hermes reduce unnecessary findings.",
+        "Large or complex areas": "This helps EVOSIA know whether complexity is intentional or a sign of a problem.",
+        "Concentrated responsibilities": "This helps EVOSIA judge whether a refactor is wanted or the design is intentional.",
+        "Dependency choices": "This helps EVOSIA judge whether unpinned dependencies are a risk or an accepted trade-off.",
+        "Configuration setup": "This helps EVOSIA judge whether missing configuration is a real gap or intentional.",
+        "Security-sensitive code": "This helps EVOSIA treat security-relevant code with appropriate caution.",
+        "Other observations": "Your context helps EVOSIA reduce unnecessary findings.",
     }
-    return reasons.get(topic, "Your context helps Hermes reduce unnecessary findings.")
+    return reasons.get(topic, "Your context helps EVOSIA reduce unnecessary findings.")
 
 
 @router.get("/needs-context", response_model=list[ContextQuestion])
@@ -399,7 +399,7 @@ def guided_missions(
             "validation": "Tests and checks would run before any change is finalized.",
             "rollback": "Prepared changes are isolated and reversible until merged/deployed.",
             "authority_consequence": (
-                "Approving here permits Hermes to PREPARE a proposed change "
+                "Approving here permits EVOSIA to PREPARE a proposed change "
                 "in an isolated workspace. It will NOT merge, deploy, or change production."
             ),
             "status": m.status,
@@ -436,7 +436,7 @@ def approve_preparation(
         "status_label": MISSION_STATUS_LABELS[mission.status],
         "execution_authorized": False,
         "message": (
-            "Approved for preparation. Hermes may prepare the change in an "
+            "Approved for preparation. EVOSIA may prepare the change in an "
             "isolated workspace. Nothing has been executed or deployed."
         ),
     }

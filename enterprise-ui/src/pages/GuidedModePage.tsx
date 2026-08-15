@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../App';
 import { guidedClient } from '../lib/api';
-import FirstRunOnboarding from '../components/FirstRunOnboarding';
-import ProjectSelection from '../components/ProjectSelection';
-import AnalysisProgress from '../components/AnalysisProgress';
 import PreparedChangeView from '../components/PreparedChangeView';
 
 // Types matching the backend guided router responses
@@ -265,13 +262,13 @@ function SummaryView({
         {summary.needs_attention === 0 && summary.needs_context === 0 && summary.proposed_work === 0 && (
           <div className="all-clear card">
             <p>Nothing needs your attention right now.</p>
-            <p className="muted">Hermes will let you know when something changes.</p>
+            <p className="muted">EVOSIA will let you know when something changes.</p>
           </div>
         )}
       </div>
 
       <div className="authority-info card">
-        <h3>What Hermes can do right now</h3>
+        <h3>What EVOSIA can do right now</h3>
         <ul className="authority-list">
           <li><span className="green">✓</span> Inspect your project</li>
           <li><span className="green">✓</span> Explain findings in plain language</li>
@@ -352,7 +349,7 @@ function NeedsContextView() {
     <div className="needs-context">
       <h2>Needs your context</h2>
       <p className="muted">
-        Your answers help Hermes understand your project. Hermes will never treat your
+        Your answers help EVOSIA understand your project. EVOSIA will never treat your
         answer as a decision to change code.
       </p>
       <div className="card-list">
@@ -420,7 +417,7 @@ function MissionDecisionView() {
       <h2>Proposed work</h2>
       <p className="muted">
         These are recommendations based on items you or a reviewer flagged. Approving here
-        permits Hermes to <strong>prepare</strong> a change in an isolated workspace. It will
+        permits EVOSIA to <strong>prepare</strong> a change in an isolated workspace. It will
         <strong> not</strong> merge, deploy, or change production.
       </p>
       <div className="card-list">
@@ -449,7 +446,7 @@ function MissionDecisionView() {
                 <strong>What could change:</strong> {m.scope}
               </div>
               <div className="mission-field">
-                <strong>How Hermes would verify:</strong> {m.validation}
+                <strong>How EVOSIA would verify:</strong> {m.validation}
               </div>
               <div className="mission-field">
                 <strong>How to undo:</strong> {m.rollback}
@@ -484,7 +481,7 @@ function NoActionNeededView({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="no-action card">
       <h2>No action needed</h2>
-      <p>Hermes didn't find anything that needs your attention.</p>
+      <p>EVOSIA didn't find anything that needs your attention.</p>
       <button className="btn" onClick={onRefresh}>Check again</button>
     </div>
   );
@@ -495,7 +492,7 @@ function EvidenceExhaustedView() {
     <div className="evidence-exhausted card">
       <h2>Evidence exhausted</h2>
       <p>
-        Hermes has inspected the available evidence and cannot draw firmer conclusions
+        EVOSIA has inspected the available evidence and cannot draw firmer conclusions
         without new information.
       </p>
       <p className="muted">
@@ -545,7 +542,7 @@ function UsabilityTestEntry() {
   );
 }
 
-function PreparedChangeView() {
+function PreparedChangeFallback() {
   return (
     <div className="prepared-change card">
       <h2>Prepared change</h2>

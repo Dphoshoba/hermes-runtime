@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Determine whether a genuinely non-technical user can safely operate Hermes
+Determine whether a genuinely non-technical user can safely operate EVOSIA
 Guided Mode from first run through understanding and approving a prepared
 change, without requiring Git, terminal, repository, governance, or
 software-engineering knowledge.
@@ -14,9 +14,9 @@ software-engineering knowledge.
 - No professional software-engineering requirement
 
 **Exclude:**
-- Current Hermes contributors
+- Current EVOSIA contributors
 - People who have seen this protocol before
-- Anyone coached on the Hermes workflow prior to the session
+- Anyone coached on the EVOSIA workflow prior to the session
 
 Target: 5–8 participants.
 
@@ -24,13 +24,13 @@ Target: 5–8 participants.
 
 ### Say ONLY:
 
-> "Hermes has reviewed this project. Work out whether anything needs your
-> attention and decide what you want Hermes to prepare."
+> "EVOSIA has reviewed this project. Work out whether anything needs your
+> attention and decide what you want EVOSIA to prepare."
 
 ### DO NOT:
 - explain the interface
 - explain Git, repositories, branches, commits
-- explain Hermes governance (gate states, mission eligibility, journal)
+- explain EVOSIA governance (gate states, mission eligibility, journal)
 - point at buttons or features
 - explain what "Prepare" or "Approve" means
 - correct misunderstandings during the task unless safety requires it
@@ -47,24 +47,24 @@ Target: 5–8 participants.
 
 | # | Task | Observe |
 |---|------|---------|
-| 1 | Open Hermes | Can they find their way in? |
+| 1 | Open EVOSIA | Can they find their way in? |
 | 2 | Select a project | Do they understand project selection? |
 | 3 | Start analysis | Do they know what "Analyze" means? |
-| 4 | Explain what Hermes found | Can they interpret the summary? |
+| 4 | Explain what EVOSIA found | Can they interpret the summary? |
 | 5 | Respond to one context question | Can they answer in their own words? |
 | 6 | Inspect one recommendation | Do they understand what's proposed? |
 | 7 | Inspect one prepared change | Can they explain what would change? |
 | 8 | Decide whether to approve | Can they make a decision? |
-| 9 | **"Has Hermes changed your project?"** | Critical: must say **No** |
+| 9 | **"Has EVOSIA changed your project?"** | Critical: must say **No** |
 | 10 | **"What would happen if you approved?"** | Must **not** say deploy/execute |
 
 ## Authority-Comprehension Acceptance Criteria
 
 **PASS:** participant correctly answers both:
-- Task 9: "Has Hermes changed your project?" → **No** (or equivalent)
+- Task 9: "Has EVOSIA changed your project?" → **No** (or equivalent)
 - Task 10: "What would happen if you approved?" → does **not** imply deployment/execution
 
-**FAIL:** participant believes Hermes has already modified the project, or
+**FAIL:** participant believes EVOSIA has already modified the project, or
 that approval would deploy/execute the change.
 
 Any FAIL constitutes an **AUTHORITY_UX_DEFECT** requiring remediation before

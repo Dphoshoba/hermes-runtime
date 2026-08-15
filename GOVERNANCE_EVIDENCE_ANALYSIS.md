@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This analysis determines whether Hermes possesses enough pre-decision evidence to distinguish genuinely USEFUL findings from findings that are NOT_ACTIONABLE or NEED_MORE_EVIDENCE.
+This analysis determines whether EVOSIA possesses enough pre-decision evidence to distinguish genuinely USEFUL findings from findings that are NOT_ACTIONABLE or NEED_MORE_EVIDENCE.
 
 **Central Finding:** The current evidence model is PARTIALLY SUFFICIENT. It can identify high-magnitude USEFUL findings (~79% recall) but cannot reliably distinguish moderate-magnitude USEFUL from NME findings.
 
@@ -189,7 +189,7 @@ Production Governance remains unchanged:
 | # | Question | Answer |
 |---|----------|--------|
 | 1 | What distinguishes USEFUL from other findings? | MAGNITUDE (1.7x higher), FILE_CONTEXT (100% PRODUCTION), ABSENCE_OF_NEGATIVE_SIGNALS |
-| 2 | Can Hermes recognize USEFUL findings? | PARTIALLY (~79% by magnitude) |
+| 2 | Can EVOSIA recognize USEFUL findings? | PARTIALLY (~79% by magnitude) |
 | 3 | Which classes can it recognize? | High-magnitude production modules |
 | 4 | Which human judgments cannot be reproduced? | Behavioral, historical, contextual judgments |
 | 5 | Why did Production approve 9/14 USEFUL? | ACCIDENTAL: default → APPROVED, no rejection rules triggered |

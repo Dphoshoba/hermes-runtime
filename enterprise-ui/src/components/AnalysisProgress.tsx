@@ -67,7 +67,7 @@ export default function AnalysisProgress({ projectName, onComplete }: AnalysisPr
       <div className="progress-header">
         <h2>Analyzing {projectName}</h2>
         <p className="muted">
-          Hermes is reviewing your project. This is read-only — no changes are
+          EVOSIA is reviewing your project. This is read-only — no changes are
           being made.
         </p>
       </div>

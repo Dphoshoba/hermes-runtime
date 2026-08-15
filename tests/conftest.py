@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
+from evosia.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
 
 
 @pytest.fixture

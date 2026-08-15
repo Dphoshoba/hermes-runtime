@@ -449,7 +449,7 @@ describe('Structured API Errors', () => {
 describe('Authentication Expiry', () => {
   it('shows login form when user is null (expired session)', () => {
     renderWithAuth(LoginPage, '/login', { user: null })
-    expect(screen.getByText('Hermes Enterprise')).toBeInTheDocument()
+    expect(screen.getByText('EVOSIA Enterprise')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
   })
 })

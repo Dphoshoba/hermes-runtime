@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.governance_intel_models import (
+from evosia.governance_intel_models import (
     ApprovalDecision,
     ApprovedCandidateMission,
     ArchitectureImpact,
@@ -21,11 +21,11 @@ from hermes_v01.governance_intel_models import (
     RecommendationAssessment,
     ApprovalSummary,
 )
-from hermes_v01.governance_analyzer import govern_engineering
-from hermes_v01.governance_renderer import render_json, render_markdown, save_artifacts
-from hermes_v01.repo_scanner import scan_repository
-from hermes_v01.repo_analyzer import analyze_repository
-from hermes_v01.engineering_analyzer import analyze_engineering
+from evosia.governance_analyzer import govern_engineering
+from evosia.governance_renderer import render_json, render_markdown, save_artifacts
+from evosia.repo_scanner import scan_repository
+from evosia.repo_analyzer import analyze_repository
+from evosia.engineering_analyzer import analyze_engineering
 
 
 SAMPLE_REPO = Path(__file__).resolve().parent.parent / "validation" / "sample-repo"
@@ -335,7 +335,7 @@ class TestRenderer:
 
 class TestCLI:
     def _run(self, args):
-        return subprocess.run([sys.executable, "-m", "hermes_v01.governance_cli", *args],
+        return subprocess.run([sys.executable, "-m", "evosia.governance_cli", *args],
                               capture_output=True, text=True, timeout=30)
 
     def test_scan(self, sample_ei, tmp_output):

@@ -9,11 +9,11 @@
 
 ## Executive Summary
 
-Hermes v1.0.0-alpha proved its architecture against real software engineering work. Three end-to-end missions executed correctly through the full pipeline. No Hermes defects were found — all failures were target-repository issues (uninstalled dependencies). However, eight friction findings reveal genuine architectural gaps that limit real-world utility.
+EVOSIA v1.0.0-alpha proved its architecture against real software engineering work. Three end-to-end missions executed correctly through the full pipeline. No EVOSIA defects were found — all failures were target-repository issues (uninstalled dependencies). However, eight friction findings reveal genuine architectural gaps that limit real-world utility.
 
 This proposal analyses each finding, identifies root causes, and recommends a phased improvement plan. Three improvements are approved for v1.1: per-mission queue isolation, per-task environment control, and mission report status separation. The remaining findings are deferred to v1.2 or rejected.
 
-**Key decision:** Hermes should remain a *mission execution runtime*, not become a *dependency manager* or *test runner*. Improvements should enhance mission authoring and reporting fidelity without expanding the runtime's scope.
+**Key decision:** EVOSIA should remain a *mission execution runtime*, not become a *dependency manager* or *test runner*. Improvements should enhance mission authoring and reporting fidelity without expanding the runtime's scope.
 
 ---
 
@@ -54,7 +54,7 @@ This proposal analyses each finding, identifies root causes, and recommends a ph
 
 When a mission targets a Python package that isn't installed, tasks that `import` it fail. The mission author must either:
 1. Add a manual `pip install -e .` task with dependencies on all downstream tasks, or
-2. Ensure the environment is pre-configured outside Hermes.
+2. Ensure the environment is pre-configured outside EVOSIA.
 
 Neither is ergonomic or reliable.
 
@@ -146,7 +146,7 @@ A mission where all tasks fail because the target code has bugs should report `C
 **Architectural Root Cause:**
 Tasks are defined as raw `command: list[str]`. Common operations (list files, check patterns, verify imports) require inline Python scripts that are 200+ characters and hard to read in mission JSON.
 
-Hermes has no abstraction layer between "mission author writes command" and "subprocess executes command." Every operation is a shell command.
+EVOSIA has no abstraction layer between "mission author writes command" and "subprocess executes command." Every operation is a shell command.
 
 **Classification:** usability
 

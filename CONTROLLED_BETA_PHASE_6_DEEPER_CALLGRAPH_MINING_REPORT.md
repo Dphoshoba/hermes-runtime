@@ -3,7 +3,7 @@
 **Program:** CONTROLLED_BETA_PHASE_6_DEEPER_CALLGRAPH_MINING
 **Authorization:** Operator CONTINUATION AUTHORIZATION (read-only deeper mining)
 **Prior:** Phase 5 HUMAN_CONTEXT_REQUIRED_FOR_FURTHER_PROGRESS (commit `ed676aa…`)
-**Governance baseline:** EVIDENCE_RISK_GATE · **Hermes version:** 1.3.0
+**Governance baseline:** EVIDENCE_RISK_GATE · **EVOSIA version:** 1.3.0
 **Autonomous execution:** DISABLED · **Repository mutation:** DISABLED
 
 ## Authorization scope

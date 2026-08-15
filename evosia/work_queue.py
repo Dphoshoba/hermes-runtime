@@ -1,0 +1,623 @@
+from __future__ import annotations
+
+import json
+import threading
+import time
+from dataclasses import asdict, dataclass, replace
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Iterable, Mapping, Optional
+
+from .utils import atomic_write_json
+
+TASK_STATES = (
+    "READY",
+    "RUNNING",
+    "BLOCKED",
+    "OBSERVED",
+    "VERIFICATION_PENDING",
+    "VERIFIED",
+    "COMPLETE",
+)
+
+TERMINAL_TASK_STATES = {"VERIFIED", "COMPLETE"}
+
+
+@dataclass(frozen=True)
+class WorkItem:
+    task_id: str
+    title: str
+    priority: int = 100
+    dependencies: tuple[str, ...] = ()
+    state: str = "BLOCKED"
+    attempts: int = 0
+    last_error: str | None = None
+    max_retries: int = 3
+    retry_delay_seconds: float = 1.0
+    max_retry_delay_seconds: float = 60.0
+    retry_backoff_multiplier: float = 2.0
+    retryable: bool = True
+    # Scheduling fields
+    scheduled_at: Optional[str] = None  # ISO format UTC timestamp for delayed execution
+    recurring: bool = False  # If True, task is re-queued after completion
+    interval_seconds: float = 0.0  # Interval for recurring tasks
+    last_run_at: Optional[str] = None  # ISO format UTC timestamp of last execution
+
+    def __post_init__(self) -> None:
+        if not self.task_id.strip():
+            raise ValueError("task_id must not be empty")
+        if not self.title.strip():
+            raise ValueError("title must not be empty")
+        if self.state not in TASK_STATES:
+            raise ValueError(f"unknown task state: {self.state}")
+        if self.attempts < 0:
+            raise ValueError("attempts must be >= 0")
+        if self.task_id in self.dependencies:
+            raise ValueError("a task cannot depend on itself")
+        if self.max_retries < 0:
+            raise ValueError("max_retries must be >= 0")
+        if self.retry_delay_seconds <= 0:
+            raise ValueError("retry_delay_seconds must be > 0")
+        if self.max_retry_delay_seconds < self.retry_delay_seconds:
+            raise ValueError("max_retry_delay_seconds must be >= retry_delay_seconds")
+        if self.retry_backoff_multiplier <= 1.0:
+            raise ValueError("retry_backoff_multiplier must be > 1.0")
+        if self.recurring and self.interval_seconds <= 0:
+            raise ValueError("recurring tasks must have interval_seconds > 0")
+        if self.scheduled_at is not None:
+            try:
+                datetime.fromisoformat(self.scheduled_at.replace("Z", "+00:00"))
+            except ValueError:
+                raise ValueError("scheduled_at must be valid ISO format UTC timestamp")
+        if self.last_run_at is not None:
+            try:
+                datetime.fromisoformat(self.last_run_at.replace("Z", "+00:00"))
+            except ValueError:
+                raise ValueError("last_run_at must be valid ISO format UTC timestamp")
+
+    def as_dict(self) -> dict[str, Any]:
+        data = asdict(self)
+        data["dependencies"] = list(self.dependencies)
+        return data
+
+    def next_retry_delay(self) -> float:
+        """Calculate next retry delay with exponential backoff, capped at max."""
+        delay = self.retry_delay_seconds * (self.retry_backoff_multiplier ** self.attempts)
+        return min(delay, self.max_retry_delay_seconds)
+
+    def can_retry(self) -> bool:
+        """Check if task can be retried (has attempts remaining and is retryable)."""
+        return self.retryable and self.attempts < self.max_retries
+
+    def is_due(self, now: Optional[datetime] = None) -> bool:
+        """Check if task is due for execution (scheduled_at has passed)."""
+        if self.scheduled_at is None:
+            return True
+        if now is None:
+            now = datetime.now(timezone.utc)
+        scheduled = datetime.fromisoformat(self.scheduled_at.replace("Z", "+00:00"))
+        return scheduled <= now
+
+    def next_scheduled_at(self) -> Optional[str]:
+        """Calculate next scheduled time for recurring task."""
+        if not self.recurring or self.interval_seconds <= 0:
+            return None
+        base = datetime.now(timezone.utc)
+        if self.last_run_at is not None:
+            base = datetime.fromisoformat(self.last_run_at.replace("Z", "+00:00"))
+        next_run = base.timestamp() + self.interval_seconds
+        return datetime.fromtimestamp(next_run, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+@dataclass(frozen=True)
+class WorkQueueState:
+    schema_version: str
+    revision: int
+    items: tuple[WorkItem, ...]
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "revision": self.revision,
+            "items": [item.as_dict() for item in self.items],
+        }
+
+
+class WorkQueueStateStore:
+    """Atomically persists work-queue state."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    def load(self) -> WorkQueueState | None:
+        if not self.path.exists():
+            return None
+        try:
+            raw = json.loads(self.path.read_text(encoding="utf-8"))
+            items = tuple(
+                WorkItem(
+                    **{
+                        **item,
+                        "dependencies": tuple(item.get("dependencies", ())),
+                    }
+                )
+                for item in raw.get("items", ())
+            )
+            return WorkQueueState(
+                schema_version=raw["schema_version"],
+                revision=int(raw["revision"]),
+                items=items,
+            )
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise ValueError(f"invalid work queue state: {self.path}") from exc
+
+    def save(self, state: WorkQueueState) -> None:
+        atomic_write_json(self.path, state.as_dict())
+
+
+class WorkQueueManager:
+    """Deterministic, restart-safe manager for Program III engineering tasks."""
+
+    def __init__(self, *, state_store: WorkQueueStateStore, items: Iterable[WorkItem] = ()) -> None:
+        self._state_store = state_store
+        self._lock = threading.RLock()
+        loaded = state_store.load()
+        if loaded is not None:
+            self._state = self._normalize(loaded)
+        else:
+            initial = tuple(items)
+            self._validate_graph(initial)
+            self._state = self._normalize(
+                WorkQueueState(schema_version="1", revision=0, items=initial)
+            )
+            self._state_store.save(self._state)
+
+    @property
+    def state(self) -> WorkQueueState:
+        return self._state
+
+    def items(self) -> tuple[WorkItem, ...]:
+        return self._state.items
+
+    def get(self, task_id: str) -> WorkItem:
+        for item in self._state.items:
+            if item.task_id == task_id:
+                return item
+        raise KeyError(task_id)
+
+    def next_ready(self) -> WorkItem | None:
+        ready = [item for item in self._state.items if item.state == "READY"]
+        if not ready:
+            return None
+        return min(ready, key=lambda item: (item.priority, item.task_id))
+
+    def dispatch_next(self) -> WorkItem | None:
+        item = self.next_ready()
+        if item is None:
+            return None
+        return self.transition(item.task_id, "RUNNING", increment_attempts=True)
+
+    def dispatch_ready(self, max_concurrent: int = 1) -> list[WorkItem]:
+        """Dispatch up to max_concurrent READY tasks to RUNNING atomically.
+
+        Returns the list of tasks dispatched (may be fewer than max_concurrent
+        if fewer tasks are READY). Each task is transitioned from READY to
+        RUNNING with attempt increment in a single persisted state update.
+        """
+        if max_concurrent < 1:
+            raise ValueError("max_concurrent must be >= 1")
+        ready = sorted(
+            [item for item in self._state.items if item.state == "READY"],
+            key=lambda item: (item.priority, item.task_id),
+        )
+        to_dispatch = ready[:max_concurrent]
+        if not to_dispatch:
+            return []
+
+        dispatched: list[WorkItem] = []
+        items = list(self._state.items)
+        for i, item in enumerate(items):
+            if item.task_id in {d.task_id for d in to_dispatch}:
+                items[i] = replace(
+                    item,
+                    state="RUNNING",
+                    attempts=item.attempts + 1,
+                )
+                dispatched.append(items[i])
+
+        new_state = WorkQueueState(
+            schema_version=self._state.schema_version,
+            revision=self._state.revision + 1,
+            items=tuple(items),
+        )
+        self._persist(self._normalize(new_state))
+        return dispatched
+
+    def transition(
+        self,
+        task_id: str,
+        state: str,
+        *,
+        last_error: str | None = None,
+        increment_attempts: bool = False,
+    ) -> WorkItem:
+        if state not in TASK_STATES:
+            raise ValueError(f"unknown task state: {state}")
+        current = self.get(task_id)
+        if current.state in TERMINAL_TASK_STATES and state not in TERMINAL_TASK_STATES:
+            raise ValueError(f"cannot move terminal task {task_id} back to {state}")
+        if current.state == "RUNNING" and state == "RUNNING":
+            raise ValueError(f"task already running: {task_id}")
+
+        updated = replace(
+            current,
+            state=state,
+            attempts=current.attempts + (1 if increment_attempts else 0),
+            last_error=last_error,
+        )
+        self._replace_item(updated)
+        return self.get(task_id)
+
+    def mark_observed(self, task_id: str) -> WorkItem:
+        return self.transition(task_id, "OBSERVED")
+
+    def mark_verification_pending(self, task_id: str) -> WorkItem:
+        return self.transition(task_id, "VERIFICATION_PENDING")
+
+    def record_independent_verification(self, task_id: str) -> WorkItem:
+        current = self.get(task_id)
+        if current.state != "VERIFICATION_PENDING":
+            raise ValueError("independent verification requires VERIFICATION_PENDING")
+        return self.transition(task_id, "VERIFIED")
+
+    def get_due_tasks(self, now: Optional[datetime] = None) -> list[WorkItem]:
+        """Get all READY tasks that are due for execution (scheduled_at has passed)."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+        due = []
+        for item in self._state.items:
+            if item.state == "READY" and item.is_due(now):
+                due.append(item)
+        # Sort by priority then task_id for deterministic ordering
+        return sorted(due, key=lambda item: (item.priority, item.task_id))
+
+    def dispatch_next_due(self, now: Optional[datetime] = None) -> WorkItem | None:
+        """Dispatch the next due READY task to RUNNING."""
+        due = self.get_due_tasks(now)
+        if not due:
+            return None
+        return self.transition(due[0].task_id, "RUNNING", increment_attempts=True)
+
+    def schedule_task(self, task_id: str, scheduled_at: str) -> WorkItem:
+        """Schedule a task for future execution."""
+        current = self.get(task_id)
+        if current.state not in {"READY", "BLOCKED"}:
+            raise ValueError(f"cannot schedule task {task_id} from state {current.state}")
+        # Validate timestamp
+        try:
+            datetime.fromisoformat(scheduled_at.replace("Z", "+00:00"))
+        except ValueError:
+            raise ValueError("scheduled_at must be valid ISO format UTC timestamp")
+        updated = replace(current, scheduled_at=scheduled_at)
+        self._replace_item(updated)
+        return self.get(task_id)
+
+    def reschedule_recurring(self, task_id: str) -> WorkItem:
+        """Reschedule a recurring task for its next interval after completion."""
+        current = self.get(task_id)
+        if not current.recurring:
+            raise ValueError(f"task {task_id} is not recurring")
+        next_run = current.next_scheduled_at()
+        if next_run is None:
+            raise ValueError(f"cannot compute next scheduled time for {task_id}")
+        updated = replace(current, scheduled_at=next_run, state="READY", last_run_at=current.next_scheduled_at())
+        self._replace_item(updated)
+        return self.get(task_id)
+
+    def mark_complete(self, task_id: str) -> WorkItem:
+        current = self.get(task_id)
+        if current.state == "COMPLETE":
+            return current
+        if current.state not in {"VERIFIED", "COMPLETE"}:
+            raise ValueError("completion requires independently VERIFIED state")
+        return self.transition(task_id, "COMPLETE")
+
+    def mark_failed(self, task_id: str, error: str) -> WorkItem:
+        """Mark task as failed. If retryable and has attempts remaining, schedule retry."""
+        current = self.get(task_id)
+        if current.state in TERMINAL_TASK_STATES:
+            raise ValueError(f"cannot fail terminal task {task_id}")
+        
+        if current.can_retry():
+            # Schedule retry: transition back to READY with error recorded
+            return self.transition(task_id, "READY", last_error=error, increment_attempts=False)
+        else:
+            # No retries left or not retryable — record error, leave state unchanged.
+            # The runner tracks actual success/failure via task_results separately.
+            updated = replace(current, last_error=error)
+            self._replace_item(updated)
+            return self.get(task_id)
+
+    def retry_task(self, task_id: str) -> WorkItem:
+        """Manually retry a task (transition to READY, increment attempts)."""
+        current = self.get(task_id)
+        if not current.can_retry():
+            raise ValueError(f"task {task_id} cannot be retried (max retries reached or not retryable)")
+        if current.state not in {"READY", "BLOCKED", "OBSERVED", "VERIFICATION_PENDING"}:
+            raise ValueError(f"task {task_id} cannot be retried from state {current.state}")
+        return self.transition(task_id, "READY", increment_attempts=True)
+
+    def recover_incomplete_tasks(self) -> list[WorkItem]:
+        """Recover tasks that were in progress when process crashed.
+        
+        Transitions RUNNING -> READY (with attempt increment)
+        Transitions OBSERVED -> READY (with attempt increment) 
+        Transitions VERIFICATION_PENDING -> READY (with attempt increment)
+        
+        Only recovers tasks that can_retry().
+        Returns list of recovered tasks.
+        """
+        recovered = []
+        for item in self._state.items:
+            if item.state in {"RUNNING", "OBSERVED", "VERIFICATION_PENDING"}:
+                if item.can_retry():
+                    recovered.append(self.transition(item.task_id, "READY", increment_attempts=True))
+        return recovered
+
+    def refresh(self) -> WorkQueueState:
+        normalized = self._normalize(self._state)
+        if normalized != self._state:
+            self._persist(normalized)
+        return self._state
+
+    def compact(self, archive_path: Path) -> tuple[int, int]:
+        """Archive COMPLETE tasks to a separate file, removing them from active queue.
+        
+        Returns (archived_count, remaining_count).
+        """
+        archive_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        active_items = []
+        archived_items = []
+        
+        for item in self._state.items:
+            if item.state == "COMPLETE":
+                archived_items.append(item)
+            else:
+                active_items.append(item)
+        
+        if not archived_items:
+            return (0, len(active_items))
+        
+        # Save archived items
+        archive_state = WorkQueueState(
+            schema_version=self._state.schema_version,
+            revision=0,
+            items=tuple(archived_items),
+        )
+        atomic_write_json(archive_path, archive_state.as_dict())
+        
+        # Update active queue
+        new_state = WorkQueueState(
+            schema_version=self._state.schema_version,
+            revision=self._state.revision + 1,
+            items=tuple(active_items),
+        )
+        self._persist(self._normalize(new_state))
+        
+        return (len(archived_items), len(active_items))
+
+    def prune_terminal_tasks(self, max_age_hours: float = 168.0) -> int:
+        """Remove COMPLETE tasks older than max_age_hours.
+        
+        Uses last_run_at if available, otherwise keeps all COMPLETE tasks.
+        Returns number of pruned tasks.
+        """
+        now = datetime.now(timezone.utc)
+        max_age_seconds = max_age_hours * 3600
+        
+        keep_items = []
+        pruned = 0
+        
+        for item in self._state.items:
+            if item.state == "COMPLETE" and item.last_run_at is not None:
+                try:
+                    last_run = datetime.fromisoformat(item.last_run_at.replace("Z", "+00:00"))
+                    age = (now - last_run).total_seconds()
+                    if age > max_age_seconds:
+                        pruned += 1
+                        continue  # skip this item (prune it)
+                except ValueError:
+                    pass  # keep if timestamp invalid
+            keep_items.append(item)
+        
+        if pruned > 0:
+            new_state = WorkQueueState(
+                schema_version=self._state.schema_version,
+                revision=self._state.revision + 1,
+                items=tuple(keep_items),
+            )
+            self._persist(self._normalize(new_state))
+        
+        return pruned
+
+    def verify_integrity(self) -> list[str]:
+        """Verify queue state integrity.
+        
+        Returns list of issues found (empty if healthy).
+        Checks:
+        - No duplicate task_ids
+        - All dependencies reference existing tasks
+        - No cycles in dependency graph
+        - Terminal tasks have valid state transitions
+        - Attempts non-negative
+        - Scheduled tasks have valid timestamps
+        """
+        issues = []
+        items = self._state.items
+        
+        # Check duplicates
+        seen: set[str] = set()
+        for item in items:
+            if item.task_id in seen:
+                issues.append(f"Duplicate task_id: {item.task_id}")
+            seen.add(item.task_id)
+        
+        # Check dependencies exist
+        by_id = {item.task_id: item for item in items}
+        for item in items:
+            for dep in item.dependencies:
+                if dep not in by_id:
+                    issues.append(f"Task {item.task_id} depends on missing task: {dep}")
+        
+        # Check for cycles
+        visiting: set[str] = set()
+        visited: set[str] = set()
+        
+        def visit(task_id: str) -> None:
+            if task_id in visited:
+                return
+            if task_id in visiting:
+                issues.append("Cycle detected in dependency graph")
+                return
+            visiting.add(task_id)
+            if task_id in by_id:
+                for dep in by_id[task_id].dependencies:
+                    visit(dep)
+            visiting.remove(task_id)
+            visited.add(task_id)
+        
+        for task_id in by_id:
+            visit(task_id)
+        
+        # Check terminal tasks
+        for item in items:
+            if item.state in TERMINAL_TASK_STATES:
+                if item.state == "COMPLETE" and not any(dep_state in TERMINAL_TASK_STATES for dep_state in [by_id[d].state for d in item.dependencies if d in by_id]):
+                    # COMPLETE tasks should have all dependencies in terminal states
+                    pass  # This is checked by _normalize
+            
+            if item.attempts < 0:
+                issues.append(f"Task {item.task_id} has negative attempts: {item.attempts}")
+            
+            if item.scheduled_at is not None:
+                try:
+                    datetime.fromisoformat(item.scheduled_at.replace("Z", "+00:00"))
+                except ValueError:
+                    issues.append(f"Task {item.task_id} has invalid scheduled_at: {item.scheduled_at}")
+        
+        return issues
+
+    def repair_common_issues(self) -> list[str]:
+        """Attempt to repair common queue state issues.
+        
+        Returns list of repairs performed.
+        Repairs:
+        - Reset negative attempts to 0
+        - Clear invalid scheduled_at timestamps
+        - Normalize BLOCKED/READY states based on dependencies
+        """
+        repairs = []
+        items = list(self._state.items)
+        modified = False
+        
+        for i, item in enumerate(items):
+            # Fix negative attempts
+            if item.attempts < 0:
+                items[i] = replace(item, attempts=0)
+                repairs.append(f"Reset negative attempts to 0 for {item.task_id}")
+                modified = True
+            
+            # Clear invalid scheduled_at
+            if item.scheduled_at is not None:
+                try:
+                    datetime.fromisoformat(item.scheduled_at.replace("Z", "+00:00"))
+                except ValueError:
+                    items[i] = replace(item, scheduled_at=None)
+                    repairs.append(f"Cleared invalid scheduled_at for {item.task_id}")
+                    modified = True
+        
+        if modified:
+            new_state = WorkQueueState(
+                schema_version=self._state.schema_version,
+                revision=self._state.revision + 1,
+                items=tuple(items),
+            )
+            self._persist(self._normalize(new_state))
+        
+        # Also run normalize to fix BLOCKED/READY states
+        normalized = self._normalize(self._state)
+        if normalized != self._state:
+            self._persist(normalized)
+            repairs.append("Normalized BLOCKED/READY states based on dependencies")
+        
+        return repairs
+
+    def summary(self) -> dict[str, list[str]]:
+        result = {state: [] for state in TASK_STATES}
+        for item in sorted(self._state.items, key=lambda value: (value.priority, value.task_id)):
+            result[item.state].append(item.task_id)
+        return result
+
+    def _replace_item(self, updated: WorkItem) -> None:
+        with self._lock:
+            items = tuple(updated if item.task_id == updated.task_id else item for item in self._state.items)
+            next_state = WorkQueueState(
+                schema_version=self._state.schema_version,
+                revision=self._state.revision + 1,
+                items=items,
+            )
+            self._persist(self._normalize(next_state))
+
+    def _persist(self, state: WorkQueueState) -> None:
+        self._validate_graph(state.items)
+        self._state_store.save(state)
+        self._state = state
+
+    @staticmethod
+    def _normalize(state: WorkQueueState) -> WorkQueueState:
+        by_id = {item.task_id: item for item in state.items}
+        normalized: list[WorkItem] = []
+        for item in state.items:
+            if item.state in {"RUNNING", "OBSERVED", "VERIFICATION_PENDING", "VERIFIED", "COMPLETE"}:
+                normalized.append(item)
+                continue
+            dependencies_satisfied = all(
+                by_id[dependency].state in TERMINAL_TASK_STATES
+                for dependency in item.dependencies
+            )
+            desired = "READY" if dependencies_satisfied else "BLOCKED"
+            normalized.append(replace(item, state=desired))
+        return WorkQueueState(
+            schema_version=state.schema_version,
+            revision=state.revision,
+            items=tuple(normalized),
+        )
+
+    @staticmethod
+    def _validate_graph(items: Iterable[WorkItem]) -> None:
+        item_tuple = tuple(items)
+        by_id: Mapping[str, WorkItem] = {item.task_id: item for item in item_tuple}
+        if len(by_id) != len(item_tuple):
+            raise ValueError("duplicate task_id")
+        for item in item_tuple:
+            unknown = [dependency for dependency in item.dependencies if dependency not in by_id]
+            if unknown:
+                raise ValueError(f"unknown dependencies for {item.task_id}: {unknown}")
+
+        visiting: set[str] = set()
+        visited: set[str] = set()
+
+        def visit(task_id: str) -> None:
+            if task_id in visited:
+                return
+            if task_id in visiting:
+                raise ValueError("cyclic task dependencies")
+            visiting.add(task_id)
+            for dependency in by_id[task_id].dependencies:
+                visit(dependency)
+            visiting.remove(task_id)
+            visited.add(task_id)
+
+        for task_id in by_id:
+            visit(task_id)

@@ -2,7 +2,7 @@
 
 **Program:** Post-Promotion Controlled Beta Acceptance Program
 **Governance baseline:** EVIDENCE_RISK_GATE (promoted commit `dcf72aeb29b9c5a3f633b28a67dec842ff972f30`)
-**Hermes version:** 1.3.0
+**EVOSIA version:** 1.3.0
 **Baseline commit (HEAD at run):** `82229d83f45dcd2477a4a4c267dd200af4da77c7`
 **Run timestamp:** 2026-08-13 (UTC)
 **Autonomous execution:** DISABLED · **Repository mutation:** DISABLED

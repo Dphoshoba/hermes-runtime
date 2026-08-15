@@ -1,4 +1,4 @@
-# Engineering Score — Hermes Runtime v1.0.0-beta
+# Engineering Score — EVOSIA Runtime v1.0.0-beta
 
 Date: 2026-08-08
 

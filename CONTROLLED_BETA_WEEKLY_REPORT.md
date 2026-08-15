@@ -15,7 +15,7 @@
 **Baseline SHA:** 823a9d7e70a9fab8714c219ff52338ef696d3f9e
 **Language:** Python
 **Framework:** FastAPI
-**Reason:** Hermes itself — dogfooding
+**Reason:** EVOSIA itself — dogfooding
 
 ---
 

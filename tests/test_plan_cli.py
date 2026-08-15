@@ -8,13 +8,13 @@ from unittest.mock import patch
 
 import pytest
 
-from hermes_v01.plan_cli import (
+from evosia.plan_cli import (
     cmd_build,
     cmd_enqueue,
     cmd_show,
     cmd_validate,
 )
-from hermes_v01.work_queue import WorkQueueManager, WorkQueueStateStore
+from evosia.work_queue import WorkQueueManager, WorkQueueStateStore
 
 
 def _write_mission(tmp_path: Path, data: dict) -> Path:
@@ -127,7 +127,7 @@ class TestBuildCLI:
 
 class TestShowCLI:
     def test_show_plan(self, tmp_path: Path, capsys) -> None:
-        from hermes_v01.mission import MissionPlanner, parse_mission, save_plan
+        from evosia.mission import MissionPlanner, parse_mission, save_plan
 
         planner = MissionPlanner()
         mission = parse_mission(_minimal_mission())
@@ -152,7 +152,7 @@ class TestShowCLI:
 
 class TestEnqueueCLI:
     def test_enqueue_plan(self, tmp_path: Path, capsys) -> None:
-        from hermes_v01.mission import MissionPlanner, parse_mission, save_plan
+        from evosia.mission import MissionPlanner, parse_mission, save_plan
 
         planner = MissionPlanner()
         mission = parse_mission(_minimal_mission())
@@ -172,7 +172,7 @@ class TestEnqueueCLI:
         assert len(mgr.items()) == 1
 
     def test_enqueue_duplicate_rejected(self, tmp_path: Path) -> None:
-        from hermes_v01.mission import MissionPlanner, parse_mission, save_plan
+        from evosia.mission import MissionPlanner, parse_mission, save_plan
 
         planner = MissionPlanner()
         mission = parse_mission(_minimal_mission())
@@ -189,7 +189,7 @@ class TestEnqueueCLI:
         assert result == 1
 
     def test_enqueue_invalid_plan(self, tmp_path: Path) -> None:
-        from hermes_v01.mission import MissionPlanner, parse_mission, save_plan
+        from evosia.mission import MissionPlanner, parse_mission, save_plan
 
         planner = MissionPlanner()
         data = _minimal_mission()
@@ -206,7 +206,7 @@ class TestEnqueueCLI:
         assert result == 1
 
     def test_enqueue_output(self, tmp_path: Path, capsys) -> None:
-        from hermes_v01.mission import MissionPlanner, parse_mission, save_plan
+        from evosia.mission import MissionPlanner, parse_mission, save_plan
 
         planner = MissionPlanner()
         mission = parse_mission(_minimal_mission())

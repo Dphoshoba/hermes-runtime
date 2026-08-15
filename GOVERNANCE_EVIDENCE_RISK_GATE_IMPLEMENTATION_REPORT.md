@@ -4,14 +4,14 @@
 **Authorization:** IMPLEMENTATION PLAN APPROVED (CHECKPOINT)
 **Architecture:** `GOVERNANCE_SHOULD_BECOME_EVIDENCE_AND_RISK_GATE`
 **Operating mode:** Controlled Beta — gate mode is the default authorization path.
-**Hermes version after implementation:** `8b6050710f05bd0677498e16b4f081927f7c9163`
+**EVOSIA version after implementation:** `8b6050710f05bd0677498e16b4f081927f7c9163`
 (local commit on `main`; no push/PR — per safety constraints.)
 
 ---
 
 ## 1. What was implemented
 
-Transformed Hermes Governance from an **automated approver** into an
+Transformed EVOSIA Governance from an **automated approver** into an
 **Evidence & Risk Gate**: machine logic observes, corroborates, and routes
 findings to human review; it never decides actionability. Human adjudication
 (`ACTIONABLE` / `NOT_ACTIONABLE` / `NEEDS_MORE_EVIDENCE` / `DUPLICATE`) is the
@@ -158,7 +158,7 @@ the F/suppression execution gap.
 ---
 
 ## 5. Decision
-**EVIDENCE_RISK_GATE_IMPLEMENTED_AND_VALIDATED** for the core (Hermes v01)
+**EVIDENCE_RISK_GATE_IMPLEMENTED_AND_VALIDATED** for the core (EVOSIA v01)
 gate + mission boundary + prioritizer + renderer + metrics, validated by real
 exit codes across 182 focused + regression tests.
 

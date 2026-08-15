@@ -23,7 +23,7 @@ export default function LoginPage() {
 
   return (
     <div className="auth-container">
-      <h2>Hermes Enterprise</h2>
+      <h2>EVOSIA Enterprise</h2>
       {error && <div className="error-msg">{error}</div>}
       <form onSubmit={handleSubmit}>
         <div className="form-group">

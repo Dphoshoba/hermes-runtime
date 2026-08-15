@@ -1,5 +1,5 @@
 PRODUCT_VISION.md
-Hermes Enterprise
+EVOSIA Enterprise
 Product Vision
 
 Version: 1.0
@@ -8,19 +8,19 @@ Status: Foundational Vision
 
 Our Mission
 
-Hermes exists to make autonomous software engineering trustworthy.
+EVOSIA exists to make autonomous software engineering trustworthy.
 
 Artificial intelligence has made writing software dramatically easier.
 
 It has not made engineering safer.
 
-Hermes closes that gap.
+EVOSIA closes that gap.
 
 We believe AI should not simply generate code.
 
 AI should understand software, justify every recommendation, operate within governance, execute safely, verify its work, and explain every engineering decision.
 
-Hermes exists to build that future.
+EVOSIA exists to build that future.
 
 Our Vision
 
@@ -59,11 +59,11 @@ How risky is this?
 Can we prove it?
 Should we even touch this repository today?
 
-Hermes answers those questions.
+EVOSIA answers those questions.
 
 Our Customers
 
-Hermes is designed for organizations that treat software as a strategic asset.
+EVOSIA is designed for organizations that treat software as a strategic asset.
 
 Examples include:
 
@@ -77,9 +77,9 @@ engineering teams
 CTOs
 platform engineering groups
 DevOps organizations
-What Hermes Does
+What EVOSIA Does
 
-Hermes continuously:
+EVOSIA continuously:
 
 evaluates repository readiness
 understands repository structure
@@ -90,24 +90,24 @@ executes approved work safely
 verifies outcomes
 documents every engineering decision
 
-Hermes becomes an always-on engineering intelligence platform.
+EVOSIA becomes an always-on engineering intelligence platform.
 
-What Makes Hermes Different
+What Makes EVOSIA Different
 
-Hermes is not another AI coding assistant.
+EVOSIA is not another AI coding assistant.
 
-Hermes is an Engineering Operating System.
+EVOSIA is an Engineering Operating System.
 
 Other systems optimize for:
 
 generating more code
 
-Hermes optimizes for:
+EVOSIA optimizes for:
 
 generating better engineering decisions.
-The Hermes Difference
+The EVOSIA Difference
 
-Hermes combines:
+EVOSIA combines:
 
 Repository Intelligence
 
@@ -135,7 +135,7 @@ Every change is explainable.
 
 The Engineering Command Center
 
-The primary interface to Hermes Enterprise is the Engineering Command Center.
+The primary interface to EVOSIA Enterprise is the Engineering Command Center.
 
 Every morning an engineering leader should be able to open one screen and immediately understand:
 
@@ -157,17 +157,17 @@ Engineering Trends
 
 Recommended Work
 
-Hermes should answer:
+EVOSIA should answer:
 
 "What should my engineering team work on today?"
 
 Human-Centered Autonomy
 
-Hermes is autonomous.
+EVOSIA is autonomous.
 
 Humans remain accountable.
 
-Hermes:
+EVOSIA:
 
 observes
 
@@ -197,7 +197,7 @@ Responsibility remains human.
 
 Our Platform Strategy
 
-Hermes consists of three layers.
+EVOSIA consists of three layers.
 
 Core Engine
 
@@ -231,17 +231,17 @@ Our Long-Term Goal
 
 Our ambition is simple.
 
-We want Hermes to become the operating system for software engineering.
+We want EVOSIA to become the operating system for software engineering.
 
 Just as Git transformed version control...
 
 Just as GitHub transformed collaboration...
 
-Hermes aims to transform engineering decision making.
+EVOSIA aims to transform engineering decision making.
 
 Success
 
-Hermes succeeds when:
+EVOSIA succeeds when:
 
 engineering teams make better decisions
 
@@ -277,11 +277,11 @@ Trust
 
 If a feature weakens these principles,
 
-it does not belong in Hermes.
+it does not belong in EVOSIA.
 
 Five-Year Vision
 
-Within five years Hermes should:
+Within five years EVOSIA should:
 
 manage hundreds of thousands of repositories
 
@@ -295,9 +295,9 @@ and demonstrate that autonomous engineering can be both powerful and trustworthy
 
 The Promise
 
-Hermes does not promise to write the most code.
+EVOSIA does not promise to write the most code.
 
-Hermes promises to make engineering decisions that humans can understand, verify, and trust.
+EVOSIA promises to make engineering decisions that humans can understand, verify, and trust.
 
 Closing Statement
 
@@ -305,7 +305,7 @@ We believe the future of software engineering is not human versus AI.
 
 It is humans and AI engineering together under shared principles of evidence, governance, safety, and trust.
 
-Hermes exists to make that future possible.
+EVOSIA exists to make that future possible.
 
 Now... let's build the first slice of Enterprise.
 
@@ -315,7 +315,7 @@ Sprint 1 (2–3 weeks)
 
 I would call it:
 
-Hermes Enterprise MVP — Engineering Command Center
+EVOSIA Enterprise MVP — Engineering Command Center
 
 The goal is that you become the first daily user.
 
@@ -401,6 +401,6 @@ Open a web browser.
 Log in.
 See all your repositories.
 Click Scan.
-Watch Hermes run the pipeline.
+Watch EVOSIA run the pipeline.
 View findings, governance decisions, and missions.
 Read reports without opening the terminal.

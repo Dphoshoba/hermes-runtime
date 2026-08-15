@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.evidence import EvidenceRecorder
-from hermes_v01.reviewer import IndependentReviewer, ImmutableReviewStore
+from evosia.evidence import EvidenceRecorder
+from evosia.reviewer import IndependentReviewer, ImmutableReviewStore
 
 
 class Clock:
@@ -96,7 +96,7 @@ def test_size_mismatch_is_failed(tmp_path: Path) -> None:
     payload["artifact_manifest"][0]["size_bytes"] += 1
     unsigned = dict(payload)
     unsigned.pop("record_sha256")
-    from hermes_v01.evidence import canonical_json_bytes
+    from evosia.evidence import canonical_json_bytes
     import hashlib
     payload["record_sha256"] = hashlib.sha256(canonical_json_bytes(unsigned)).hexdigest()
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -112,7 +112,7 @@ def test_invalid_timestamps_fail(tmp_path: Path) -> None:
     payload["execution_record"]["end_time"] = "2025-01-01T00:00:00Z"
     unsigned = dict(payload)
     unsigned.pop("record_sha256")
-    from hermes_v01.evidence import canonical_json_bytes
+    from evosia.evidence import canonical_json_bytes
     import hashlib
     payload["record_sha256"] = hashlib.sha256(canonical_json_bytes(unsigned)).hexdigest()
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -128,7 +128,7 @@ def test_incomplete_record_is_incomplete(tmp_path: Path) -> None:
     payload["execution_record"]["exit_code"] = None
     unsigned = dict(payload)
     unsigned.pop("record_sha256")
-    from hermes_v01.evidence import canonical_json_bytes
+    from evosia.evidence import canonical_json_bytes
     import hashlib
     payload["record_sha256"] = hashlib.sha256(canonical_json_bytes(unsigned)).hexdigest()
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

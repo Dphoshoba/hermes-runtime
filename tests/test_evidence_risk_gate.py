@@ -9,15 +9,15 @@ from __future__ import annotations
 
 import pytest
 
-from hermes_v01.governance_intel_models import (
+from evosia.governance_intel_models import (
     FindingGate, assert_machine_state, HUMAN_ACTIONABLE, HUMAN_NOT_ACTIONABLE,
     GATE_REQUIRES_REVIEW, GATE_OBSERVED, GATE_CORROBORATED,
 )
-from hermes_v01.governance_analyzer import govern_engineering
-from hermes_v01.mission_generator import (
+from evosia.governance_analyzer import govern_engineering
+from evosia.mission_generator import (
     generate_missions, _is_human_actionable, _FORBIDDEN_GATE_DECISIONS,
 )
-from hermes_v01.mission_prioritizer import _GOVERNANCE_WEIGHTS, compute_priority_score
+from evosia.mission_prioritizer import _GOVERNANCE_WEIGHTS, compute_priority_score
 
 
 def _ei(two_findings=True):

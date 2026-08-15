@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from hermes_v01.supervisor import AtomicJsonStateStore, ExecutionSupervisor, SupervisorState
+from evosia.supervisor import AtomicJsonStateStore, ExecutionSupervisor, SupervisorState
 
 
 class Clock:

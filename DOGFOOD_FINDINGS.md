@@ -1,11 +1,11 @@
-# Dogfooding Findings — Hermes v1.0.0-alpha
+# Dogfooding Findings — EVOSIA v1.0.0-alpha
 
 Date: 2026-08-08
 Baseline: 593 tests passing
 
 ## Summary
 
-3 missions executed against validation/sample-repo. All missions demonstrated correct end-to-end pipeline behavior (planning → constraints → queue → execution → evidence → review → health → report). Failures were exclusively due to the target repository not having `sample_app` installed — a realistic dogfood scenario, not a Hermes defect.
+3 missions executed against validation/sample-repo. All missions demonstrated correct end-to-end pipeline behavior (planning → constraints → queue → execution → evidence → review → health → report). Failures were exclusively due to the target repository not having `sample_app` installed — a realistic dogfood scenario, not a EVOSIA defect.
 
 ---
 
@@ -130,7 +130,7 @@ Baseline: 593 tests passing
 
 ## Critical Defects
 
-None. All failures are target-repository issues, not Hermes defects.
+None. All failures are target-repository issues, not EVOSIA defects.
 
 ## Recommended v1.1 Priorities
 

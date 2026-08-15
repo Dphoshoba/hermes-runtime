@@ -1,4 +1,4 @@
-# CONTROLLED BETA GUIDE — Hermes Enterprise
+# CONTROLLED BETA GUIDE — EVOSIA Enterprise
 
 **Version:** 1.4.0
 **Status:** CONTROLLED_BETA
@@ -9,7 +9,7 @@
 
 ## Overview
 
-Hermes Enterprise is in controlled beta. This guide defines the day-to-day operator workflow, safe operations, forbidden operations, and known limitations.
+EVOSIA Enterprise is in controlled beta. This guide defines the day-to-day operator workflow, safe operations, forbidden operations, and known limitations.
 
 **Critical principle:** The Controlled Beta governance baseline is the **Evidence & Risk Gate**. Governance is an evidence-and-risk *gate* — the machine routes findings (`OBSERVED`/`CORROBORATED`/`REQUIRES_REVIEW`/`INSUFFICIENT_EVIDENCE`/`DEFERRED`/`DUPLICATE`) but never authorizes actionability. Every actionability decision requires human adjudication (human `ACTIONABLE`) before a mission can be eligible; legacy Governance `APPROVED` is replay-only and advisory.
 
@@ -19,7 +19,7 @@ Hermes Enterprise is in controlled beta. This guide defines the day-to-day opera
 
 ### 1. Add Repository
 
-Add a repository to Hermes for scanning:
+Add a repository to EVOSIA for scanning:
 
 ```bash
 hermes-repo add <repository-path>

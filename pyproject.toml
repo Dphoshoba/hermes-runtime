@@ -3,14 +3,14 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hermes-runtime-v01"
+name = "evosia-runtime"
 version = "1.3.0"
 description = "Autonomous engineering runtime for deterministic mission execution"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
-    { name = "Hermes Runtime Team" },
+    { name = "EVOSIA Runtime Team" },
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -45,31 +45,31 @@ enterprise = [
 ]
 
 [project.scripts]
-hermes-validate = "hermes_v01.__main__:main"
-hermes-supervise = "hermes_v01.supervisor_cli:main"
-hermes-status = "hermes_v01.status_cli:main"
-hermes-record = "hermes_v01.evidence_cli:main"
-hermes-review = "hermes_v01.reviewer_cli:main"
-hermes-health = "hermes_v01.health_cli:main"
-hermes-runtime = "hermes_v01.runtime_cli:main"
-hermes-queue = "hermes_v01.work_queue_cli:main"
-hermes-metrics = "hermes_v01.metrics_cli:main"
-hermes-capabilities = "hermes_v01.capabilities_cli:main"
-hermes-plan = "hermes_v01.plan_cli:main"
-hermes-mission = "hermes_v01.mission_runner_cli:main"
-hermes-repo = "hermes_v01.repo_cli:main"
-hermes-engineering = "hermes_v01.engineering_cli:main"
-hermes-governance = "hermes_v01.governance_cli:main"
-hermes-recommend = "hermes_v01.mission_recommendation_cli:main"
-hermes-benchmark = "hermes_v01.benchmark_cli:main"
-hermes-ready = "hermes_v01.readiness_cli:main"
-hermes-github = "hermes_v01.github_cli:main"
-hermes-journal = "hermes_v01.journal_cli:main"
-hermes-human-review = "hermes_v01.human_review_cli:main"
+hermes-validate = "evosia.__main__:main"
+hermes-supervise = "evosia.supervisor_cli:main"
+hermes-status = "evosia.status_cli:main"
+hermes-record = "evosia.evidence_cli:main"
+hermes-review = "evosia.reviewer_cli:main"
+hermes-health = "evosia.health_cli:main"
+hermes-runtime = "evosia.runtime_cli:main"
+hermes-queue = "evosia.work_queue_cli:main"
+hermes-metrics = "evosia.metrics_cli:main"
+hermes-capabilities = "evosia.capabilities_cli:main"
+hermes-plan = "evosia.plan_cli:main"
+hermes-mission = "evosia.mission_runner_cli:main"
+hermes-repo = "evosia.repo_cli:main"
+hermes-engineering = "evosia.engineering_cli:main"
+hermes-governance = "evosia.governance_cli:main"
+hermes-recommend = "evosia.mission_recommendation_cli:main"
+hermes-benchmark = "evosia.benchmark_cli:main"
+hermes-ready = "evosia.readiness_cli:main"
+hermes-github = "evosia.github_cli:main"
+hermes-journal = "evosia.journal_cli:main"
+hermes-human-review = "evosia.human_review_cli:main"
 
 [tool.setuptools]
 packages = [
-    "hermes_v01",
+    "evosia",
     "enterprise",
     "enterprise.models",
     "enterprise.routers",
@@ -81,7 +81,7 @@ packages = [
 "*" = ["__pycache__/*", "*.pyc", "*.pyo"]
 
 [tool.setuptools.package-data]
-hermes_v01 = ["py.typed"]
+evosia = ["py.typed"]
 enterprise = [
     "migrations/**/*",
     "migrations/*",

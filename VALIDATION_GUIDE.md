@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to validate Hermes against real-world repositories using the benchmark engine and golden validation datasets. Hermes now supports both Python and JavaScript/TypeScript repositories.
+This guide explains how to validate EVOSIA against real-world repositories using the benchmark engine and golden validation datasets. EVOSIA now supports both Python and JavaScript/TypeScript repositories.
 
 ## Validation Process
 
@@ -39,7 +39,7 @@ hermes-benchmark run --repo validation/golden_repositories/requests
 
 Each golden repository has expected minimums defined in `validation/benchmark_config.json`.
 
-Hermes validates:
+EVOSIA validates:
 - Minimum modules discovered
 - Minimum findings generated
 - Pipeline completes without errors
@@ -47,7 +47,7 @@ Hermes validates:
 
 ### 4. Multi-Language Validation
 
-Hermes now supports JavaScript and TypeScript repositories. To validate:
+EVOSIA now supports JavaScript and TypeScript repositories. To validate:
 
 ```bash
 # Scan a JavaScript/TypeScript repository
@@ -58,7 +58,7 @@ hermes-engineering scan --repo /path/to/js-repo
 hermes-governance scan --repo /path/to/js-repo
 ```
 
-Hermes detects:
+EVOSIA detects:
 - JavaScript/TypeScript files (.js, .jsx, .mjs, .cjs, .ts, .tsx)
 - Package manifests (package.json, tsconfig.json)
 - React components, hooks, routes, fetch/API calls
@@ -108,11 +108,11 @@ Each repository includes expected outputs:
 
 ### Expected Findings
 
-Minimum number of engineering findings Hermes should identify.
+Minimum number of engineering findings EVOSIA should identify.
 
 ### Expected Missions
 
-Minimum number of missions Hermes should generate.
+Minimum number of missions EVOSIA should generate.
 
 ### Expected Summary
 
@@ -128,7 +128,7 @@ The benchmark engine detects drift by comparing:
 
 ## Self-Validation
 
-Hermes benchmarks itself to validate:
+EVOSIA benchmarks itself to validate:
 - All 856+ tests pass
 - Pipeline completes end-to-end
 - Deterministic output
@@ -141,7 +141,7 @@ validation/
 ├── benchmark_config.json         # Repository configuration
 ├── clone_golden_repos.sh         # Clone script
 ├── golden_repositories/          # Cloned repositories
-│   └── hermes-runtime.json       # Hermes self-validation dataset
+│   └── hermes-runtime.json       # EVOSIA self-validation dataset
 ├── snapshots/                    # Benchmark snapshots
 └── benchmarks/                   # Generated reports
     ├── ENGINEERING_BENCHMARK.json
@@ -172,7 +172,7 @@ hermes-benchmark compare
 ### Quick Validation
 
 ```bash
-# Benchmark Hermes itself
+# Benchmark EVOSIA itself
 hermes-benchmark run --repo .
 
 # Check confidence

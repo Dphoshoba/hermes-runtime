@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.evidence import (
+from evosia.evidence import (
     EvidenceIntegrityChecker,
     EvidenceRecorder,
     ExecutionRecord,

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.benchmark_engine import (
+from evosia.benchmark_engine import (
     BenchmarkComparison,
     BenchmarkResult,
     BenchmarkSummary,
@@ -27,7 +27,7 @@ from hermes_v01.benchmark_engine import (
 )
 
 HERMES_ROOT = Path(__file__).resolve().parent.parent
-HERMES_SRC = HERMES_ROOT / "hermes_v01"
+HERMES_SRC = HERMES_ROOT / "evosia"
 
 
 # ---------------------------------------------------------------------------
@@ -190,7 +190,7 @@ class TestMalformedInputs:
 class TestCLI:
     def _run(self, args):
         return subprocess.run(
-            [sys.executable, "-m", "hermes_v01.benchmark_cli", *args],
+            [sys.executable, "-m", "evosia.benchmark_cli", *args],
             capture_output=True, text=True, timeout=120,
         )
 
@@ -251,15 +251,15 @@ class TestCLI:
 class TestBackwardCompatibility:
     def test_existing_tests_still_pass(self):
         # Verify core modules still work
-        from hermes_v01.mission import MissionPlanner
-        from hermes_v01.mission_recommendation_models import DraftMission
-        from hermes_v01.engineering_analyzer import analyze_engineering
-        from hermes_v01.governance_analyzer import govern_engineering
+        from evosia.mission import MissionPlanner
+        from evosia.mission_recommendation_models import DraftMission
+        from evosia.engineering_analyzer import analyze_engineering
+        from evosia.governance_analyzer import govern_engineering
         planner = MissionPlanner()
         assert planner is not None
 
     def test_benchmark_module_imports(self):
-        from hermes_v01.benchmark_engine import (
+        from evosia.benchmark_engine import (
             run_benchmark, compare_benchmarks, compute_summary,
             compute_trend, compute_confidence, save_snapshot, load_snapshots,
         )

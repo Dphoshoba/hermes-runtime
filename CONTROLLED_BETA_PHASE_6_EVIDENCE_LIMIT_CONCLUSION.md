@@ -1,7 +1,7 @@
 # Controlled Beta — Evidence-Limit Conclusion (Phase 6 Closure)
 
 **Program:** CONTROLLED_BETA_PHASE_6_CLOSURE_EVIDENCE_LIMIT
-**Governance baseline:** EVIDENCE_RISK_GATE · **Hermes version:** 1.3.0
+**Governance baseline:** EVIDENCE_RISK_GATE · **EVOSIA version:** 1.3.0
 **Baseline commit:** `82229d83f45dcd2477a4a4c267dd200af4da77c7`
 **Preceding phase commit:** `d5c7a15ac5be6e88969a5925ec38f510a90875f8`
 **Autonomous execution:** DISABLED · **Repository mutation:** DISABLED
@@ -41,7 +41,7 @@ append-only; **0 mission eligibility added**.
 
 ## What was exhausted (honest experimental result)
 
-Across Phases 3–6, Hermes performed, read-only and provenance-preserving:
+Across Phases 3–6, EVOSIA performed, read-only and provenance-preserving:
 - security-context git enrichment (21 NME; 5 literal secrets, 16 keyword-only)
 - full call-graph scanning of all 3 cohort repos at recorded commits
 - real import-graph inbound/outbound/route-reachability for 12 deferred targets

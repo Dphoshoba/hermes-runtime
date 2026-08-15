@@ -8,12 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.repo_scanner import scan_repository
-from hermes_v01.repo_analyzer import analyze_repository
-from hermes_v01.engineering_analyzer import analyze_engineering
-from hermes_v01.governance_analyzer import govern_engineering
-from hermes_v01.mission_generator import generate_missions
-from hermes_v01.benchmark_engine import (
+from evosia.repo_scanner import scan_repository
+from evosia.repo_analyzer import analyze_repository
+from evosia.engineering_analyzer import analyze_engineering
+from evosia.governance_analyzer import govern_engineering
+from evosia.mission_generator import generate_missions
+from evosia.benchmark_engine import (
     compute_confidence,
     compute_summary,
     run_benchmark,
@@ -78,14 +78,14 @@ class TestRecommendationUniqueness:
 # eligibility requires an explicit human ACTIONABLE adjudication. The legacy
 # automated-approval-rate metric is intentionally non-authoritative (0.0).
 
-from hermes_v01.governance_intel_models import (
+from evosia.governance_intel_models import (
     FindingGate,
     GATE_OBSERVED,
     GATE_REQUIRES_REVIEW,
     HUMAN_ACTIONABLE,
     HUMAN_NOT_ACTIONABLE,
 )
-from hermes_v01.mission_generator import generate_missions
+from evosia.mission_generator import generate_missions
 
 
 def _ei_dict() -> dict:

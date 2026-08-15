@@ -20,18 +20,18 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from hermes_v01.providers import (
+from evosia.providers import (
     LocalRepositoryProvider,
     RepositoryMetadata,
     RepositoryReference,
 )
-from hermes_v01.github_provider import (
+from evosia.github_provider import (
     GitHubRepositoryProvider,
     ReadOnlyViolation,
     _redact_token,
     _parse_repo_ref,
 )
-from hermes_v01.readiness import assess_readiness
+from evosia.readiness import assess_readiness
 
 
 @pytest.fixture
@@ -198,7 +198,7 @@ class TestGitHubProviderMocked:
                 mock_resp.read.return_value = repo_response
             return mock_resp
 
-        with patch("hermes_v01.github_provider.urlopen", side_effect=mock_urlopen):
+        with patch("evosia.github_provider.urlopen", side_effect=mock_urlopen):
             meta = provider.get_metadata("owner/test-repo")
             assert meta.name == "test-repo"
             assert meta.default_branch == "main"
@@ -211,7 +211,7 @@ class TestGitHubProviderMocked:
             {"name": "develop"},
         ]).encode("utf-8")
 
-        with patch("hermes_v01.github_provider.urlopen") as mock_open:
+        with patch("evosia.github_provider.urlopen") as mock_open:
             mock_resp = MagicMock()
             mock_resp.read.return_value = mock_response
             mock_resp.__enter__ = lambda s: s
@@ -236,7 +236,7 @@ class TestGitHubProviderMocked:
             },
         ]).encode("utf-8")
 
-        with patch("hermes_v01.github_provider.urlopen") as mock_open:
+        with patch("evosia.github_provider.urlopen") as mock_open:
             mock_resp = MagicMock()
             mock_resp.read.return_value = mock_response
             mock_resp.__enter__ = lambda s: s
@@ -263,7 +263,7 @@ class TestGitHubProviderMocked:
             ],
         }).encode("utf-8")
 
-        with patch("hermes_v01.github_provider.urlopen") as mock_open:
+        with patch("evosia.github_provider.urlopen") as mock_open:
             mock_resp = MagicMock()
             mock_resp.read.return_value = mock_response
             mock_resp.__enter__ = lambda s: s

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Clone golden repositories for Hermes benchmarking.
+# Clone golden repositories for EVOSIA benchmarking.
 # Run from the project root: bash validation/clone_golden_repos.sh
 
 set -euo pipefail

@@ -17,13 +17,13 @@
 
 - **Status:** PASS
 - **Component:** FirstRunOnboarding (5-step progressive walkthrough)
-- **Features:** plain-language explanation of what Hermes can/cannot do, safety messaging, skip option
+- **Features:** plain-language explanation of what EVOSIA can/cannot do, safety messaging, skip option
 
 ## M3 — Conversational Context Collection
 
 - **Status:** PASS (implemented in M1 backend)
 - **Clustering:** NME findings grouped by topic (intentional isolation, large/complex areas, concentrated responsibilities, dependency choices, configuration setup, security-sensitive code)
-- **Questions:** plain-language, state why Hermes is asking, allow "I don't know" / "Ask someone else"
+- **Questions:** plain-language, state why EVOSIA is asking, allow "I don't know" / "Ask someone else"
 - **Metrics:** questions_per_100_findings tracked via clustering; context reuse via ProjectContext model
 
 ## M4 — Disposable Realistic Repository
@@ -41,7 +41,7 @@
 ## M6 — Change Explanation UX
 
 - **Status:** PASS
-- **Guided mission cards show:** What, Why, Expected benefit, Risk, What could change, How Hermes would verify, How to undo, Authority consequence
+- **Guided mission cards show:** What, Why, Expected benefit, Risk, What could change, How EVOSIA would verify, How to undo, Authority consequence
 - **Technical details:** collapsible (progressive disclosure)
 
 ## M7 — Authority Comprehension UX

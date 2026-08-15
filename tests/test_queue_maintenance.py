@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore, WorkQueueState
+from evosia.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore, WorkQueueState
 
 
 def test_compact_archives_complete_tasks(tmp_path: Path) -> None:
@@ -255,7 +255,7 @@ def test_repair_common_issues_clears_invalid_scheduled_at(tmp_path: Path) -> Non
 
 
 def test_repair_common_issues_normalizes_states(tmp_path: Path) -> None:
-    from hermes_v01.work_queue import WorkQueueState
+    from evosia.work_queue import WorkQueueState
     queue = WorkQueueManager(
         state_store=WorkQueueStateStore(tmp_path / "queue.json"),
         items=(WorkItem("task-1", "Task 1"),),

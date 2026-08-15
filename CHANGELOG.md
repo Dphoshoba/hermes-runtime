@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Hermes are documented here. This project adheres to
+All notable changes to EVOSIA are documented here. This project adheres to
 post-Cycle-8 Evidence & Risk Gate milestones.
 
 ## [Unreleased] — Evidence & Risk Gate (M-Cycle 8 Gate)

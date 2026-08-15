@@ -6,7 +6,7 @@ Covers 25 focused tests as required by Cycle 6.
 from __future__ import annotations
 
 import pytest
-from hermes_v01.mission_prioritizer import (
+from evosia.mission_prioritizer import (
     PrioritizationResult,
     PriorityReason,
     compute_priority_score,

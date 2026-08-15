@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_v01.metrics import (
+from evosia.metrics import (
     FailureClassification,
     classify_failure,
     compute_queue_metrics,
@@ -13,7 +13,7 @@ from hermes_v01.metrics import (
     QueueMetrics,
     RuntimeMetrics,
 )
-from hermes_v01.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
+from evosia.work_queue import WorkItem, WorkQueueManager, WorkQueueStateStore
 
 
 def test_classify_failure_infrastructure_connection_refused(tmp_path: Path) -> None:

@@ -1,8 +1,8 @@
-# Hermes Enterprise — Architecture Specification v1.0
+# EVOSIA Enterprise — Architecture Specification v1.0
 
 **Status:** Architecture Proposal
 **Date:** 2026-08-09
-**Scope:** Platform architecture for Hermes Enterprise
+**Scope:** Platform architecture for EVOSIA Enterprise
 **Classification:** Internal — Engineering
 
 ---
@@ -34,11 +34,11 @@
 
 ## 1. Vision
 
-### What is Hermes Enterprise?
+### What is EVOSIA Enterprise?
 
-Hermes Enterprise is a self-hosted, multi-tenant engineering intelligence platform that enables organizations to autonomously monitor, analyze, and improve their software repositories through evidence-driven governance and mission execution.
+EVOSIA Enterprise is a self-hosted, multi-tenant engineering intelligence platform that enables organizations to autonomously monitor, analyze, and improve their software repositories through evidence-driven governance and mission execution.
 
-It is the commercial evolution of Hermes Core — an autonomous engineering runtime that executes missions through a pipeline of evidence collection, independent review, and health monitoring.
+It is the commercial evolution of EVOSIA Core — an autonomous engineering runtime that executes missions through a pipeline of evidence collection, independent review, and health monitoring.
 
 ### Who is it for?
 
@@ -63,9 +63,9 @@ It is the commercial evolution of Hermes Core — an autonomous engineering runt
 
 ## 2. Product Philosophy
 
-### Relationship to Hermes Core
+### Relationship to EVOSIA Core
 
-Hermes Enterprise preserves every architectural principle from Hermes Core:
+EVOSIA Enterprise preserves every architectural principle from EVOSIA Core:
 
 | Core Principle | Enterprise Preservation |
 |----------------|------------------------|
@@ -80,7 +80,7 @@ Hermes Enterprise preserves every architectural principle from Hermes Core:
 Enterprise capabilities extend Core principles, never override them:
 
 ```
-Hermes Core (Foundation)
+EVOSIA Core (Foundation)
 ├── Evidence Collection     → Evidence Store (distributed, searchable)
 ├── Independent Review      → Review Service (multi-reviewer, weighted)
 ├── Health Monitoring       → Health Dashboard (real-time, alerting)
@@ -105,7 +105,7 @@ Hermes Core (Foundation)
 ### Community (Open Source)
 
 ```
-Hermes Core Runtime
+EVOSIA Core Runtime
 ├── Repository Readiness Assessment
 ├── Repository Intelligence (single repo)
 ├── Engineering Intelligence (single repo)
@@ -219,7 +219,7 @@ Everything in Professional, plus:
 └───────────────────────────────┬─────────────────────────────────────┘
                                 │
 ┌───────────────────────────────▼─────────────────────────────────────┐
-│                     HERMES CORE ENGINE                               │
+│                     EVOSIA CORE ENGINE                               │
 │                                                                      │
 │  ┌──────────────────────────────────────────────────────────────┐   │
 │  │  Readiness │ Scanner Registry │ Mission Runner │ Safety      │   │
@@ -278,7 +278,7 @@ Repository Event (Push, PR, Schedule)
          │
          ▼
 ┌─────────────────┐
-│  Hermes Core     │
+│  EVOSIA Core     │
 │  (Execute)       │
 │  ├── Readiness   │
 │  ├── Scan        │
@@ -1094,7 +1094,7 @@ POST /v1/organizations/:org/webhooks
 Payload signed with HMAC-SHA256:
 
 ```
-X-Hermes-Signature: sha256=...
+X-EVOSIA-Signature: sha256=...
 ```
 
 ### API Versioning
@@ -1114,7 +1114,7 @@ The default view. Provides organization-wide visibility.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  HERMES ENTERPRISE                                    [Search] [⚙] │
+│  EVOSIA ENTERPRISE                                    [Search] [⚙] │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ │
@@ -1512,7 +1512,7 @@ Viewer
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Identity   │────►│  Hermes     │────►│  Application│
+│  Identity   │────►│  EVOSIA     │────►│  Application│
 │  Provider   │     │  Auth       │     │  Session    │
 │  (SAML/OIDC)│     │  Service    │     │             │
 └─────────────┘     └─────────────┘     └─────────────┘
@@ -1628,7 +1628,7 @@ Full Integration
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  GitHub     │────►│  GitHub     │────►│  Hermes     │
+│  GitHub     │────►│  GitHub     │────►│  EVOSIA     │
 │  Webhooks   │     │  Service    │     │  Enterprise │
 │             │◄────│             │◄────│             │
 └─────────────┘     └─────────────┘     └─────────────┘
@@ -2195,7 +2195,7 @@ Failover:
 **License:** MIT
 
 ```
-Hermes Core Runtime
+EVOSIA Core Runtime
 ├── All CLI commands
 ├── All scanners (Python, JavaScript, TypeScript)
 ├── Repository Intelligence (single repo)
@@ -2261,28 +2261,28 @@ Everything in Professional, plus:
 ### Year 1 (2026-2027): Foundation
 
 ```
-Q1 2026: Hermes Core v1.0 (Stable Release)
+Q1 2026: EVOSIA Core v1.0 (Stable Release)
 ├── Multi-language scanning
 ├── Repository Intelligence
 ├── Engineering Intelligence
 ├── Mission Execution
 └── Evidence System
 
-Q2 2026: Hermes Enterprise v1.0
+Q2 2026: EVOSIA Enterprise v1.0
 ├── Web Dashboard
 ├── REST API
 ├── Multi-tenancy (basic)
 ├── GitHub integration (write)
 └── Professional tier
 
-Q3 2026: Hermes Enterprise v1.1
+Q3 2026: EVOSIA Enterprise v1.1
 ├── Policy Engine
 ├── Approval Workflows
 ├── AI Provider Layer
 ├── Notification Service
 └── SSO Integration
 
-Q4 2026: Hermes Enterprise v1.2
+Q4 2026: EVOSIA Enterprise v1.2
 ├── Compliance Reporting
 ├── Advanced Analytics
 ├── Custom AI Models
@@ -2395,7 +2395,7 @@ Q3 2030: Global Intelligence
 ├── Best practice recommendations
 └── Technology trend analysis
 
-Q4 2030: Hermes Platform
+Q4 2030: EVOSIA Platform
 ├── Complete engineering platform
 ├── Developer experience focus
 ├── Enterprise-grade reliability
@@ -2406,7 +2406,7 @@ Q4 2030: Hermes Platform
 
 ## 20. Architectural Principles
 
-These principles are immutable. They define what Hermes is and what it must never become.
+These principles are immutable. They define what EVOSIA is and what it must never become.
 
 ### 1. Evidence Over Opinion
 

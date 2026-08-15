@@ -1,5 +1,5 @@
 from pathlib import Path
-from hermes_v01.__main__ import inspect_repository
+from evosia.__main__ import inspect_repository
 
 def test_present_and_missing(tmp_path: Path) -> None:
     repo = tmp_path / "EVOS"

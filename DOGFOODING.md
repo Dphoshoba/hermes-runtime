@@ -1,8 +1,8 @@
-# Hermes Dogfooding Guide
+# EVOSIA Dogfooding Guide
 
 ## Purpose
 
-This directory contains the real-world validation framework for Hermes Runtime. The goal is to prove Hermes against real software engineering work and turn observed friction into evidence-based improvements.
+This directory contains the real-world validation framework for EVOSIA Runtime. The goal is to prove EVOSIA against real software engineering work and turn observed friction into evidence-based improvements.
 
 ## Structure
 

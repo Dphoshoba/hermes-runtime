@@ -34,7 +34,7 @@ export default function ProjectSelection({ onSelect, onAnalyze }: ProjectSelecti
       <div className="selection-header">
         <h2>Choose a project</h2>
         <p className="muted">
-          Select a project for Hermes to review. Hermes will analyze the project
+          Select a project for EVOSIA to review. EVOSIA will analyze the project
           and explain what it finds in plain language.
         </p>
       </div>
@@ -85,7 +85,7 @@ export default function ProjectSelection({ onSelect, onAnalyze }: ProjectSelecti
         <div className="folder-picker card">
           <h3>Open a project folder</h3>
           <p className="muted">
-            Choose a folder on your computer. Hermes will look for a project
+            Choose a folder on your computer. EVOSIA will look for a project
             inside it.
           </p>
           <div className="picker-mock">
@@ -101,7 +101,7 @@ export default function ProjectSelection({ onSelect, onAnalyze }: ProjectSelecti
         <div className="setup-notice card">
           <h3>This project needs setup</h3>
           <p className="muted">
-            Hermes couldn't find a recognizable project structure in this folder.
+            EVOSIA couldn't find a recognizable project structure in this folder.
             Make sure it contains source code files.
           </p>
         </div>
