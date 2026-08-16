@@ -48,4 +48,8 @@ validation/snapshots/
 # OS
 .DS_Store
 Thumbs.db
+
+# R1 remote M8: disposable certs + fixture repo git
 validation/m8-disposable-repo/.git
+certs/
+*.pem

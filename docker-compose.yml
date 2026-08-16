@@ -1,0 +1,60 @@
+version: "3.8"
+
+# EVOSIA Remote M8 test environment.
+#
+# Single-participant model: one HTTPS origin, one disposable fixture DB, one
+# isolated preparation workspace, all inside an isolated container stack.
+#
+# The facilitator controls the lifecycle externally via docker-compose + the
+# fixture CLI (seed/reset/verify). Participants only ever see the web app.
+#
+# HTTPS is terminated at nginx. Certificates are mounted from ./certs.
+# For an operator smoke test, generate self-signed certs with scripts/generate-certs.sh.
+# For real participants, mount real certificates (see EXTERNAL ACTION in report).
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      EVOSIA_DATABASE_URL: "sqlite:///./data/evosia_m8.db"
+      EVOSIA_JWT_SECRET: "${EVOSIA_JWT_SECRET}"
+      EVOSIA_CORS_ALLOW_ORIGINS: "${EVOSIA_CORS_ALLOW_ORIGINS:-https://localhost}"
+      EVOSIA_ENV: "${EVOSIA_ENV:-production}"
+      EVOSIA_PREP_ROOT: "/app/prep_workspaces"
+      EVOSIA_M8_FIXTURE: "${EVOSIA_M8_FIXTURE:-enabled}"
+      EVOSIA_STATIC_DIR: "/app/static"
+      # EVOSIA_GEMINI_API_KEY optional; omit to prove Gemini-independent run.
+    volumes:
+      - m8_data:/app/data
+      - m8_prep:/app/prep_workspaces
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    # No ports published to the host — only nginx reaches the backend.
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      # Origin nginx advertises to the backend for CORS header alignment.
+      NGINX_CORS_ORIGIN: "${EVOSIA_CORS_ALLOW_ORIGINS:-https://localhost}"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    ports:
+      - "${M8_HTTPS_PORT:-443}:443"
+    restart: unless-stopped
+
+volumes:
+  m8_data: {}
+  m8_prep: {}
