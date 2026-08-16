@@ -117,6 +117,12 @@ class ContextAddRequest(BaseModel):
     actor: str = Field(min_length=1, max_length=255)
 
 
+class ExplainQuestionRequest(BaseModel):
+    topic: str = Field(min_length=1, max_length=200)
+    question: str = Field(min_length=1)
+    why_asking: str = Field(default="")
+
+
 class QuestionAnswerRequest(BaseModel):
     answer: str = Field(min_length=1)
     actor: str = Field(min_length=1, max_length=255)
@@ -653,4 +659,132 @@ def get_prepared_change(
         "validation_output": prepared.validation_output,
         "created_by": prepared.created_by,
         "created_at": prepared.created_at.isoformat() if prepared.created_at else None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Gemini Explanation Layer (I3)
+#
+# Governing principle: "Gemini may explain. EVOSIA decides."
+# Gemini is a non-authoritative explanation service over evidence already
+# supplied by EVOSIA. The endpoints below accept only allow-listed
+# authoritative fields and return responses tagged GEMINI_EXPLANATION.
+# They NEVER alter mission state, permissions, preparation, or evidence.
+# ---------------------------------------------------------------------------
+
+from ..services.gemini_explain import (  # noqa: E402
+    explain_finding as _explain_finding,
+    explain_context_question as _explain_context_question,
+    explain_mission as _explain_mission,
+    explain_prepared_change as _explain_prepared_change,
+    explain_approval as _explain_approval,
+    gemini_enabled,
+)
+
+
+@router.get("/explain/finding/{finding_id}")
+def explain_finding(
+    finding_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Explain an EVOSIA finding in plain language.
+
+    Only allow-listed Finding fields are sent to Gemini.
+    Response is tagged GEMINI_EXPLANATION — never LIVE_EVOSIA_EVIDENCE.
+    """
+    finding = db.query(Finding).filter(Finding.id == finding_id).first()
+    if not finding or finding.repository_id != getattr(user, "active_repository_id", None):
+        raise HTTPException(status_code=404, detail="Finding not found")
+    safe = {
+        "title": finding.title,
+        "category": finding.category,
+        "plain_title": _plain_title(finding),
+        "why_it_matters": _why_it_matters(finding),
+    }
+    return _explain_finding(safe)
+
+
+@router.post("/explain/question")
+def explain_question(
+    body: ExplainQuestionRequest,
+    user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Explain why EVOSIA needs a context question answered.
+
+    The backend supplies the authoritative question fields (already queried
+    from EVOSIA findings) as the allow-listed body. Gemini never sees the
+    target repository or any non-authoritative data.
+    """
+    safe = {
+        "topic": body.topic,
+        "question": body.question,
+        "why_asking": body.why_asking,
+    }
+    return _explain_context_question(safe)
+
+
+@router.get("/explain/mission/{mission_id}")
+def explain_mission_route(
+    mission_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Explain an existing proposed mission from EVOSIA."""
+    mission = db.query(Mission).filter(Mission.id == mission_id).first()
+    if not mission:
+        raise HTTPException(status_code=404, detail="Mission not found")
+    safe = {
+        "mission_id": mission.id,
+        "title": mission.title,
+        "plain_title": mission.title,
+        "what": mission.description or "",
+        "why": mission.scope or "",
+        "benefit": mission.rollback or "",
+        "risk": mission.rollback or "",
+        "scope": mission.scope or "",
+        "validation": mission.rollback or "",
+        "rollback": mission.rollback or "",
+    }
+    return _explain_mission(safe)
+
+
+@router.get("/explain/prepared-change/{prepared_id}")
+def explain_prepared_change_route(
+    prepared_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Explain an existing prepared-change state.
+
+    Only title/description are sent — never workspace_path, affected_files,
+    diff_content, or validation results.
+    """
+    pc = db.query(PreparedChange).filter(PreparedChange.id == prepared_id).first()
+    if not pc:
+        raise HTTPException(status_code=404, detail="Prepared change not found")
+    safe = {
+        "title": pc.title,
+        "description": pc.description,
+    }
+    return _explain_prepared_change(safe)
+
+
+@router.get("/explain/approval")
+def explain_approval_route() -> dict[str, Any]:
+    """Static explanation: what approval for preparation means."""
+    return _explain_approval()
+
+
+@router.get("/explain/status")
+def explain_status() -> dict[str, Any]:
+    """Report whether the Gemini explanation layer is available.
+
+    Never exposes credentials.
+    """
+    return {
+        "service": "Gemini Explanation Layer",
+        "provenance": "GEMINI_EXPLANATION",
+        "enabled": gemini_enabled,
+        "available": gemini_enabled,
     }
