@@ -51,6 +51,30 @@ _gemini_api_key = os.environ.get("EVOSIA_GEMINI_API_KEY")
 _gemini_model = os.environ.get("EVOSIA_GEMINI_MODEL", "gemini-1.5-flash")
 _gemini_enabled = bool(_gemini_api_key)
 
+
+def _scrub_secret(value: str | None) -> str:
+    """Redact a secret for any diagnostic/log path — never print the raw key."""
+    if not value:
+        return "<unset>"
+    return value[:4] + "…REDACTED"
+
+
+# Guarantee the raw key is never interpolated into a log line.
+if _gemini_api_key:
+    logger.debug("Gemini explanation layer enabled (key=%s)", _scrub_secret(_gemini_api_key))
+
+
+def _scrub(value: str) -> str:
+    """Return a redacted form of a secret for any diagnostic/log path."""
+    if not value:
+        return "<unset>"
+    return value[:4] + "…REDACTED"
+
+
+# Ensure the API key can never be interpolated into logs by accident.
+if _gemini_api_key:
+    logger.debug("Gemini explanation layer enabled (key=%s)", _scrub(_gemini_api_key))
+
 # ---------------------------------------------------------------------------
 # Authoritative evidence allow-lists
 # ---------------------------------------------------------------------------
