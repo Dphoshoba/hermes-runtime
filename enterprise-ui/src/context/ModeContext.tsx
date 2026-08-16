@@ -57,17 +57,14 @@ export function ModeProvider({ children }: { children: ReactNode }) {
     return mode;
   }, [mode, reachability.reachable, reachability.checking]);
 
-  const value = useMemo(
-    () => ({
-      mode: effectiveMode,
-      setMode,
-      toggleDemo,
-      isLive: effectiveMode === 'live',
-      isDemo: effectiveMode === 'demo',
-      isOffline: effectiveMode === 'offline',
-    }),
-    [effectiveMode, setMode, toggleDemo],
-  );
+  const value = useMemo<ModeContextValue>(() => ({
+    mode: effectiveMode,
+    setMode,
+    toggleDemo,
+    isLive: effectiveMode === 'live',
+    isDemo: effectiveMode === 'demo',
+    isOffline: effectiveMode === 'offline',
+  }), [effectiveMode, setMode, toggleDemo]);
 
   return <ModeContext.Provider value={value}>{children}</ModeContext.Provider>;
 }

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../App';
 import { guidedClient } from '../lib/api';
-import PreparedChangeView from '../components/PreparedChangeView';
 
 // Types matching the backend guided router responses
 interface GuidedSummary {
@@ -140,7 +139,6 @@ export default function GuidedModePage() {
         {step === 'mission-decision' && <MissionDecisionView />}
         {step === 'no-action-needed' && <NoActionNeededView onRefresh={fetchSummary} />}
         {step === 'evidence-exhausted' && <EvidenceExhaustedView />}
-        {step === 'prepared-change' && <PreparedChangeView />}
       </GuidedLayout>
     </div>
   );
@@ -498,57 +496,6 @@ function EvidenceExhaustedView() {
       <p className="muted">
         This may change if new commits, documentation, telemetry, or human context become
         available.
-      </p>
-    </div>
-  );
-}
-
-function UsabilityTestEntry() {
-  const [expanded, setExpanded] = useState(false);
-  // Dev-only affordance; does not compromise normal Guided Mode UX
-  const isDev = localStorage.getItem('hermes_dev') === '1';
-  if (!isDev) return null;
-
-  return (
-    <div className="usability-test-entry card" style={{ marginTop: 40 }}>
-      <button className="btn btn-sm" onClick={() => setExpanded(!expanded)}>
-        Beta Testing Tools
-      </button>
-      {expanded && (
-        <div style={{ marginTop: 16 }}>
-          <p className="muted">
-            M9 Usability Test — for facilitators running the real-user beta.
-          </p>
-          <ul>
-            <li>
-              <a href="/validation/usability/M9_REAL_USER_TEST_PROTOCOL.md">Test Protocol</a>
-            </li>
-            <li>
-              <a href="/validation/usability/M9_FACILITATOR_QUICK_CARD.md">Facilitator Quick Card</a>
-            </li>
-            <li>
-              <a href="/validation/usability/M9_PARTICIPANT_TEMPLATE.json">Participant Template</a>
-            </li>
-            <li>
-              <a href="/validation/usability/M9_RESULTS_SUMMARY_TEMPLATE.json">Results Summary Template</a>
-            </li>
-          </ul>
-          <p className="muted">
-            Enable: <code>localStorage.setItem('hermes_dev', '1')</code>
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PreparedChangeFallback() {
-  return (
-    <div className="prepared-change card">
-      <h2>Prepared change</h2>
-      <p>Your approved change is ready for review in an isolated workspace.</p>
-      <p className="muted">
-        Nothing has been merged, deployed, or applied to production.
       </p>
     </div>
   );
