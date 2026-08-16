@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../App';
 import { guidedClient } from '../lib/api';
+import { useMode } from '../context/ModeContext';
+import ProvenanceBadge from '../components/ProvenanceBadge';
+import DemoModeToggle from '../components/DemoModeToggle';
+import PreparedChangeView from '../components/PreparedChangeView';
 
 // Types matching the backend guided router responses
 interface GuidedSummary {
@@ -63,6 +67,18 @@ interface GuidedMission {
   technical: Record<string, unknown>;
 }
 
+interface PreparedChange {
+  prepared_id: string;
+  mission_id: string;
+  title: string;
+  description: string;
+  status: string;
+  affected_files: string[];
+  validation_status: string;
+  workspace_path: string;
+  created_at: string;
+}
+
 type GuidedStep =
   | 'loading'
   | 'summary'
@@ -76,6 +92,7 @@ type GuidedStep =
 
 export default function GuidedModePage() {
   const { } = useAuth();
+  const { isOffline } = useMode();
   const [step, setStep] = useState<GuidedStep>('loading');
   const [summary, setSummary] = useState<GuidedSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -87,14 +104,18 @@ export default function GuidedModePage() {
     try {
       const s = await guidedClient.summary();
       setSummary(s);
-      setStep('summary');
+      if (isOffline) {
+        setError('EVOSIA is offline. Check your connection and try again.');
+        setStep('error');
+      } else {
+        setStep('summary');
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load guided summary');
       setStep('error');
-    } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isOffline]);
 
   useEffect(() => {
     fetchSummary();
@@ -136,7 +157,8 @@ export default function GuidedModePage() {
         )}
         {step === 'needs-attention' && <NeedsAttentionView />}
         {step === 'needs-context' && <NeedsContextView />}
-        {step === 'mission-decision' && <MissionDecisionView />}
+        {step === 'mission-decision' && <MissionDecisionView onPreparedChange={() => setStep('prepared-change')} />}
+        {step === 'prepared-change' && <PreparedChangeReview onBack={() => setStep('mission-decision')} />}
         {step === 'no-action-needed' && <NoActionNeededView onRefresh={fetchSummary} />}
         {step === 'evidence-exhausted' && <EvidenceExhaustedView />}
       </GuidedLayout>
@@ -160,12 +182,22 @@ function GuidedLayout({
   return (
     <div className="guided-layout">
       <header className="guided-header">
-        <h1>Guided Mode</h1>
-        <div className="guided-safety-badge" role="status">
-          <span className="safety-dot" aria-hidden="true" />
-          <span>0 changes made</span>
+        <div className="guided-header-left">
+          <h1>Guided Mode</h1>
+          {summary && (
+            <span className="guided-authority-badge" title={summary.authority_level_label}>
+              {summary.authority_level_label}
+            </span>
+          )}
         </div>
-        <button className="btn btn-sm" onClick={onRefresh}>Refresh</button>
+        <div className="guided-header-right">
+          <DemoModeToggle />
+          <div className="guided-safety-badge" role="status">
+            <span className="safety-dot" aria-hidden="true" />
+            <span>0 changes made</span>
+          </div>
+          <button className="btn btn-sm" onClick={onRefresh}>Refresh</button>
+        </div>
       </header>
 
       {summary && (
@@ -197,6 +229,12 @@ function GuidedLayout({
             Proposed work
             {summary.proposed_work > 0 && <span className="chip-count">{summary.proposed_work}</span>}
           </button>
+          <button
+            className={`nav-chip ${step === 'prepared-change' ? 'active' : ''}`}
+            onClick={() => onNavigate('prepared-change')}
+          >
+            Prepared changes
+          </button>
         </nav>
       )}
 
@@ -212,10 +250,15 @@ function SummaryView({
   summary: GuidedSummary;
   onNavigate: (s: GuidedStep) => void;
 }) {
+  const { isDemo } = useMode();
+
   return (
     <div className="guided-summary">
       <div className="summary-hero card">
-        <h2>{summary.headline}</h2>
+        <div className="summary-header-row">
+          <h2>{summary.headline}</h2>
+          <ProvenanceBadge provenance={isDemo ? 'demo' : 'live'} />
+        </div>
         <p className="summary-subtitle">
           {summary.repository_name
             ? `Project: ${summary.repository_name}`
@@ -275,6 +318,11 @@ function SummaryView({
           <li><span className="red">✗</span> Deploy or execute changes</li>
           <li><span className="red">✗</span> Change production</li>
         </ul>
+        <div className="authority-answer">
+          <p className="muted">
+            <strong>Has EVOSIA changed my project?</strong> No. EVOSIA inspects and explains. Nothing is changed unless you approve a prepared change, and even then it remains in an isolated workspace until you choose to act.
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -284,6 +332,7 @@ function NeedsAttentionView() {
   const [items, setItems] = useState<NeedsAttentionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isDemo } = useMode();
 
   useEffect(() => {
     guidedClient
@@ -299,7 +348,10 @@ function NeedsAttentionView() {
 
   return (
     <div className="needs-attention">
-      <h2>Worth discussing</h2>
+      <div className="view-header-row">
+        <h2>Worth discussing</h2>
+        <ProvenanceBadge provenance={isDemo ? 'demo' : 'live'} />
+      </div>
       <p className="muted">These are items a human reviewer flagged as worth addressing.</p>
       <div className="card-list">
         {items.map((item) => (
@@ -326,6 +378,7 @@ function NeedsContextView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const { isDemo } = useMode();
 
   useEffect(() => {
     guidedClient
@@ -345,7 +398,10 @@ function NeedsContextView() {
 
   return (
     <div className="needs-context">
-      <h2>Needs your context</h2>
+      <div className="view-header-row">
+        <h2>Needs your context</h2>
+        <ProvenanceBadge provenance={isDemo ? 'demo' : 'live'} />
+      </div>
       <p className="muted">
         Your answers help EVOSIA understand your project. EVOSIA will never treat your
         answer as a decision to change code.
@@ -379,10 +435,12 @@ function NeedsContextView() {
   );
 }
 
-function MissionDecisionView() {
+function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => void }) {
   const [missions, setMissions] = useState<GuidedMission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const { isDemo } = useMode();
 
   const loadMissions = useCallback(() => {
     setLoading(true);
@@ -398,11 +456,26 @@ function MissionDecisionView() {
   }, [loadMissions]);
 
   const handleApprove = async (missionId: string) => {
+    setBusy(missionId);
     try {
       await guidedClient.approvePreparation(missionId, 'operator');
       loadMissions();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to approve preparation');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handlePrepare = async (missionId: string) => {
+    setBusy(missionId);
+    try {
+      await guidedClient.prepareChange(missionId);
+      onPreparedChange();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to prepare change');
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -412,7 +485,10 @@ function MissionDecisionView() {
 
   return (
     <div className="mission-decision">
-      <h2>Proposed work</h2>
+      <div className="view-header-row">
+        <h2>Proposed work</h2>
+        <ProvenanceBadge provenance={isDemo ? 'demo' : 'live'} />
+      </div>
       <p className="muted">
         These are recommendations based on items you or a reviewer flagged. Approving here
         permits EVOSIA to <strong>prepare</strong> a change in an isolated workspace. It will
@@ -423,7 +499,7 @@ function MissionDecisionView() {
           <div key={m.mission_id} className="card mission-card">
             <div className="mission-header">
               <h3>{m.plain_title}</h3>
-              <span className={`badge badge-${m.status === 'APPROVED_FOR_FUTURE_EXECUTION' ? 'green' : 'yellow'}`}>
+              <span className={`badge badge-${m.status === 'APPROVED_FOR_FUTURE_EXECUTION' ? 'green' : m.status === 'PREPARED' ? 'green' : 'yellow'}`}>
                 {m.status_label}
               </span>
             </div>
@@ -453,17 +529,34 @@ function MissionDecisionView() {
             <div className="authority-statement card highlight">
               <strong>If you approve:</strong> {m.authority_consequence}
             </div>
-            {m.status === 'DRAFT' || m.status === 'NEEDS_REFINEMENT' ? (
-              <div className="mission-actions">
-                <button className="btn btn-primary" onClick={() => handleApprove(m.mission_id)}>
-                  Approve preparation
-                </button>
-                <button className="btn btn-sm">Not now</button>
-                <button className="btn btn-sm">Needs clarification</button>
-              </div>
-            ) : (
-              <p className="muted">Approved for preparation. Nothing executed yet.</p>
-            )}
+            <div className="mission-actions">
+              {m.status === 'DRAFT' || m.status === 'NEEDS_REFINEMENT' ? (
+                <>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => handleApprove(m.mission_id)}
+                    disabled={busy === m.mission_id}
+                  >
+                    {busy === m.mission_id ? 'Approving…' : 'Approve preparation'}
+                  </button>
+                  <button className="btn btn-sm">Not now</button>
+                  <button className="btn btn-sm">Needs clarification</button>
+                </>
+              ) : m.status === 'APPROVED_FOR_FUTURE_EXECUTION' ? (
+                <>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => handlePrepare(m.mission_id)}
+                    disabled={busy === m.mission_id}
+                  >
+                    {busy === m.mission_id ? 'Preparing…' : 'Prepare change'}
+                  </button>
+                  <p className="muted">Approved for preparation. Nothing executed yet.</p>
+                </>
+              ) : (
+                <p className="muted">Prepared change ready for review.</p>
+              )}
+            </div>
             <details className="technical-details">
               <summary>Technical details</summary>
               <pre>{JSON.stringify(m.technical, null, 2)}</pre>
@@ -471,6 +564,91 @@ function MissionDecisionView() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function PreparedChangeReview({ onBack }: { onBack: () => void }) {
+  const [changes, setChanges] = useState<PreparedChange[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<PreparedChange | null>(null);
+  const { isDemo } = useMode();
+
+  useEffect(() => {
+    guidedClient
+      .preparedChanges()
+      .then((data: PreparedChange[]) => setChanges(data))
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <p>Loading…</p>;
+  if (error) return <p className="error-msg">{error}</p>;
+
+  if (changes.length === 0) {
+    return (
+      <div className="no-action card">
+        <h2>No prepared changes</h2>
+        <p>No changes have been prepared yet. Approve a proposed work item first.</p>
+        <button className="btn" onClick={onBack}>Back to proposed work</button>
+      </div>
+    );
+  }
+
+  if (!selected) {
+    return (
+      <div className="prepared-change-list">
+        <div className="view-header-row">
+          <h2>Prepared changes</h2>
+          <ProvenanceBadge provenance={isDemo ? 'demo' : 'live'} />
+        </div>
+        <p className="muted">
+          These changes have been prepared in an isolated workspace. Nothing has been
+          merged, deployed, or applied to production.
+        </p>
+        <div className="card-list">
+          {changes.map((c) => (
+            <button
+              key={c.prepared_id}
+              className="card prepared-change-card-btn"
+              onClick={() => setSelected(c)}
+            >
+              <h3>{c.title}</h3>
+              <p className="muted">{c.description}</p>
+              <div className="card-meta">
+                <span className={`badge badge-${c.validation_status === 'pass' ? 'green' : c.validation_status === 'pending' ? 'yellow' : 'red'}`}>
+                  {c.validation_status}
+                </span>
+                <span className="muted">Created: {c.created_at}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="prepared-change-detail">
+      <button className="btn btn-sm" onClick={() => setSelected(null)} style={{ marginBottom: 16 }}>
+        ← Back to list
+      </button>
+      <PreparedChangeView
+        change={{
+          id: selected.prepared_id,
+          title: selected.title,
+          what: selected.description,
+          why: 'Based on a human-ACTIONABLE finding approved by an operator.',
+          benefit: 'Addresses an operator-flagged engineering concern.',
+          risk: 'Change risk depends on scope; prepared changes remain unreviewed until you act.',
+          files: selected.affected_files,
+          verification: 'Tests and checks would run before any change is finalized.',
+          rollback: 'Prepared changes are isolated and reversible until merged/deployed.',
+          validation: selected.validation_status as 'pass' | 'pending' | 'fail',
+        }}
+        onApprove={() => {}}
+      />
     </div>
   );
 }
