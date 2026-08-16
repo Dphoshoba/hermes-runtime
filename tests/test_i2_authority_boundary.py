@@ -20,9 +20,12 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 
-# Use in-memory SQLite for complete process-level isolation.
-I2_DB_URL = "sqlite:///:memory:"
-os.environ["HERMES_DATABASE_URL"] = I2_DB_URL
+# Each boundary suite uses its OWN unique file-backed database so that running
+# I2/I3/I4/I6 together in one pytest process cannot collide on a shared
+# `:memory:` engine key or on a stale module-level engine alias. No production
+# data is touched (the file lives in the repo working dir and is removed on
+# teardown).
+I2_DB_URL = "sqlite:///./test_i2_boundary.db"
 
 from enterprise.app import app
 from enterprise.database import Base, get_engine
@@ -62,15 +65,33 @@ def _make_fixture_repo() -> str:
 
 
 @pytest.fixture(autouse=True)
-def _isolated_i2_db():
-    """Create and tear down an isolated in-memory SQLite database for I2."""
-    eng = get_engine(I2_DB_URL)
+def _isolated_i2_db(monkeypatch):
+    """Create and tear down an isolated file-backed SQLite database for I2.
+
+    The app binds its engine at import time; rebind it here so the running
+    FastAPI app uses THIS test's database (not a stale engine from a previous
+    module in the same process).
+    """
+    monkeypatch.setenv("HERMES_DATABASE_URL", I2_DB_URL)
+    monkeypatch.setenv("EVOSIA_DATABASE_URL", I2_DB_URL)
+    monkeypatch.setenv("EVOSIA_JWT_SECRET", "i2-test-secret")
+    # SECRET_KEY is cached at import in enterprise.services; refresh it so the
+    # JWT fail-closed startup guard sees the test secret (not the insecure default).
+    import enterprise.services as _svc
+    monkeypatch.setattr(_svc, "SECRET_KEY", "i2-test-secret")
+    import enterprise.app as _app_mod
+    monkeypatch.setattr(_app_mod, "SECRET_KEY", "i2-test-secret")
+    _app_mod.engine = get_engine()
+    eng = _app_mod.engine
     Base.metadata.create_all(bind=eng)
     yield
     Base.metadata.drop_all(bind=eng)
-    # Clear engine cache so subsequent tests get a fresh in-memory DB.
     from enterprise.database import _ENGINES
     _ENGINES.pop(I2_DB_URL, None)
+    try:
+        os.remove("./test_i2_boundary.db")
+    except OSError:
+        pass
 
 
 @pytest.fixture

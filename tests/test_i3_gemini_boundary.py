@@ -20,26 +20,43 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-os.environ["HERMES_DATABASE_URL"] = "sqlite:///:memory:"
-
 import pytest
+
+# Unique file-backed DB so I3 cannot collide with I2/I4/I6 on a shared
+# `:memory:` engine key when run together in one process.
+I3_DB_URL = "sqlite:///./test_i3_boundary.db"
 
 from enterprise.app import app
 from enterprise.database import Base, get_engine, SessionLocal
 
+import enterprise.app as _app_mod
 
-@pytest.fixture(scope="module", autouse=True)
-def setup_db():
-    eng = get_engine()
+app_test_client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def setup_db(monkeypatch):
+    monkeypatch.setenv("HERMES_DATABASE_URL", I3_DB_URL)
+    monkeypatch.setenv("EVOSIA_DATABASE_URL", I3_DB_URL)
+    monkeypatch.setenv("EVOSIA_JWT_SECRET", "i3-test-secret")
+    import enterprise.services as _svc
+    monkeypatch.setattr(_svc, "SECRET_KEY", "i3-test-secret")
+    # Rebind the app's import-time engine alias to this test's database.
+    _app_mod.engine = get_engine()
+    monkeypatch.setattr(_app_mod, "SECRET_KEY", "i3-test-secret")
+    eng = _app_mod.engine
     Base.metadata.create_all(bind=eng)
     yield
     Base.metadata.drop_all(bind=eng)
-    # Clear engine cache so in-memory DB doesn't leak across modules
     from enterprise.database import _ENGINES
-    _ENGINES.pop("sqlite:///:memory:", None)
+    _ENGINES.pop(I3_DB_URL, None)
+    try:
+        os.remove("./test_i3_boundary.db")
+    except OSError:
+        pass
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def auth_header():
     """Register → login → return auth header with real JWT."""
     email = f"i3-{uuid.uuid4().hex[:8]}@test.com"
@@ -54,9 +71,6 @@ def auth_header():
     )
     token = resp.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
-
-
-app_test_client = TestClient(app)
 
 
 class TestGeminiProvenance:

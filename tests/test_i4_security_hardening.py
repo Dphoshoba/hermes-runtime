@@ -18,19 +18,36 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
+# Unique file-backed DB so I4 cannot collide with I2/I3/I6 on a shared
+# engine key when run together in one process.
+I4_DB_URL = "sqlite:///./test_i4_boundary.db"
+
 from enterprise.app import app as _app
 from enterprise.database import Base, get_engine
 from sqlalchemy.orm import sessionmaker as _sm
 
 
-@pytest.fixture(scope="module", autouse=True)
-def setup_db():
-    eng = get_engine()
+@pytest.fixture(autouse=True)
+def setup_db(monkeypatch):
+    monkeypatch.setenv("HERMES_DATABASE_URL", I4_DB_URL)
+    monkeypatch.setenv("EVOSIA_DATABASE_URL", I4_DB_URL)
+    monkeypatch.setenv("EVOSIA_JWT_SECRET", "i4-test-secret")
+    import enterprise.services as _svc
+    monkeypatch.setattr(_svc, "SECRET_KEY", "i4-test-secret")
+    # Rebind the app's import-time engine alias to this test's database.
+    import enterprise.app as _app_mod
+    _app_mod.engine = get_engine()
+    monkeypatch.setattr(_app_mod, "SECRET_KEY", "i4-test-secret")
+    eng = _app_mod.engine
     Base.metadata.create_all(bind=eng)
     yield
     Base.metadata.drop_all(bind=eng)
     from enterprise.database import _ENGINES
     _ENGINES.clear()
+    try:
+        os.remove("./test_i4_boundary.db")
+    except OSError:
+        pass
 
 
 def _auth_header(client: TestClient) -> dict[str, str]:
@@ -92,12 +109,20 @@ class TestJWTSecretNotHardcoded:
     so test collection / TestClient still work.
     """
 
-    def test_production_fails_without_secret(self):
+    def test_production_fails_without_secret(self, monkeypatch):
         from enterprise.app import validate_security_config
+        import enterprise.app as _app_mod
 
         saved = os.environ.pop("EVOSIA_JWT_SECRET", None)
         saved_env = os.environ.pop("EVOSIA_ENV", None)
         os.environ["EVOSIA_ENV"] = "production"
+        # The fail-closed guard inspects the module-global SECRET_KEY; restore
+        # the insecure default so this test verifies the guard fires when no
+        # real secret is configured (overriding the suite-wide test secret).
+        monkeypatch.setattr(
+            _app_mod, "SECRET_KEY",
+            "hermes-enterprise-dev-secret-change-in-production",
+        )
         try:
             with pytest.raises(RuntimeError):
                 validate_security_config()
@@ -107,12 +132,19 @@ class TestJWTSecretNotHardcoded:
             if saved_env is not None:
                 os.environ["EVOSIA_ENV"] = saved_env
 
-    def test_development_allows_dev_secret(self):
+    def test_development_allows_dev_secret(self, monkeypatch):
         from enterprise.app import validate_security_config
+        import enterprise.app as _app_mod
 
         saved = os.environ.pop("EVOSIA_JWT_SECRET", None)
         saved_env = os.environ.pop("EVOSIA_ENV", None)
         os.environ["EVOSIA_ENV"] = "development"
+        # Restore the insecure default so this test verifies the dev fallback
+        # path (overriding the suite-wide test secret).
+        monkeypatch.setattr(
+            _app_mod, "SECRET_KEY",
+            "hermes-enterprise-dev-secret-change-in-production",
+        )
         try:
             validate_security_config()  # must not raise
         finally:

@@ -40,12 +40,30 @@ from enterprise.services.m8_fixture import (  # noqa: E402
 )
 
 
-@pytest.fixture(scope="module", autouse=True)
-def setup_db():
-    eng = get_engine()
+@pytest.fixture(autouse=True)
+def setup_db(monkeypatch):
+    # I6 uses a private file-backed DB (./test_i6_m8.db) so it cannot collide
+    # with I2/I3/I4 on a shared engine key when run together in one process.
+    monkeypatch.setenv("HERMES_DATABASE_URL", _I6_DB)
+    monkeypatch.setenv("EVOSIA_DATABASE_URL", _I6_DB)
+    monkeypatch.setenv("EVOSIA_M8_FIXTURE", "enabled")
+    monkeypatch.setenv("EVOSIA_JWT_SECRET", "i6-test-secret")
+    import enterprise.services as _svc
+    monkeypatch.setattr(_svc, "SECRET_KEY", "i6-test-secret")
+    # Rebind the app's import-time engine alias to this test's database.
+    import enterprise.app as _app_mod
+    _app_mod.engine = get_engine()
+    monkeypatch.setattr(_app_mod, "SECRET_KEY", "i6-test-secret")
+    eng = _app_mod.engine
     Base.metadata.create_all(bind=eng)
     yield
     Base.metadata.drop_all(bind=eng)
+    from enterprise.database import _ENGINES
+    _ENGINES.pop(_I6_DB, None)
+    try:
+        os.remove("./test_i6_m8.db")
+    except OSError:
+        pass
 
 
 @pytest.fixture()
