@@ -122,7 +122,7 @@ def validate_blank_template_is_unpopulated(path: Path) -> list[ValidationError]:
 
     # All observational fields must be null in a blank template
     observational_fields = [
-        "test_timestamp", "hermes_commit", "prior_hermes_experience",
+        "test_timestamp", "evosia_commit", "prior_hermes_experience",
         "technical_experience", "time_to_first_analysis_seconds",
         "technical_blockers", "operator_interventions", "user_confidence",
         "usability_defects", "critical_usability_failures",

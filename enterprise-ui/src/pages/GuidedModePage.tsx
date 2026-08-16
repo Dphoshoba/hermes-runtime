@@ -76,6 +76,8 @@ interface PreparedChange {
   affected_files: string[];
   validation_status: string;
   workspace_path: string;
+  diff_content: string | null;
+  validation_output: string | null;
   created_at: string;
 }
 
@@ -596,6 +598,18 @@ function PreparedChangeReview({ onBack }: { onBack: () => void }) {
     );
   }
 
+  const openDetail = (c: PreparedChange) => {
+    if (isDemo) {
+      setSelected(c);
+      return;
+    }
+    // LIVE_MODE: fetch the full record (includes diff/workspace/validation evidence)
+    guidedClient
+      .getPreparedChange(c.prepared_id)
+      .then((full) => setSelected(full))
+      .catch(() => setSelected(c));
+  };
+
   if (!selected) {
     return (
       <div className="prepared-change-list">
@@ -612,7 +626,7 @@ function PreparedChangeReview({ onBack }: { onBack: () => void }) {
             <button
               key={c.prepared_id}
               className="card prepared-change-card-btn"
-              onClick={() => setSelected(c)}
+              onClick={() => openDetail(c)}
             >
               <h3>{c.title}</h3>
               <p className="muted">{c.description}</p>
@@ -642,10 +656,15 @@ function PreparedChangeReview({ onBack }: { onBack: () => void }) {
           why: 'Based on a human-ACTIONABLE finding approved by an operator.',
           benefit: 'Addresses an operator-flagged engineering concern.',
           risk: 'Change risk depends on scope; prepared changes remain unreviewed until you act.',
-          files: selected.affected_files,
+          files: selected.affected_files || [],
           verification: 'Tests and checks would run before any change is finalized.',
           rollback: 'Prepared changes are isolated and reversible until merged/deployed.',
-          validation: selected.validation_status as 'pass' | 'pending' | 'fail',
+          validation: (selected.validation_status as 'pass' | 'pending' | 'fail') || 'pending',
+          status: selected.status,
+          diff: selected.diff_content,
+          workspace: selected.workspace_path,
+          validationOutput: selected.validation_output,
+          isLive: !isDemo,
         }}
         onApprove={() => {}}
       />

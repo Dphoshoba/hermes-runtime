@@ -73,6 +73,9 @@ export const guidedClient = {
     const qs = repositoryId ? `?repository_id=${encodeURIComponent(repositoryId)}` : '';
     return guidedApi(`/prepared-changes${qs}`);
   },
+  async getPreparedChange(preparedId: string): Promise<any> {
+    return guidedApi(`/prepared-changes/${preparedId}`);
+  },
   permission: () => guidedApi('/permission'),
   context: {
     list: (repositoryId?: string, topic?: string) => {

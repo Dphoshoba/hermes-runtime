@@ -1,8 +1,8 @@
 {
   "participant_id": null,
   "test_timestamp": null,
-  "hermes_version": "1.3.0",
-  "hermes_commit": null,
+  "evosia_version": null,
+  "evosia_commit": null,
   "prior_hermes_experience": null,
   "technical_experience": null,
   "tasks": {

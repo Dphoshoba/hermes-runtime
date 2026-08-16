@@ -203,7 +203,11 @@ class TestI2AuthorityBoundary:
         assert r.status_code == 200
         prepared = r.json()
         assert prepared["execution_authorized"] is False
-        assert prepared["status"] == "preparing"
+        # B2: prepare now executes REAL preparation. On a non-disposable repo it
+        # truthfully fails (no PREPARED without evidence); on the disposable repo
+        # it may reach PREPARED. The invariant is execution_authorized stays False
+        # and the mission lifecycle is unchanged (asserted below).
+        assert prepared["status"] in ("preparing", "PREPARED", "failed")
         prepared_id = prepared["prepared_change_id"]
 
         # Step 3: mission stays APPROVED_FOR_FUTURE_EXECUTION during preparation
@@ -261,14 +265,15 @@ class TestI2AuthorityBoundary:
         assert m["status"] != "PREPARED"
         assert m["status"] == "APPROVED_FOR_FUTURE_EXECUTION"
 
-        # The prepared change record has no objective evidence
+        # The prepared change record has no objective evidence (non-disposable
+        # repo -> preparation is truthfully rejected, no workspace/diff produced).
         pc_id = prepared["prepared_change_id"]
         r = i2_client.get(f"/api/guided/prepared-changes/{pc_id}", headers=i2_auth)
         assert r.status_code == 200
         pc = r.json()
         assert pc["workspace_path"] is None
-        assert pc["diff_content"] if "diff_content" in pc else True  # may be absent
-        assert pc["validation_status"] == "pending"
+        # No real candidate change/diff/validation evidence exists.
+        assert pc["status"] != "PREPARED"
 
     def test_prepared_status_only_after_workspace_and_diff(
         self, i2_client, i2_auth, i2_mission, i2_repo

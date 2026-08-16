@@ -1,8 +1,6 @@
 {
   "participant_id": "P04",
   "test_timestamp": null,
-  "hermes_version": "1.3.0",
-  "hermes_commit": null,
   "prior_hermes_experience": null,
   "technical_experience": null,
   "tasks": {
@@ -90,5 +88,7 @@
     "understands_approval_not_execution": null,
     "pass": null
   },
-  "overall_result": null
+  "overall_result": null,
+  "evosia_version": "1.3.0",
+  "evosia_commit": null
 }

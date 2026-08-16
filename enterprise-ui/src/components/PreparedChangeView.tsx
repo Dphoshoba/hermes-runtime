@@ -11,6 +11,11 @@ interface PreparedChangeDetail {
   verification: string;
   rollback: string;
   validation: 'pass' | 'pending' | 'fail';
+  status?: string;
+  diff?: string | null;
+  workspace?: string | null;
+  validationOutput?: string | null;
+  isLive?: boolean;
 }
 
 interface PreparedChangeViewProps {
@@ -20,10 +25,16 @@ interface PreparedChangeViewProps {
 
 export default function PreparedChangeView({ change, onApprove }: PreparedChangeViewProps) {
   const [showDiff, setShowDiff] = useState(false);
+  const isPrepared = change.status === 'PREPARED';
 
   return (
     <div className="prepared-change-card card">
       <h3>{change.title}</h3>
+      {isPrepared ? (
+        <span className="badge badge-amber">Prepared change</span>
+      ) : (
+        <span className="badge badge-yellow">Preparation pending</span>
+      )}
       <div className="change-section">
         <h4>What will change</h4>
         <p>{change.what}</p>
@@ -43,9 +54,13 @@ export default function PreparedChangeView({ change, onApprove }: PreparedChange
       <div className="change-section">
         <h4>Files affected</h4>
         <div className="change-files">
-          {change.files.map((f, i) => (
-            <div key={i} className="change-file">{f}</div>
-          ))}
+          {change.files.length > 0 ? (
+            change.files.map((f, i) => (
+              <div key={i} className="change-file">{f}</div>
+            ))
+          ) : (
+            <div className="change-file muted">Not yet determined</div>
+          )}
         </div>
       </div>
       <div className="change-section">
@@ -60,6 +75,26 @@ export default function PreparedChangeView({ change, onApprove }: PreparedChange
           {change.validation === 'fail' && '✗ Failed'}
         </div>
       </div>
+
+      {change.isLive && isPrepared && (
+        <div className="change-section">
+          <h4>Isolated workspace</h4>
+          <p className="muted">{change.workspace || 'Not recorded'}</p>
+          <h4>Candidate diff</h4>
+          {change.diff ? (
+            <pre className="diff-block">{change.diff}</pre>
+          ) : (
+            <p className="muted">No diff recorded.</p>
+          )}
+          <h4>Validation output</h4>
+          {change.validationOutput ? (
+            <pre className="diff-block">{change.validationOutput}</pre>
+          ) : (
+            <p className="muted">No validation output recorded.</p>
+          )}
+        </div>
+      )}
+
       <div className="change-section">
         <h4>How it can be undone</h4>
         <p>{change.rollback}</p>

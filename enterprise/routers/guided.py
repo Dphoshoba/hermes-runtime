@@ -570,11 +570,25 @@ def prepare_change(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
+    """Initiate REAL preparation for an approved mission.
+
+    Authority: requires APPROVED_FOR_FUTURE_EXECUTION (set by approve-preparation).
+    Preparation operates only on the disposable test repository, creates an
+    isolated workspace, generates a real candidate change + diff, runs real
+    validation, and transitions to PREPARED ONLY when objective evidence exists.
+    Execution remains unauthorized (no merge/commit/push/deploy).
+    """
+    from ..services.preparation import run_preparation
+
     mission = db.query(Mission).filter(Mission.id == mission_id).first()
     if not mission:
         raise HTTPException(status_code=404, detail="Mission not found")
     if mission.status != "APPROVED_FOR_FUTURE_EXECUTION":
         raise HTTPException(status_code=409, detail="Mission must be approved for preparation first")
+
+    repository = db.query(Repository).filter(Repository.id == mission.repository_id).first()
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
 
     prepared = PreparedChange(
         mission_id=mission.id,
@@ -599,6 +613,22 @@ def prepare_change(
     db.commit()
     db.refresh(prepared)
 
+    try:
+        result = run_preparation(mission, prepared, repository, operator=user.name)
+    except ValueError as exc:
+        prepared.status = "failed"
+        prepared.validation_status = "failed"
+        prepared.validation_output = str(exc)
+        prepared.provenance = {
+            **(prepared.provenance or {}),
+            "outcome": "rejected",
+            "detail": str(exc),
+        }
+        result = {"status": "rejected", "reason": str(exc)}
+    finally:
+        db.commit()
+        db.refresh(prepared)
+
     return {
         "prepared_change_id": prepared.id,
         "mission_id": mission.id,
@@ -608,8 +638,16 @@ def prepare_change(
         "diff_content": prepared.diff_content,
         "rollback_representation": prepared.rollback_representation,
         "validation_status": prepared.validation_status,
+        "validation_output": prepared.validation_output,
         "execution_authorized": False,
-        "message": "Preparation initiated. A candidate change will be generated in an isolated workspace. Nothing has been executed or deployed.",
+        "message": (
+            "Preparation complete. A candidate change was generated in an isolated "
+            "workspace and validated. Nothing has been executed, merged, or deployed. "
+            "The target repository is unchanged."
+            if prepared.status == "PREPARED"
+            else "Preparation did not reach a prepared state. See validation evidence."
+        ),
+        "preparation_result": result,
     }
 
 
@@ -655,6 +693,8 @@ def get_prepared_change(
         "status": prepared.status,
         "workspace_path": prepared.workspace_path,
         "affected_files": prepared.affected_files,
+        "diff_content": prepared.diff_content,
+        "rollback_representation": prepared.rollback_representation,
         "validation_status": prepared.validation_status,
         "validation_output": prepared.validation_output,
         "created_by": prepared.created_by,
