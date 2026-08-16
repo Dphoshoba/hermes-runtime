@@ -577,7 +577,10 @@ def prepare_change(
         description=mission.description,
         status="preparing",
         affected_files=[],
+        diff_content=None,
+        rollback_representation=None,
         validation_status="pending",
+        workspace_path=None,
         created_by=user.name,
         provenance={
             "origin": "guided_mode",
@@ -586,8 +589,6 @@ def prepare_change(
             "prepared_at": datetime.now(timezone.utc).isoformat(),
         },
     )
-    mission.status = "PREPARED"
-    mission.updated_at = datetime.now(timezone.utc)
     db.add(prepared)
     db.commit()
     db.refresh(prepared)
@@ -598,9 +599,11 @@ def prepare_change(
         "status": prepared.status,
         "workspace_path": prepared.workspace_path,
         "affected_files": prepared.affected_files,
+        "diff_content": prepared.diff_content,
+        "rollback_representation": prepared.rollback_representation,
         "validation_status": prepared.validation_status,
-        "message": "Change is being prepared in an isolated workspace. Nothing has been executed or deployed.",
         "execution_authorized": False,
+        "message": "Preparation initiated. A candidate change will be generated in an isolated workspace. Nothing has been executed or deployed.",
     }
 
 

@@ -206,12 +206,12 @@ class TestI2AuthorityBoundary:
         assert prepared["status"] == "preparing"
         prepared_id = prepared["prepared_change_id"]
 
-        # Step 3: mission now PREPARED
+        # Step 3: mission stays APPROVED_FOR_FUTURE_EXECUTION during preparation
         r = i2_client.get("/api/guided/missions", headers=i2_auth)
         missions = r.json()
         m = next(m for m in missions if m["mission_id"] == i2_mission)
-        assert m["status"] == "PREPARED"
-        assert m["status_label"] == "Prepared change"
+        assert m["status"] == "APPROVED_FOR_FUTURE_EXECUTION"
+        assert m["status_label"] == "Approved for preparation"
 
         # Step 4: prepared changes list
         r = i2_client.get("/api/guided/prepared-changes", headers=i2_auth)

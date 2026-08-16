@@ -499,7 +499,7 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
           <div key={m.mission_id} className="card mission-card">
             <div className="mission-header">
               <h3>{m.plain_title}</h3>
-              <span className={`badge badge-${m.status === 'APPROVED_FOR_FUTURE_EXECUTION' ? 'green' : m.status === 'PREPARED' ? 'green' : 'yellow'}`}>
+              <span className={`badge badge-${m.status === 'APPROVED_FOR_FUTURE_EXECUTION' ? 'green' : m.status === 'PREPARED' ? 'amber' : 'yellow'}`}>
                 {m.status_label}
               </span>
             </div>
