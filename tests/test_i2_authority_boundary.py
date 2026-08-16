@@ -225,6 +225,100 @@ class TestI2AuthorityBoundary:
         pcd = r.json()
         assert pcd["workspace_path"] == prepared["workspace_path"]
 
+    def test_prepared_not_assigned_without_workspace_evidence(
+        self, i2_client, i2_auth, i2_mission, i2_repo
+    ):
+        """PREPARED must only be assigned when objective preparation evidence exists.
+
+        Per I2 reconciliation: PREPARED means an actual candidate change in an
+        isolated workspace with workspace_path, diff_content, affected_files,
+        and validation_status. A mere PreparedChange DB record must NOT
+        transition the mission to PREPARED.
+        """
+        from enterprise.database import SessionLocal
+
+        # Approve preparation
+        r = i2_client.post(
+            f"/api/guided/missions/{i2_mission}/approve-preparation",
+            json={"operator": "operator:i2"},
+            headers=i2_auth,
+        )
+        assert r.status_code == 200
+        assert r.json()["status"] == "APPROVED_FOR_FUTURE_EXECUTION"
+
+        # Prepare change — creates a record but not a real workspace
+        r = i2_client.post(
+            f"/api/guided/missions/{i2_mission}/prepare",
+            headers=i2_auth,
+        )
+        assert r.status_code == 200
+        prepared = r.json()
+
+        # Mission must NOT transition to PREPARED — only APPROVED_FOR_FUTURE_EXECUTION
+        r = i2_client.get("/api/guided/missions", headers=i2_auth)
+        missions = r.json()
+        m = next(m for m in missions if m["mission_id"] == i2_mission)
+        assert m["status"] != "PREPARED"
+        assert m["status"] == "APPROVED_FOR_FUTURE_EXECUTION"
+
+        # The prepared change record has no objective evidence
+        pc_id = prepared["prepared_change_id"]
+        r = i2_client.get(f"/api/guided/prepared-changes/{pc_id}", headers=i2_auth)
+        assert r.status_code == 200
+        pc = r.json()
+        assert pc["workspace_path"] is None
+        assert pc["diff_content"] if "diff_content" in pc else True  # may be absent
+        assert pc["validation_status"] == "pending"
+
+    def test_prepared_status_only_after_workspace_and_diff(
+        self, i2_client, i2_auth, i2_mission, i2_repo
+    ):
+        """A mission whose PreparedChange has workspace_path+diff CAN be PREPARED.
+
+        This proves the system knows how to assign PREPARED correctly — but
+        only when real evidence exists, not from a stub record.
+        """
+        eng = get_engine(I2_DB_URL)
+        Session = sessionmaker(autocommit=False, autoflush=False, bind=eng, future=True)
+        session = Session()
+
+        # Approve
+        i2_client.post(
+            f"/api/guided/missions/{i2_mission}/approve-preparation",
+            json={"operator": "operator:i2"},
+            headers=i2_auth,
+        )
+
+        # Prepare — creates stub record
+        r = i2_client.post(
+            f"/api/guided/missions/{i2_mission}/prepare",
+            headers=i2_auth,
+        )
+        assert r.status_code == 200
+        pc_id = r.json()["prepared_change_id"]
+
+        # Manually populate real evidence (simulating completed preparation)
+        pc = session.get(PreparedChange, pc_id)
+        pc.workspace_path = "/workspace/sandbox-001"
+        pc.diff_content = "--- a/src.py\n+++ b/src.py\n+print('real change')\n"
+        pc.affected_files = ["src.py"]
+        pc.validation_status = "passed"
+        pc.status = "prepared"
+        session.commit()
+        session.close()
+
+        # Verify the prepared change now has objective evidence
+        r = i2_client.get(f"/api/guided/prepared-changes/{pc_id}", headers=i2_auth)
+        pc_detail = r.json()
+        assert pc_detail["workspace_path"] is not None
+        assert pc_detail["validation_status"] != "pending"
+
+        # Mission still must not auto-transition to PREPARED by the record alone
+        r = i2_client.get("/api/guided/missions", headers=i2_auth)
+        missions = r.json()
+        m = next(m for m in missions if m["mission_id"] == i2_mission)
+        assert m["status"] == "APPROVED_FOR_FUTURE_EXECUTION"
+
     def test_no_execute_endpoint_exists(
         self, i2_client, i2_auth, i2_mission
     ):

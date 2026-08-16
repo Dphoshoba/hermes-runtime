@@ -20,20 +20,23 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-os.environ["HERMES_DATABASE_URL"] = "sqlite:///./test_i3_gemini.db"
+os.environ["HERMES_DATABASE_URL"] = "sqlite:///:memory:"
 
 import pytest
 
 from enterprise.app import app
-from enterprise.database import Base, get_engine
-from sqlalchemy.orm import sessionmaker as _sm
+from enterprise.database import Base, get_engine, SessionLocal
 
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_db():
-    eng = get_engine(os.environ["HERMES_DATABASE_URL"])
+    eng = get_engine()
     Base.metadata.create_all(bind=eng)
     yield
+    Base.metadata.drop_all(bind=eng)
+    # Clear engine cache so in-memory DB doesn't leak across modules
+    from enterprise.database import _ENGINES
+    _ENGINES.pop("sqlite:///:memory:", None)
 
 
 @pytest.fixture(scope="module")
@@ -100,8 +103,7 @@ class TestGeminiCannotCreateEvidence:
 
     def test_no_prepared_change_created(self, auth_header):
         from enterprise.models import PreparedChange
-        eng = get_engine(os.environ["HERMES_DATABASE_URL"])
-        session = _sm(autocommit=False, autoflush=False, bind=get_engine(), future=True)()
+        session = SessionLocal()
         count_before = session.query(PreparedChange).count()
         with patch("enterprise.services.gemini_explain._call_gemini", return_value="ok"):
             app_test_client.get("/api/guided/explain/approval", headers=auth_header)
