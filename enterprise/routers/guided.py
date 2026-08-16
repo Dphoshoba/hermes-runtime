@@ -586,6 +586,8 @@ def prepare_change(
             "prepared_at": datetime.now(timezone.utc).isoformat(),
         },
     )
+    mission.status = "PREPARED"
+    mission.updated_at = datetime.now(timezone.utc)
     db.add(prepared)
     db.commit()
     db.refresh(prepared)
