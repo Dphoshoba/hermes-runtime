@@ -8,14 +8,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Install Python dependencies
+# Source must be present before pip install (setuptools needs pyproject +
+# package dirs + README). Copy pyproject/README first so the editable install
+# can discover the evosia/ and enterprise/ packages.
 COPY pyproject.toml .
-RUN pip install --upgrade pip && \
-    pip install -e ".[postgres]"
-
-# Copy backend source
+COPY README.md .
 COPY enterprise/ enterprise/
 COPY evosia/ evosia/
-COPY pyproject.toml .
+RUN pip install --upgrade pip && \
+    pip install -e ".[postgres]"
 
 # Build frontend
 FROM node:22 AS frontend
