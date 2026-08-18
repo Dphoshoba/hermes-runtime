@@ -14,11 +14,11 @@ RUN pip install --upgrade pip && \
 
 # Copy backend source
 COPY enterprise/ enterprise/
-COPY hermes_v01/ hermes_v01/
+COPY evosia/ evosia/
 COPY pyproject.toml .
 
 # Build frontend
-FROM node:20 AS frontend
+FROM node:22 AS frontend
 WORKDIR /app
 COPY enterprise-ui/package.json enterprise-ui/package*.json ./
 RUN npm ci
