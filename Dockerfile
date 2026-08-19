@@ -16,7 +16,7 @@ COPY README.md .
 COPY enterprise/ enterprise/
 COPY evosia/ evosia/
 RUN pip install --upgrade pip && \
-    pip install -e ".[postgres]"
+    pip install -e ".[enterprise]"
 
 # Build frontend
 FROM node:22 AS frontend
@@ -37,9 +37,9 @@ ENV EVOSIA_DATABASE_URL="" \
     EVOSIA_GITHUB_CLIENT_SECRET="" \
     PORT=8000
 
-EXPOSE 8000
+EXPOSE ${PORT:-8000}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-8000}/api/health')" || exit 1
 
-CMD ["uvicorn", "enterprise.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD uvicorn enterprise.app:app --host 0.0.0.0 --port ${PORT:-8000}
