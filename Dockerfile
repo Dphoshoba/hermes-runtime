@@ -18,6 +18,19 @@ COPY evosia/ evosia/
 COPY validation/m8-disposable-repo/ validation/m8-disposable-repo/
 RUN pip install --upgrade pip && \
     pip install -e ".[enterprise]"
+# Reconstruct deterministic git metadata for the M8 disposable fixture.
+# .dockerignore strips .git (to keep the root repo out of the image), so we
+# re-init the fixture as a git repo with one deterministic baseline commit.
+# git is kept installed so the facilitator can run git rev-parse HEAD for
+# integrity checks inside the container.
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    cd /app/validation/m8-disposable-repo && \
+    git init -q && \
+    git config user.email "m8-fixture@local" && \
+    git config user.name "M8 Fixture" && \
+    git add -A && \
+    git commit -q -m "disposable M8 repository" && \
+    rm -rf /var/lib/apt/lists/*
 
 # Build frontend
 FROM node:22 AS frontend
