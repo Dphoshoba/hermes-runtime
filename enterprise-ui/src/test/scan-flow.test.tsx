@@ -11,7 +11,7 @@ import { AuthContext } from '../App'
 import type { User } from '../lib/types'
 
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+globalThis.fetch = mockFetch
 
 function ok(body: unknown) {
   return { ok: true, json: () => Promise.resolve(body), status: 200, headers: new Headers() } as Response
