@@ -15,6 +15,7 @@ COPY pyproject.toml .
 COPY README.md .
 COPY enterprise/ enterprise/
 COPY evosia/ evosia/
+COPY validation/m8-disposable-repo/ validation/m8-disposable-repo/
 RUN pip install --upgrade pip && \
     pip install -e ".[enterprise]"
 

@@ -1,6 +1,8 @@
 node_modules
 npm-debug.log
 .git
+# Preserve .git for the M8 disposable fixture (verifier requires git_initialized)
+!validation/m8-disposable-repo/.git
 .gitignore
 __pycache__
 *.pyc
