@@ -1,0 +1,3 @@
+# Dependency choices for the sample service.
+# Intentionally minimal (no third-party deps) so M8 has a "dependency choices"
+# context question without pulling in external packages.
