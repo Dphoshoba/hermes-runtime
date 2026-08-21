@@ -1,10 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../App';
 import { guidedClient } from '../lib/api';
 import { useMode } from '../context/ModeContext';
 import ProvenanceBadge from '../components/ProvenanceBadge';
 import DemoModeToggle from '../components/DemoModeToggle';
 import PreparedChangeView from '../components/PreparedChangeView';
+import FirstRunOnboarding from '../components/FirstRunOnboarding';
+
+// Maximum time Guided Mode may show the review spinner before surfacing an
+// explicit error. Prevents the indefinite "Reviewing your project…" state
+// reported by Participant 1.
+const LOADING_TIMEOUT_MS = 30000;
 
 // Types matching the backend guided router responses
 interface GuidedSummary {
@@ -99,12 +105,24 @@ export default function GuidedModePage() {
   const [summary, setSummary] = useState<GuidedSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchSummary = useCallback(async () => {
     setLoading(true);
     setError(null);
+    // Safety net: never leave the spinner running indefinitely. If the
+    // request does not resolve within LOADING_TIMEOUT_MS, surface an explicit
+    // error instead of leaving the participant stuck at "Reviewing...".
+    if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+    loadingTimerRef.current = setTimeout(() => {
+      setError('EVOSIA is taking longer than expected to review your project. Please try again.');
+      setStep('error');
+      setLoading(false);
+    }, LOADING_TIMEOUT_MS);
     try {
       const s = await guidedClient.summary();
+      if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
       setSummary(s);
       if (isOffline) {
         setError('EVOSIA is offline. Check your connection and try again.');
@@ -113,15 +131,33 @@ export default function GuidedModePage() {
         setStep('summary');
       }
     } catch (e: unknown) {
+      if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
       setError(e instanceof Error ? e.message : 'Failed to load guided summary');
       setStep('error');
+    } finally {
       setLoading(false);
     }
   }, [isOffline]);
 
   useEffect(() => {
+    return () => {
+      if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
+
+  // First-run onboarding: show before the summary for first-time participants.
+  if (!onboardingComplete) {
+    return (
+      <FirstRunOnboarding
+        onComplete={() => setOnboardingComplete(true)}
+        projectName={summary?.repository_name ?? undefined}
+      />
+    );
+  }
 
   if (loading) {
     return (

@@ -13,24 +13,29 @@ const STEPS = [
     detail: 'EVOSIA will not change or deploy your software without additional permission.',
   },
   {
-    title: 'What EVOSIA can see',
-    body: 'EVOSIA can inspect your project files, dependencies, and structure to identify potential concerns.',
-    detail: 'EVOSIA works read-only by default. It does not modify your project unless you explicitly approve a prepared change.',
+    title: 'What EVOSIA does',
+    body: 'EVOSIA inspects your project and produces a plain-language summary. It can identify issues worth discussing, ask for context about your project, and recommend work.',
+    detail: 'A prepared change is a candidate modification created in an isolated workspace. Prepared ≠ Executed. It is not merged, deployed, or applied to your project until you explicitly choose to act.',
   },
   {
-    title: 'What EVOSIA cannot do',
-    body: 'EVOSIA cannot deploy changes, merge code, or modify production systems without additional explicit permission.',
-    detail: 'Every action beyond inspection and recommendation requires your clear approval.',
+    title: 'Needs your attention',
+    body: '"Needs your attention" means EVOSIA found something a human reviewer flagged as worth addressing.',
+    detail: 'You decide whether to act on it. EVOSIA will not act without your approval.',
   },
   {
-    title: 'When your approval is needed',
-    body: 'EVOSIA may ask for context about your project and recommend work. You decide what to prepare.',
-    detail: 'No changes are made to your project until you review and approve a prepared change.',
+    title: 'Needs context',
+    body: '"Needs context" means EVOSIA asks you a question about your project so it can understand your intentions.',
+    detail: 'Answering a context question provides information only. It is not authorization and does not permit EVOSIA to change anything.',
+  },
+  {
+    title: 'Proposed work & approval',
+    body: '"Proposed work" is a recommendation. Approving preparation permits EVOSIA to prepare a change in an isolated workspace only.',
+    detail: 'Preparation does not merge code, deploy anything, or modify your live project. Your project remains unchanged.',
   },
   {
     title: "Let's begin",
     body: 'EVOSIA will now review your project and show you a plain-language summary.',
-    detail: "You'll always know exactly what EVOSIA can and cannot do.",
+    detail: "Has EVOSIA changed your project? No. EVOSIA inspects and explains. Nothing is changed unless you approve a prepared change.",
   },
 ];
 
