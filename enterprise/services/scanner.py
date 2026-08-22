@@ -231,6 +231,9 @@ def _execute_stage(db, job, repo, stage, timings, state):
         if mat_path:
             ri = run_repository_intelligence(mat_path)
             repo.metadata_json = {**(repo.metadata_json or {}), "repository_intelligence": ri}
+            # Persist authoritative review scope (actual files/folders walked).
+            if isinstance(ri, dict) and ri.get("review_scope"):
+                job.metadata_json = {**(job.metadata_json or {}), "review_scope": ri["review_scope"]}
             state["ri"] = ri
     elif stage == "engineering_intelligence":
         ri = state.get("ri")

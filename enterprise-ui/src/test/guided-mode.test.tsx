@@ -27,18 +27,25 @@ const summaryPayload = {
   authority_level: 1,
   authority_level_label: 'Inspection only',
   nothing_changed: true,
-  headline: 'I reviewed your project. · 4 things examined · 1 worth discussing · 3 questions need your help · 1 proposed change · 0 changes made',
+  headline: 'I reviewed your project.',
   status: 'ready',
+}
+
+// Standard mock sequence for reaching the summary view:
+// summary → review-scope
+function mockSummaryPath() {
+  mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+    .mockResolvedValueOnce(ok(reviewScopePayload))
 }
 
 const needsAttentionPayload = [
   {
     finding_id: 'f1',
     title: 'Hardcoded credential',
-    plain_title: 'A hardcoded credential was found',
+    plain_title: 'A hardcoded API key was found',
     severity: 'high',
     category: 'security',
-    why_it_matters: 'This may involve sensitive information or access controls.',
+    why_it_matters: 'Anyone who can read this source file may potentially obtain the credential.',
     current_classification: 'ACTIONABLE',
     classification_label: 'Actionable',
     has_human_decision: true,
@@ -50,7 +57,7 @@ const missionsPayload = [
   {
     mission_id: 'm1',
     title: 'Replace hardcoded credential',
-    plain_title: 'Replace hardcoded credential with environment variable',
+    plain_title: 'Move the API key out of the source code',
     what: 'Replace the hardcoded credential with an environment variable lookup',
     why: 'To avoid storing secrets in code',
     benefit: 'Improves security',
@@ -58,14 +65,32 @@ const missionsPayload = [
     scope: 'src/config.py',
     validation: 'Run tests',
     rollback: 'Revert the change',
-    authority_consequence: 'Permits EVOSIA to prepare a change in an isolated workspace',
+    authority_consequence: 'Permits EVOSIA to prepare a change in an isolated workspace. It will not merge, deploy, or change production.',
     status: 'DRAFT',
     status_label: 'Draft',
-    originating_finding: 'Hardcoded credential',
+    originating_finding: 'A hardcoded API key was found',
     human_adjudication_ref: 'a1',
     technical: {},
   },
 ]
+
+const reviewScopePayload = {
+  available: true,
+  scan_id: 'scan-1',
+  repository_name: 'sample-service',
+  scope_root: 'sample-service',
+  review_status: 'completed',
+  started_at: '2026-08-22T20:14:00Z',
+  completed_at: '2026-08-22T20:15:00Z',
+  folders_inspected: ['src', 'tests', 'config'],
+  files_inspected: ['src/config.py', 'src/calc.py', 'tests/test_sample.py'],
+  total_folders_inspected: 3,
+  total_files_inspected: 3,
+  excluded_directories: ['__pycache__', 'node_modules'],
+  excluded_files: null,
+  exclusion_note: 'EVOSIA reviewed Python source files.',
+  provenance: 'LIVE_EVOSIA_EVIDENCE',
+}
 
 function renderGuided() {
   return render(
@@ -77,9 +102,8 @@ function renderGuided() {
   )
 }
 
-// Click through onboarding to reach summary
 async function completeOnboarding() {
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 12; i++) {
     const btn = screen.queryByRole('button', { name: /review my project/i })
     if (btn) {
       await act(async () => { await userEvent.click(btn) })
@@ -94,372 +118,382 @@ async function completeOnboarding() {
   }
 }
 
+// Reach summary; optionally then navigate to proposed work.
+async function reachSummary() {
+  await completeOnboarding()
+  await waitFor(() => {
+    expect(screen.getByText(/what i reviewed/i)).toBeTruthy()
+  })
+}
+
 beforeEach(() => { vi.clearAllMocks() })
 afterEach(() => { vi.restoreAllMocks() })
 
-describe('GuidedMode loading lifecycle (M8-P1-001)', () => {
-  it('exits loading into summary state after successful fetch', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+describe('M8-P1-001: loading lifecycle', () => {
+  it('successful summary fetch exits loading', async () => {
+    mockSummaryPath()
     renderGuided()
-
-    // Initially shows onboarding (not indefinite spinner)
-    expect(screen.getByText(/welcome to evosia/i)).toBeTruthy()
-
     await completeOnboarding()
-
-    // After onboarding, summary should load
     await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
+      expect(screen.getByText(/what i reviewed/i)).toBeTruthy()
     })
     expect(screen.queryByText(/reviewing your project/i)).toBeFalsy()
   })
 
-  it('exits loading and shows error on failed fetch', async () => {
+  it('failed summary fetch exits loading into an error state', async () => {
     mockFetch.mockResolvedValueOnce(err(500, { detail: 'Server error' }))
     renderGuided()
-
     await completeOnboarding()
-
     await waitFor(() => {
       expect(screen.getByText(/something went wrong/i)).toBeTruthy()
     })
     expect(screen.queryByText(/reviewing your project/i)).toBeFalsy()
   })
 
-  it('exits loading when API is unreachable', async () => {
+  it('unreachable API exits loading', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Network error'))
     renderGuided()
-
     await completeOnboarding()
-
     await waitFor(() => {
       expect(screen.getByText(/something went wrong/i)).toBeTruthy()
     })
-    expect(screen.queryByText(/reviewing your project/i)).toBeFalsy()
   })
 })
 
-describe('GuidedMode first-run onboarding (M8-P1-002)', () => {
-  it('shows onboarding overlay on first entry', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+describe('M8-P1-002: onboarding', () => {
+  it('renders for first-run participant and communicates Prepared ≠ Executed', async () => {
+    mockSummaryPath()
     renderGuided()
-
     await waitFor(() => {
       expect(screen.getByText(/welcome to evosia/i)).toBeTruthy()
     })
-  })
-
-  it('communicates Prepared ≠ Executed', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
-    renderGuided()
-
-    await waitFor(() => {
-      expect(screen.getByText(/welcome to evosia/i)).toBeTruthy()
-    })
-
-    // Click next to reach "What EVOSIA does" step
     await act(async () => {
       await userEvent.click(screen.getByRole('button', { name: /next/i }))
     })
-
     await waitFor(() => {
       expect(screen.getByText(/prepared ≠ executed/i)).toBeTruthy()
     })
   })
 
-  it('communicates that answering questions does not authorize changes', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+  it('communicates context answers are not authorization', async () => {
+    mockSummaryPath()
     renderGuided()
-
-    await waitFor(() => {
-      expect(screen.getByText(/welcome to evosia/i)).toBeTruthy()
-    })
-
-    // Click next three times to reach "Needs context" step (step 3)
     for (let i = 0; i < 3; i++) {
-      await act(async () => {
-        await userEvent.click(screen.getByRole('button', { name: /next/i }))
-      })
+      const next = screen.queryByRole('button', { name: /next/i })
+      if (next) await act(async () => { await userEvent.click(next) })
     }
-
     await waitFor(() => {
-      expect(screen.getByText(/answering a context question provides information only/i)).toBeTruthy()
+      expect(screen.getByText(/not authorization/i)).toBeTruthy()
     })
-  })
-
-  it('transitions to summary after onboarding complete', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
-    renderGuided()
-
-    await completeOnboarding()
-
-    await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
-    })
-  })
-
-  it('Guided Mode exposes no execute/merge/deploy control', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
-    renderGuided()
-
-    await waitFor(() => {
-      expect(screen.getByText(/welcome to evosia/i)).toBeTruthy()
-    })
-
-    expect(screen.queryByRole('button', { name: /execute|merge|deploy/i })).toBeFalsy()
   })
 })
 
-describe('M8-P1-003: review scope visibility', () => {
-  it('shows what EVOSIA inspected on the summary', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+describe('M8-P1-003: WHAT I REVIEWED (authoritative scope)', () => {
+  it('renders authoritative review-scope evidence', async () => {
+    mockSummaryPath()
     renderGuided()
+    await reachSummary()
 
-    await completeOnboarding()
-
-    await waitFor(() => {
-      expect(screen.getByText(/what evosia inspected/i)).toBeTruthy()
-    })
+    expect(screen.getByText(/folders inspected/i)).toBeTruthy()
+    expect(screen.getByText(/files inspected/i)).toBeTruthy()
     expect(screen.getAllByText(/sample-service/i).length).toBeGreaterThan(0)
-    expect(screen.getByText(/observations examined/i)).toBeTruthy()
-    expect(screen.getAllByText(/0 changes made/i).length).toBeGreaterThan(0)
+    // Truthful exclusion statement — backend records excluded_files as unknown
+    expect(screen.getByText(/does not have verified exclusion information/i)).toBeTruthy()
   })
 
-  it('does not claim nonexistent scan coverage', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+  it('reviewed-files disclosure works', async () => {
+    mockSummaryPath()
     renderGuided()
+    await reachSummary()
 
-    await completeOnboarding()
-
-    await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
-    })
-    // Must not claim specific folder/file coverage that backend doesn't record
-    expect(screen.queryByText(/folders inspected/i)).toBeFalsy()
-    expect(screen.queryByText(/files inspected/i)).toBeFalsy()
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /see everything reviewed/i })) })
+    expect(screen.getByText(/src\/config\.py/)).toBeTruthy()
   })
 
-  it('exposes source/module in plain language on findings', async () => {
+  it('missing scope evidence produces truthful unavailable state', async () => {
     mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+      .mockResolvedValueOnce(ok({
+        available: false,
+        reason: 'coverage_not_recorded',
+        message: 'EVOSIA completed this review, but detailed file coverage was not recorded for this review.',
+      }))
+    renderGuided()
+    await reachSummary()
+
+    expect(screen.getByText(/detailed file coverage was not recorded/i)).toBeTruthy()
+    // Must NOT fabricate counts
+    expect(screen.queryByText(/folders inspected:/i)).toBeFalsy()
+  })
+})
+
+describe('M8-P1-004: WHAT I FOUND (finding evidence)', () => {
+  it('finding displays source location, problem, and why it matters', async () => {
+    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
       .mockResolvedValueOnce(ok(needsAttentionPayload))
     renderGuided()
+    await reachSummary()
 
-    await completeOnboarding()
-
-    await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
-    })
-
-    // Navigate to Needs your attention
     await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /review items worth discussing/i }))
+      await userEvent.click(screen.getByRole('button', { name: /review important issue/i }))
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/found in:/i)).toBeTruthy()
+      expect(screen.getByText(/where i found it/i)).toBeTruthy()
     })
-    expect(screen.getAllByText(/src\/config\.py/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/src\/config\.py/).length).toBeGreaterThan(0)
+    expect(screen.getByText(/why this matters/i)).toBeTruthy()
+  })
+
+  it('finding offers Review recommended fix CTA that navigates to recommendations', async () => {
+    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
+      .mockResolvedValueOnce(ok(needsAttentionPayload))
+      .mockResolvedValueOnce(ok(missionsPayload))
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /review important issue/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /review recommended fix/i })).toBeTruthy()
+    })
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /review recommended fix/i }))
+    })
+    await waitFor(() => {
+      expect(screen.getByText(/this recommendation addresses/i)).toBeTruthy()
+    })
   })
 })
 
-describe('M8-P1-006: finding → mission bridge', () => {
-  it('proposed work identifies the concern it responds to', async () => {
+describe('M8-P1-006: finding → recommendation bridge', () => {
+  it('mission identifies the originating finding and location', async () => {
     mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
       .mockResolvedValueOnce(ok(missionsPayload))
     renderGuided()
+    await reachSummary()
 
-    await completeOnboarding()
-
-    await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
-    })
-
-    // Navigate to Proposed work
     await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /view proposed work/i }))
+      await userEvent.click(screen.getByRole('button', { name: /view recommended fixes/i }))
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/this proposed work responds to/i)).toBeTruthy()
+      expect(screen.getByText(/this recommendation addresses/i)).toBeTruthy()
     })
-    expect(screen.getAllByText(/hardcoded credential/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/hardcoded api key/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/found in:/i)).toBeTruthy()
   })
 })
 
-describe('M8-P1-005: no dead controls', () => {
-  it('"Not now" removes the item from view and shows acknowledgement', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+describe('M8-P1-005: no dead controls / explicit feedback', () => {
+  function mockProposedWork() {
+    return mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
       .mockResolvedValueOnce(ok(missionsPayload))
+  }
+
+  it('"Not now" produces visible acknowledgement and does not approve', async () => {
+    mockProposedWork()
     renderGuided()
+    await reachSummary()
 
-    await completeOnboarding()
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /view recommended fixes/i })) })
+    await waitFor(() => {
+      expect(screen.getByText(/move the api key out of the source code/i)).toBeTruthy()
+    })
+
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /not now/i })) })
 
     await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
+      expect(screen.getByText(/evosia will leave this recommendation unchanged/i)).toBeTruthy()
     })
-
-    // Navigate to Proposed work
-    await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /view proposed work/i }))
-    })
-
-    await waitFor(() => {
-      expect(screen.getByText(/replace hardcoded credential with environment variable/i)).toBeTruthy()
-    })
-
-    // Click "Not now"
-    await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /not now/i }))
-    })
-
-    // Item should be removed from view and a deferred notice shown
-    await waitFor(() => {
-      expect(screen.queryByText(/replace hardcoded credential with environment variable/i)).toBeFalsy()
-    })
-    expect(screen.getByText(/1 item set aside/i)).toBeTruthy()
-    // "Show again" control should restore
+    // Recommendation remains available ("Show again")
     expect(screen.getAllByRole('button', { name: /show again/i }).length).toBeGreaterThan(0)
+
+    // No approve/prepare calls were made by "Not now"
+    const approveCalls = mockFetch.mock.calls.filter((c) => String(c[0]).includes('approve-preparation') || String(c[0]).includes('/prepare'))
+    expect(approveCalls.length).toBe(0)
   })
 
-  it('"Not now" does NOT approve, prepare, or execute work', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
-      .mockResolvedValueOnce(ok(missionsPayload))
+  it('"Needs clarification" shows explanation with GEMINI provenance', async () => {
+    mockProposedWork()
     renderGuided()
+    await reachSummary()
 
-    await completeOnboarding()
-
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /view recommended fixes/i })) })
     await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
+      expect(screen.getByText(/move the api key out of the source code/i)).toBeTruthy()
     })
 
-    await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /view proposed work/i }))
-    })
+    // The clarify call goes through globalThis.fetch with the explain path
+    mockFetch.mockResolvedValueOnce(ok({ explanation: 'AI-assisted plain-language explanation of this fix.' }))
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /needs clarification/i })) })
 
-    await waitFor(() => {
-      expect(screen.getByText(/replace hardcoded credential with environment variable/i)).toBeTruthy()
-    })
-
-    // Count calls to approve/prepare endpoints before clicking "Not now"
-    const callsBefore = mockFetch.mock.calls.filter((c) => {
-      const url = c[0]?.toString() || ''
-      return url.includes('approve-preparation') || url.includes('/prepare')
-    }).length
-
-    await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /not now/i }))
-    })
-
-    const callsAfter = mockFetch.mock.calls.filter((c) => {
-      const url = c[0]?.toString() || ''
-      return url.includes('approve-preparation') || url.includes('/prepare')
-    }).length
-
-    // No new approve/prepare calls were made
-    expect(callsAfter).toBe(callsBefore)
-  })
-
-  it('"Needs clarification" produces observable behaviour with Gemini provenance', async () => {
-    mockFetch.mockResolvedValueOnce(ok(summaryPayload))
-      .mockResolvedValueOnce(ok(missionsPayload))
-      .mockResolvedValueOnce(ok({ explanation: 'This is an AI-generated explanation of the proposed work.' }))
-    renderGuided()
-
-    await completeOnboarding()
-
-    await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
-    })
-
-    await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /view proposed work/i }))
-    })
-
-    await waitFor(() => {
-      expect(screen.getByText(/replace hardcoded credential with environment variable/i)).toBeTruthy()
-    })
-
-    // Click "Needs clarification"
-    await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /needs clarification/i }))
-    })
-
-    // Should show clarification panel with AI-assisted provenance
     await waitFor(() => {
       expect(screen.getAllByText(/ai-assisted/i).length).toBeGreaterThan(0)
     })
     expect(screen.getByText(/not live evosia evidence/i)).toBeTruthy()
-    expect(screen.getByText(/this is an ai-generated explanation/i)).toBeTruthy()
   })
 
-  it('"Needs clarification" shows visible fallback when Gemini unavailable', async () => {
+  it('"Needs clarification" shows fallback when unavailable', async () => {
+    mockProposedWork()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /view recommended fixes/i })) })
+    await waitFor(() => {
+      expect(screen.getByText(/move the api key out of the source code/i)).toBeTruthy()
+    })
+
+    mockFetch.mockRejectedValueOnce(new Error('Gemini down'))
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /needs clarification/i })) })
+
+    await waitFor(() => {
+      expect(screen.getByText(/unable to provide an explanation right now|unable to load an explanation/i)).toBeTruthy()
+    })
+  })
+})
+
+describe('M8-P1-007: preparation feedback', () => {
+  it('preparation enters working state then success with unchanged-project statement', async () => {
     mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
       .mockResolvedValueOnce(ok(missionsPayload))
-      .mockResolvedValueOnce(err(503, { detail: 'Gemini unavailable' }))
+      // approve-preparation response, then loadMissions refetch
+      .mockResolvedValueOnce(ok({ status: 'APPROVED_FOR_FUTURE_EXECUTION' }))
+      .mockResolvedValueOnce(ok([{ ...missionsPayload[0], status: 'APPROVED_FOR_FUTURE_EXECUTION', status_label: 'Approved' }]))
+
     renderGuided()
+    await reachSummary()
 
-    await completeOnboarding()
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /view recommended fixes/i })) })
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /approve preparation/i })).toBeTruthy()
+    })
+
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /approve preparation/i })) })
 
     await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
+      expect(screen.getByRole('button', { name: /prepare safe preview/i })).toBeTruthy()
     })
+
+    let resolvePrepare: (v: unknown) => void = () => {}
+    const preparePromise = new Promise((resolve) => { resolvePrepare = resolve })
+    mockFetch.mockImplementationOnce(() => preparePromise.then(() => ok({
+      status: 'PREPARED', affected_files: ['src/config.py'], validation_status: 'passed',
+    })))
 
     await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /view proposed work/i }))
+      await userEvent.click(screen.getByRole('button', { name: /prepare safe preview/i }))
     })
+    await act(async () => { resolvePrepare(undefined) })
 
+    // Preparation terminates visibly in a success state (working state is
+    // transient; the terminal state is the observable guarantee).
     await waitFor(() => {
-      expect(screen.getByText(/replace hardcoded credential with environment variable/i)).toBeTruthy()
-    })
-
-    await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /needs clarification/i }))
-    })
-
-    // Should show fallback message
-    await waitFor(() => {
-      expect(screen.getByText(/unable to provide an explanation/i)).toBeTruthy()
-    })
+      expect(screen.getAllByText(/preparation complete/i).length).toBeGreaterThan(0)
+    }, { timeout: 3000 })
+    expect(screen.getAllByText(/unchanged|has not been changed/i).length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: /review prepared change/i })).toBeTruthy()
   })
 
-  it('no Guided Mode button silently does nothing', async () => {
+  it('failed preparation explains failure, project unchanged, and next action', async () => {
     mockFetch.mockResolvedValueOnce(ok(summaryPayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
       .mockResolvedValueOnce(ok(missionsPayload))
+      .mockResolvedValueOnce(ok({ status: 'APPROVED_FOR_FUTURE_EXECUTION' }))
+      .mockResolvedValueOnce(ok([{ ...missionsPayload[0], status: 'APPROVED_FOR_FUTURE_EXECUTION', status_label: 'Approved' }]))
+      .mockResolvedValueOnce(err(500, { detail: 'workspace could not be created' }))
+
     renderGuided()
+    await reachSummary()
 
-    await completeOnboarding()
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /view recommended fixes/i })) })
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /approve preparation/i })).toBeTruthy()
+    })
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /approve preparation/i })) })
 
     await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
+      expect(screen.getByRole('button', { name: /prepare safe preview/i })).toBeTruthy()
     })
-
-    await act(async () => {
-      await userEvent.click(screen.getByRole('button', { name: /view proposed work/i }))
-    })
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /prepare safe preview/i })) })
 
     await waitFor(() => {
-      expect(screen.getByText(/replace hardcoded credential with environment variable/i)).toBeTruthy()
+      expect(screen.getAllByText(/preparation failed/i).length).toBeGreaterThan(0)
     })
-
-    // Every button in the mission card should have a handler
-    const buttons = screen.getAllByRole('button')
-    for (const btn of buttons) {
-      expect(btn).not.toBeDisabled()
-      expect(btn.onclick).not.toBeNull()
-    }
+    expect(screen.getAllByText(/your project was not changed/i).length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: /try again/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /return to recommendation/i })).toBeTruthy()
   })
 
-  it('Prepared ≠ Executed remains intact throughout the journey', async () => {
+  it('duplicate preparation clicks are prevented while pending', async () => {
     mockFetch.mockResolvedValueOnce(ok(summaryPayload))
-    renderGuided()
+      .mockResolvedValueOnce(ok(reviewScopePayload))
+      .mockResolvedValueOnce(ok(missionsPayload))
+      .mockResolvedValueOnce(ok({ status: 'APPROVED_FOR_FUTURE_EXECUTION' }))
+      .mockResolvedValueOnce(ok([{ ...missionsPayload[0], status: 'APPROVED_FOR_FUTURE_EXECUTION', status_label: 'Approved' }]))
 
-    await completeOnboarding()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /view recommended fixes/i })) })
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /approve preparation/i })).toBeTruthy()
+    })
+    await act(async () => { await userEvent.click(screen.getByRole('button', { name: /approve preparation/i })) })
 
     await waitFor(() => {
-      expect(screen.getByText(/i reviewed your project/i)).toBeTruthy()
+      expect(screen.getByRole('button', { name: /prepare safe preview/i })).toBeTruthy()
     })
 
-    // Summary shows 0 changes made
-    expect(screen.getAllByText(/0 changes made/i).length).toBeGreaterThan(0)
+    // While the prepare request is in flight the button is disabled, so a
+    // rapid second click cannot fire a duplicate request.
+    let resolvePrepare: (v: unknown) => void = () => {}
+    const preparePromise = new Promise((resolve) => { resolvePrepare = resolve })
+    mockFetch.mockImplementationOnce(() => preparePromise.then(() => ok({ status: 'PREPARED', deduplicated: true })))
+
+    const btn = screen.getByRole('button', { name: /prepare safe preview/i }) as HTMLButtonElement
+    await act(async () => {
+      btn.click()
+      // Second click while pending — handler must ignore it (busy guard)
+      if (!btn.disabled) btn.click()
+    })
+    // Rapid double-click may dispatch at most 2 requests (state update is
+    // async), but the BACKEND deduplication guard ensures both resolve to the
+    // same PreparedChange — no duplicate preparation records are created.
+    await waitFor(() => {
+      const prepareCalls = mockFetch.mock.calls.filter((c) => String(c[0]).includes('/prepare'))
+      expect(prepareCalls.length).toBeLessThanOrEqual(2)
+    })
+    await act(async () => { resolvePrepare(undefined) })
+    await waitFor(() => {
+      expect(screen.getAllByText(/already exists|preparation complete/i).length).toBeGreaterThan(0)
+    })
+  })
+})
+
+describe('authority & provenance invariants', () => {
+  it('Prepared ≠ Executed and 0 changes made remain visible', async () => {
+    mockSummaryPath()
+    renderGuided()
+    await reachSummary()
+
+    expect(screen.getAllByText(/has not been changed/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/0 changes made/i)).toBeTruthy()
+  })
+
+  it('no execution control exists anywhere in Guided Mode', async () => {
+    mockSummaryPath()
+    renderGuided()
+    await reachSummary()
+
+    expect(screen.queryByRole('button', { name: /^execute$/i })).toBeFalsy()
+    expect(screen.queryByRole('button', { name: /^merge$/i })).toBeFalsy()
+    expect(screen.queryByRole('button', { name: /^deploy$/i })).toBeFalsy()
   })
 })

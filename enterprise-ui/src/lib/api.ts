@@ -73,6 +73,10 @@ export const guidedClient = {
     const qs = repositoryId ? `?repository_id=${encodeURIComponent(repositoryId)}` : '';
     return guidedApi(`/prepared-changes${qs}`);
   },
+  async reviewScope(repositoryId?: string): Promise<any> {
+    const qs = repositoryId ? `?repository_id=${encodeURIComponent(repositoryId)}` : '';
+    return guidedApi(`/review-scope${qs}`);
+  },
   async getPreparedChange(preparedId: string): Promise<any> {
     return guidedApi(`/prepared-changes/${preparedId}`);
   },

@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Finding, FindingAdjudication, Mission, PreparedChange, ProjectContext, Repository, User
+from ..models import Finding, FindingAdjudication, Mission, PreparedChange, ProjectContext, Repository, ScanJob, User
 from ..services import get_current_user
 
 router = APIRouter()
@@ -241,6 +241,56 @@ def guided_summary(
             "execution_enabled": False,
             "mutation_enabled": False,
         },
+    }
+
+
+@router.get("/review-scope")
+def review_scope(
+    repository_id: str | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Authoritative review scope: what the scanner actually inspected.
+
+    Served from ScanJob.metadata_json["review_scope"], recorded during the
+    real repository walk. If no scan has recorded coverage, returns an
+    explicit unavailable state — never fabricated counts.
+    """
+    job_q = db.query(ScanJob)
+    if repository_id:
+        job_q = job_q.filter(ScanJob.repository_id == repository_id)
+    job = (
+        job_q.filter(ScanJob.status == "completed")
+        .order_by(ScanJob.completed_at.desc().nullslast(), ScanJob.created_at.desc())
+        .first()
+    ) or (
+        job_q.order_by(ScanJob.created_at.desc()).first()
+    )
+    if not job:
+        return {"available": False, "reason": "no_review"}
+    scope = (job.metadata_json or {}).get("review_scope")
+    if not scope:
+        return {
+            "available": False,
+            "reason": "coverage_not_recorded",
+            "scan_id": job.id,
+            "review_status": job.status,
+            "started_at": job.started_at.isoformat() if job.started_at else None,
+            "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+            "message": (
+                "EVOSIA completed this review, but detailed file coverage "
+                "was not recorded for this review."
+            ),
+        }
+    return {
+        "available": True,
+        "scan_id": job.id,
+        "repository_name": (job.repository_rel.name if job.repository_rel else None),
+        "review_status": job.status,
+        "started_at": job.started_at.isoformat() if job.started_at else None,
+        "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+        "provenance": "LIVE_EVOSIA_EVIDENCE",
+        **scope,
     }
 
 
@@ -590,6 +640,40 @@ def prepare_change(
     if not repository:
         raise HTTPException(status_code=404, detail="Repository not found")
 
+    # Duplicate-preparation guard: an in-flight or already-completed
+    # preparation exists for this mission. Return it instead of silently
+    # creating another record from a repeated click.
+    existing = (
+        db.query(PreparedChange)
+        .filter(
+            PreparedChange.mission_id == mission.id,
+            PreparedChange.status.in_(["preparing", "PREPARED"]),
+        )
+        .order_by(PreparedChange.created_at.desc())
+        .first()
+    )
+    if existing is not None:
+        return {
+            "prepared_change_id": existing.id,
+            "mission_id": mission.id,
+            "status": existing.status,
+            "workspace_path": existing.workspace_path,
+            "affected_files": existing.affected_files,
+            "diff_content": existing.diff_content,
+            "rollback_representation": existing.rollback_representation,
+            "validation_status": existing.validation_status,
+            "validation_output": existing.validation_output,
+            "execution_authorized": False,
+            "deduplicated": True,
+            "message": (
+                "A prepared change already exists for this recommendation. "
+                "Nothing has been executed, merged, or deployed."
+                if existing.status == "PREPARED"
+                else "Preparation is already in progress for this recommendation."
+            ),
+            "preparation_result": {"status": "existing", "prepared_change_id": existing.id},
+        }
+
     prepared = PreparedChange(
         mission_id=mission.id,
         repository_id=mission.repository_id,
@@ -779,12 +863,7 @@ def explain_mission_route(
         "title": mission.title,
         "plain_title": mission.title,
         "what": mission.description or "",
-        "why": mission.scope or "",
-        "benefit": mission.rollback or "",
-        "risk": mission.rollback or "",
-        "scope": mission.scope or "",
-        "validation": mission.rollback or "",
-        "rollback": mission.rollback or "",
+        "why": mission.mission_type or "",
     }
     return _explain_mission(safe)
 

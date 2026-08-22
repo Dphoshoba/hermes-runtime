@@ -193,7 +193,7 @@ export default function GuidedModePage() {
         {step === 'summary' && summary && (
           <SummaryView summary={summary} onNavigate={setStep} />
         )}
-        {step === 'needs-attention' && <NeedsAttentionView />}
+        {step === 'needs-attention' && <NeedsAttentionView onNavigate={setStep} />}
         {step === 'needs-context' && <NeedsContextView />}
         {step === 'mission-decision' && <MissionDecisionView onPreparedChange={() => setStep('prepared-change')} />}
         {step === 'prepared-change' && <PreparedChangeReview onBack={() => setStep('mission-decision')} />}
@@ -289,6 +289,21 @@ function SummaryView({
   onNavigate: (s: GuidedStep) => void;
 }) {
   const { isDemo } = useMode();
+  const [scope, setScope] = useState<any>(null);
+  const [scopeState, setScopeState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    guidedClient
+      .reviewScope()
+      .then((s) => { if (!cancelled) { setScope(s); setScopeState('ready'); } })
+      .catch(() => { if (!cancelled) setScopeState('error'); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const fmtDate = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' }) : null;
 
   return (
     <div className="guided-summary">
@@ -302,7 +317,54 @@ function SummaryView({
             ? `Project: ${summary.repository_name}`
             : 'Your project'}
         </p>
-        <div className="summary-stats">
+      </div>
+
+      {/* WHAT I REVIEWED — authoritative review scope */}
+      <div className="review-scope card" data-testid="review-scope">
+        <h3>What I reviewed</h3>
+        {scopeState === 'loading' && <p className="muted">Checking review coverage…</p>}
+        {scopeState === 'error' && (
+          <p className="muted">
+            EVOSIA completed this review, but detailed file coverage could not be loaded right now.
+          </p>
+        )}
+        {scopeState === 'ready' && scope && !scope.available && (
+          <p className="muted">{scope.message || 'EVOSIA completed this review, but detailed file coverage was not recorded for this review.'}</p>
+        )}
+        {scopeState === 'ready' && scope?.available && (
+          <>
+            <p>
+              Review complete{scope.completed_at ? ` · ${fmtDate(scope.completed_at)}` : ''}
+            </p>
+            <ul className="scope-list">
+              <li>Project: <strong>{scope.repository_name || scope.scope_root}</strong></li>
+              <li>Folders inspected: <strong>{scope.total_folders_inspected}</strong></li>
+              <li>Files inspected: <strong>{scope.total_files_inspected}</strong></li>
+              {scope.folders_inspected?.length > 0 && (
+                <li>Examples: {scope.folders_inspected.slice(0, 3).map((f: string) => <code key={f}>{f}/</code>)}</li>
+              )}
+              <li>
+                Excluded/skipped:{' '}
+                {scope.excluded_files == null
+                  ? <>EVOSIA does not have verified exclusion information for this review.</>
+                  : <strong>{scope.excluded_files} files</strong>}
+              </li>
+            </ul>
+            <button className="btn btn-sm" onClick={() => setShowAll((v) => !v)}>
+              {showAll ? 'Hide full list' : 'See everything reviewed'}
+            </button>
+            {showAll && scope.files_inspected?.length > 0 && (
+              <ul>
+                {scope.files_inspected.map((f: string) => <li key={f}><code>{f}</code></li>)}
+              </ul>
+            )}
+            {scope.exclusion_note && <p className="muted">{scope.exclusion_note}</p>}
+          </>
+        )}
+        <p className="muted"><strong>Your project has not been changed.</strong> EVOSIA only inspects and explains.</p>
+      </div>
+
+      <div className="summary-stats">
           <div className="summary-stat">
             <div className="stat-number">{summary.total_findings}</div>
             <div className="stat-label">Examined</div>
@@ -319,26 +381,12 @@ function SummaryView({
             <div className="stat-number red">{summary.important_issue}</div>
             <div className="stat-label">Important</div>
           </div>
-        </div>
-      </div>
-
-      {/* Review scope: what EVOSIA inspected */}
-      <div className="review-scope card">
-        <h3>What EVOSIA inspected</h3>
-        <p className="muted">EVOSIA reviewed your project files, dependencies, and structure.</p>
-        <ul className="scope-list">
-          <li><strong>{summary.total_findings}</strong> observations examined</li>
-          <li>Project: <strong>{summary.repository_name || 'your project'}</strong></li>
-        </ul>
-        <p className="muted">
-          <strong>Right now: 0 changes made.</strong> EVOSIA only inspects and explains.
-        </p>
       </div>
 
       <div className="summary-actions">
         {summary.needs_attention > 0 && (
           <button className="btn btn-primary" onClick={() => onNavigate('needs-attention')}>
-            Review items worth discussing
+            Review important issue
           </button>
         )}
         {summary.needs_context > 0 && (
@@ -348,7 +396,7 @@ function SummaryView({
         )}
         {summary.proposed_work > 0 && (
           <button className="btn" onClick={() => onNavigate('mission-decision')}>
-            View proposed work ({summary.proposed_work})
+            View recommended fixes ({summary.proposed_work})
           </button>
         )}
         {summary.needs_attention === 0 && summary.needs_context === 0 && summary.proposed_work === 0 && (
@@ -379,7 +427,7 @@ function SummaryView({
   );
 }
 
-function NeedsAttentionView() {
+function NeedsAttentionView({ onNavigate }: { onNavigate?: (s: GuidedStep) => void }) {
   const [items, setItems] = useState<NeedsAttentionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -400,7 +448,7 @@ function NeedsAttentionView() {
   return (
     <div className="needs-attention">
       <div className="view-header-row">
-        <h2>Worth discussing</h2>
+        <h2>What I found</h2>
         <ProvenanceBadge provenance={isDemo ? 'demo' : 'live'} />
       </div>
       <p className="muted">These are items a human reviewer flagged as worth addressing.</p>
@@ -408,15 +456,22 @@ function NeedsAttentionView() {
         {items.map((item) => (
           <div key={item.finding_id} className="card attention-card">
             <h3>{item.plain_title}</h3>
-            <p className="why-matters">{item.why_it_matters}</p>
-            {/* Plain-language source location */}
             {item.technical?.module != null && (
-              <p className="finding-source muted">Found in: <strong>{String(item.technical.module)}</strong></p>
+              <p className="finding-source">Where I found it: <strong>{String(item.technical.module)}</strong></p>
             )}
+            <p className="why-matters"><strong>Why this matters:</strong> {item.why_it_matters}</p>
             <div className="card-meta">
               <span className="badge badge-blue">{item.category}</span>
               <span className={`badge badge-${item.severity}`}>{item.severity}</span>
             </div>
+            {item.has_human_decision && onNavigate && (
+              <button
+                className="btn btn-primary"
+                onClick={() => onNavigate('mission-decision')}
+              >
+                Review recommended fix
+              </button>
+            )}
             <details className="technical-details">
               <summary>Technical details</summary>
               <pre>{JSON.stringify(item.technical, null, 2)}</pre>
@@ -497,6 +552,8 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
   const [busy, setBusy] = useState<string | null>(null);
   const [deferred, setDeferred] = useState<Set<string>>(new Set());
   const [clarification, setClarification] = useState<{ missionId: string; text: string; error: boolean } | null>(null);
+  const [prepOutcome, setPrepOutcome] = useState<{ missionId: string; status: 'working' | 'success' | 'failed'; message: string } | null>(null);
+  const [deferredNotice, setDeferredNotice] = useState(false);
   const { isDemo } = useMode();
 
   const loadMissions = useCallback(() => {
@@ -525,21 +582,51 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
   };
 
   const handlePrepare = async (missionId: string) => {
+    // Duplicate-preparation protection: ignore clicks while a preparation
+    // request for this mission is already in flight.
+    if (busy === missionId) return;
     setBusy(missionId);
+    setPrepOutcome({ missionId, status: 'working', message: 'Preparing a safe preview… Your live project has not been changed.' });
     try {
-      await guidedClient.prepareChange(missionId);
-      onPreparedChange();
+      const res = await guidedClient.prepareChange(missionId);
+      if (res?.status === 'PREPARED') {
+        setPrepOutcome({
+          missionId,
+          status: 'success',
+          message:
+            'Preparation complete. A candidate change was created in an isolated workspace and validated. Your project has not been changed.',
+        });
+      } else if (res?.deduplicated) {
+        setPrepOutcome({
+          missionId,
+          status: 'success',
+          message: res.message || 'A prepared change already exists for this recommendation. Nothing has been executed.',
+        });
+      } else {
+        const detail = res?.validation_output || res?.message || 'The change could not be prepared.';
+        setPrepOutcome({
+          missionId,
+          status: 'failed',
+          message: `Preparation failed. Your project was not changed. What happened: ${detail}`,
+        });
+      }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to prepare change');
+      const detail = e instanceof Error ? e.message : 'Unknown error';
+      setPrepOutcome({
+        missionId,
+        status: 'failed',
+        message: `Preparation failed. Your project was not changed. What happened: ${detail}`,
+      });
     } finally {
       setBusy(null);
     }
   };
 
-  // "Not now" — truthful local deferral. Removes the item from view and
-  // acknowledges the action. No backend persistence, no approval, no execution.
+  // "Not now" — truthful local deferral with visible acknowledgement. No
+  // approval, no preparation, no repository mutation, no persistence claim.
   const handleDefer = (missionId: string) => {
     setDeferred((prev) => new Set(prev).add(missionId));
+    setDeferredNotice(true);
   };
 
   // "Needs clarification" — uses the governed Gemini explanation layer with
@@ -553,7 +640,7 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
       const data = await res.json();
       setClarification({ missionId, text: data.explanation || data.text || 'No explanation available.', error: false });
     } catch {
-      setClarification({ missionId, text: 'EVOSIA is unable to provide an explanation right now. Please try again later.', error: true });
+      setClarification({ missionId, text: 'EVOSIA is unable to load an explanation right now. Based on the review evidence, this recommendation addresses the finding shown above. Please try again later.', error: true });
     } finally {
       setBusy(null);
     }
@@ -580,10 +667,14 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
         <div className="card-list">
           {visibleMissions.map((m) => (
             <div key={m.mission_id} className="card mission-card">
+              {/* Finding → Recommendation bridge */}
               {m.originating_finding && (
-                <div className="mission-source muted">
-                  This proposed work responds to: <strong>{m.originating_finding}</strong>
+                <div className="mission-source">
+                  This recommendation addresses:<br /><strong>{m.originating_finding}</strong>
                 </div>
+              )}
+              {m.scope && (
+                <p className="finding-source">Found in: <strong>{m.scope}</strong></p>
               )}
               <div className="mission-header">
                 <h3>{m.plain_title}</h3>
@@ -615,6 +706,44 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
               <div className="authority-statement card highlight">
                 <strong>If you approve:</strong> {m.authority_consequence}
               </div>
+              {/* Preparation outcome: IDLE → WORKING → SUCCESS/FAILURE */}
+              {prepOutcome?.missionId === m.mission_id && (
+                <div
+                  role="status"
+                  className={`prep-outcome card ${prepOutcome.status === 'failed' ? 'prep-failed' : prepOutcome.status === 'success' ? 'prep-success' : ''}`}
+                >
+                  {prepOutcome.status === 'working' && (
+                    <>
+                      <strong>Preparing a safe preview…</strong>
+                      <p className="muted">Your live project has not been changed.</p>
+                    </>
+                  )}
+                  {prepOutcome.status === 'success' && (
+                    <>
+                      <strong>Preparation complete</strong>
+                      <p>{prepOutcome.message}</p>
+                      <p className="muted"><strong>Your live project: UNCHANGED.</strong> Nothing has been merged, deployed, or applied to production.</p>
+                      <button className="btn btn-primary" onClick={onPreparedChange}>Review prepared change</button>
+                    </>
+                  )}
+                  {prepOutcome.status === 'failed' && (
+                    <>
+                      <strong>Preparation failed</strong>
+                      <p>{prepOutcome.message}</p>
+                      <p className="muted"><strong>Your project was not changed.</strong></p>
+                      <div className="prep-actions">
+                        <button className="btn btn-primary" onClick={() => handlePrepare(m.mission_id)} disabled={busy === m.mission_id}>Try again</button>
+                        <button className="btn btn-sm" onClick={() => handleClarify(m.mission_id)} disabled={busy === m.mission_id}>Ask EVOSIA to explain</button>
+                        <button className="btn btn-sm" onClick={() => setPrepOutcome(null)}>Return to recommendation</button>
+                      </div>
+                      <details className="technical-details">
+                        <summary>Technical details</summary>
+                        <pre>{m.technical ? JSON.stringify(m.technical, null, 2) : 'No additional diagnostic detail recorded.'}</pre>
+                      </details>
+                    </>
+                  )}
+                </div>
+              )}
               <div className="mission-actions">
                 {m.status === 'DRAFT' || m.status === 'NEEDS_REFINEMENT' ? (
                   <>
@@ -627,7 +756,7 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
                 ) : m.status === 'APPROVED_FOR_FUTURE_EXECUTION' ? (
                   <>
                     <button className="btn btn-primary" onClick={() => handlePrepare(m.mission_id)} disabled={busy === m.mission_id}>
-                      {busy === m.mission_id ? 'Preparing…' : 'Prepare change'}
+                      {busy === m.mission_id ? 'Preparing a safe preview…' : 'Prepare safe preview'}
                     </button>
                     <p className="muted">Approved for preparation. Nothing executed yet.</p>
                   </>
@@ -643,9 +772,12 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
           ))}
         </div>
       )}
-      {deferred.size > 0 && (
-        <div className="deferred-notice card">
-          <p>{deferred.size} item{deferred.size > 1 ? 's' : ''} set aside. <button className="btn btn-sm" onClick={() => setDeferred(new Set())}>Show again</button></p>
+      {deferredNotice && deferred.size > 0 && (
+        <div role="status" className="deferred-notice card">
+          <p>
+            Okay — EVOSIA will leave this recommendation unchanged. You can look at it again any time.{' '}
+            <button className="btn btn-sm" onClick={() => { setDeferred(new Set()); setDeferredNotice(false); }}>Show again</button>
+          </p>
         </div>
       )}
     </div>

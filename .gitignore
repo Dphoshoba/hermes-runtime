@@ -53,3 +53,6 @@ Thumbs.db
 validation/m8-disposable-repo/.git
 certs/
 *.pem
+
+# Preparation workspaces (runtime artifacts)
+.prep_workspaces/

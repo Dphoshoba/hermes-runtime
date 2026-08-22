@@ -59,6 +59,18 @@ def scan_repository(repo_root: Path) -> dict[str, Any]:
             repo_info = _scan_repository_metadata(repo_root)
             repo_info["file_count"] = result.get("_total_files", 0)
             result["repository"] = repo_info
+            if "_inspected_files" in result:
+                result["review_scope"] = build_review_scope(
+                    repo_root, [Path(p) for p in result["_inspected_files"]]
+                )
+            else:
+                result["review_scope"] = {
+                    "available": False,
+                    "exclusion_note": (
+                        "EVOSIA completed this review, but detailed file "
+                        "coverage was not recorded by this scanner."
+                    ),
+                }
             result["schema_version"] = "2"
             return result
     except ImportError:
@@ -82,6 +94,7 @@ def scan_repository(repo_root: Path) -> dict[str, Any]:
         "dependencies": deps,
         "configuration": config,
         "cli_entry_points": cli_entries,
+        "review_scope": build_review_scope(repo_root, py_files),
         "schema_version": "1",
     }
 
@@ -143,6 +156,45 @@ def _discover_python_files(repo_root: Path) -> list[Path]:
             if fname.endswith(".py"):
                 py_files.append(Path(dirpath) / fname)
     return sorted(py_files)
+
+
+# Directories excluded from review. Authoritative record of the exclusion
+# policy applied during file discovery (mirrors _discover_python_files).
+REVIEW_EXCLUDED_DIRS = (
+    "__pycache__", "node_modules", ".tox", ".eggs", ".nox", "venv", ".venv",
+)
+
+
+def build_review_scope(repo_root: Path, inspected: list[Path]) -> dict[str, Any]:
+    """Build an authoritative review-scope record from actual discovery.
+
+    Everything here is derived from the real os.walk performed by
+    _discover_python_files — nothing is inferred or fabricated. Excluded-file
+    names are not individually recorded by the walker, so excluded_files is
+    None (unknown) rather than an invented count.
+    """
+    rel_files = sorted(
+        str(p.relative_to(repo_root)) if p.is_relative_to(repo_root) else str(p)
+        for p in inspected
+    )
+    folders = sorted({str(p.parent) for p in (p.relative_to(repo_root) if p.is_relative_to(repo_root) else p for p in inspected)})
+    return {
+        "scope_root": repo_root.name,
+        "languages": ["python"],
+        "folders_inspected": folders,
+        "files_inspected": rel_files,
+        "total_folders_inspected": len(folders),
+        "total_files_inspected": len(rel_files),
+        "excluded_directories": list(REVIEW_EXCLUDED_DIRS) + ["hidden directories (.*)"],
+        # The walker skips non-.py files without recording them individually,
+        # so a truthful skipped count is not knowable here.
+        "excluded_files": None,
+        "exclusion_note": (
+            "EVOSIA reviewed Python source files. Non-Python files and the "
+            "listed directories were not part of this review. A per-file "
+            "skipped count was not recorded."
+        ),
+    }
 
 
 def _scan_modules(repo_root: Path, py_files: list[Path]) -> list[dict[str, Any]]:
