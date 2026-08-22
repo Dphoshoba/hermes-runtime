@@ -322,6 +322,19 @@ function SummaryView({
         </div>
       </div>
 
+      {/* Review scope: what EVOSIA inspected */}
+      <div className="review-scope card">
+        <h3>What EVOSIA inspected</h3>
+        <p className="muted">EVOSIA reviewed your project files, dependencies, and structure.</p>
+        <ul className="scope-list">
+          <li><strong>{summary.total_findings}</strong> observations examined</li>
+          <li>Project: <strong>{summary.repository_name || 'your project'}</strong></li>
+        </ul>
+        <p className="muted">
+          <strong>Right now: 0 changes made.</strong> EVOSIA only inspects and explains.
+        </p>
+      </div>
+
       <div className="summary-actions">
         {summary.needs_attention > 0 && (
           <button className="btn btn-primary" onClick={() => onNavigate('needs-attention')}>
@@ -396,6 +409,10 @@ function NeedsAttentionView() {
           <div key={item.finding_id} className="card attention-card">
             <h3>{item.plain_title}</h3>
             <p className="why-matters">{item.why_it_matters}</p>
+            {/* Plain-language source location */}
+            {item.technical?.module != null && (
+              <p className="finding-source muted">Found in: <strong>{String(item.technical.module)}</strong></p>
+            )}
             <div className="card-meta">
               <span className="badge badge-blue">{item.category}</span>
               <span className={`badge badge-${item.severity}`}>{item.severity}</span>
@@ -478,6 +495,8 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [deferred, setDeferred] = useState<Set<string>>(new Set());
+  const [clarification, setClarification] = useState<{ missionId: string; text: string; error: boolean } | null>(null);
   const { isDemo } = useMode();
 
   const loadMissions = useCallback(() => {
@@ -517,9 +536,32 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
     }
   };
 
+  // "Not now" — truthful local deferral. Removes the item from view and
+  // acknowledges the action. No backend persistence, no approval, no execution.
+  const handleDefer = (missionId: string) => {
+    setDeferred((prev) => new Set(prev).add(missionId));
+  };
+
+  // "Needs clarification" — uses the governed Gemini explanation layer with
+  // visible GEMINI_EXPLANATION provenance and explicit fallback.
+  const handleClarify = async (missionId: string) => {
+    setBusy(missionId);
+    setClarification({ missionId, text: 'Asking EVOSIA for a plain-language explanation…', error: false });
+    try {
+      const res = await fetch(`/api/guided/explain/mission/${missionId}`, { headers: { Authorization: `Bearer ${localStorage.getItem('evosia_token')}` } });
+      if (!res.ok) throw new Error('Explanation unavailable');
+      const data = await res.json();
+      setClarification({ missionId, text: data.explanation || data.text || 'No explanation available.', error: false });
+    } catch {
+      setClarification({ missionId, text: 'EVOSIA is unable to provide an explanation right now. Please try again later.', error: true });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   if (loading) return <p>Loading…</p>;
   if (error) return <p className="error-msg">{error}</p>;
-  if (missions.length === 0) return <p>No proposed work right now.</p>;
+  const visibleMissions = missions.filter((m) => !deferred.has(m.mission_id));
 
   return (
     <div className="mission-decision">
@@ -532,76 +574,80 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
         permits EVOSIA to <strong>prepare</strong> a change in an isolated workspace. It will
         <strong> not</strong> merge, deploy, or change production.
       </p>
-      <div className="card-list">
-        {missions.map((m) => (
-          <div key={m.mission_id} className="card mission-card">
-            <div className="mission-header">
-              <h3>{m.plain_title}</h3>
-              <span className={`badge badge-${m.status === 'APPROVED_FOR_FUTURE_EXECUTION' ? 'green' : m.status === 'PREPARED' ? 'amber' : 'yellow'}`}>
-                {m.status_label}
-              </span>
-            </div>
-            <div className="mission-body">
-              <div className="mission-field">
-                <strong>What:</strong> {m.what}
-              </div>
-              <div className="mission-field">
-                <strong>Why:</strong> {m.why}
-              </div>
-              <div className="mission-field">
-                <strong>Expected benefit:</strong> {m.benefit}
-              </div>
-              <div className="mission-field">
-                <strong>Risk:</strong> {m.risk}
-              </div>
-              <div className="mission-field">
-                <strong>What could change:</strong> {m.scope}
-              </div>
-              <div className="mission-field">
-                <strong>How EVOSIA would verify:</strong> {m.validation}
-              </div>
-              <div className="mission-field">
-                <strong>How to undo:</strong> {m.rollback}
-              </div>
-            </div>
-            <div className="authority-statement card highlight">
-              <strong>If you approve:</strong> {m.authority_consequence}
-            </div>
-            <div className="mission-actions">
-              {m.status === 'DRAFT' || m.status === 'NEEDS_REFINEMENT' ? (
-                <>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => handleApprove(m.mission_id)}
-                    disabled={busy === m.mission_id}
-                  >
-                    {busy === m.mission_id ? 'Approving…' : 'Approve preparation'}
-                  </button>
-                  <button className="btn btn-sm">Not now</button>
-                  <button className="btn btn-sm">Needs clarification</button>
-                </>
-              ) : m.status === 'APPROVED_FOR_FUTURE_EXECUTION' ? (
-                <>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => handlePrepare(m.mission_id)}
-                    disabled={busy === m.mission_id}
-                  >
-                    {busy === m.mission_id ? 'Preparing…' : 'Prepare change'}
-                  </button>
-                  <p className="muted">Approved for preparation. Nothing executed yet.</p>
-                </>
-              ) : (
-                <p className="muted">Prepared change ready for review.</p>
+      {visibleMissions.length === 0 ? (
+        <p>No proposed work right now.</p>
+      ) : (
+        <div className="card-list">
+          {visibleMissions.map((m) => (
+            <div key={m.mission_id} className="card mission-card">
+              {m.originating_finding && (
+                <div className="mission-source muted">
+                  This proposed work responds to: <strong>{m.originating_finding}</strong>
+                </div>
               )}
+              <div className="mission-header">
+                <h3>{m.plain_title}</h3>
+                <span className={`badge badge-${m.status === 'APPROVED_FOR_FUTURE_EXECUTION' ? 'green' : m.status === 'PREPARED' ? 'amber' : 'yellow'}`}>
+                  {m.status_label}
+                </span>
+              </div>
+              <div className="mission-body">
+                <div className="mission-field"><strong>What:</strong> {m.what}</div>
+                <div className="mission-field"><strong>Why:</strong> {m.why}</div>
+                <div className="mission-field"><strong>Expected benefit:</strong> {m.benefit}</div>
+                <div className="mission-field"><strong>Risk:</strong> {m.risk}</div>
+                <div className="mission-field"><strong>What could change:</strong> {m.scope}</div>
+                <div className="mission-field"><strong>How EVOSIA would verify:</strong> {m.validation}</div>
+                <div className="mission-field"><strong>How to undo:</strong> {m.rollback}</div>
+              </div>
+              {clarification?.missionId === m.mission_id && (
+                <div className={`clarification-panel card ${clarification.error ? 'clarification-error' : ''}`}>
+                  <div className="clarification-header">
+                    <strong>{clarification.error ? 'EVOSIA explanation' : 'EVOSIA explanation (AI-assisted)'}</strong>
+                    <button className="btn btn-sm" onClick={() => setClarification(null)}>Dismiss</button>
+                  </div>
+                  <p>{clarification.text}</p>
+                  {!clarification.error && (
+                    <p className="muted provenance-note">This explanation is AI-assisted and is not live EVOSIA evidence.</p>
+                  )}
+                </div>
+              )}
+              <div className="authority-statement card highlight">
+                <strong>If you approve:</strong> {m.authority_consequence}
+              </div>
+              <div className="mission-actions">
+                {m.status === 'DRAFT' || m.status === 'NEEDS_REFINEMENT' ? (
+                  <>
+                    <button className="btn btn-primary" onClick={() => handleApprove(m.mission_id)} disabled={busy === m.mission_id}>
+                      {busy === m.mission_id ? 'Approving…' : 'Approve preparation'}
+                    </button>
+                    <button className="btn btn-sm" onClick={() => handleDefer(m.mission_id)} disabled={busy === m.mission_id}>Not now</button>
+                    <button className="btn btn-sm" onClick={() => handleClarify(m.mission_id)} disabled={busy === m.mission_id}>Needs clarification</button>
+                  </>
+                ) : m.status === 'APPROVED_FOR_FUTURE_EXECUTION' ? (
+                  <>
+                    <button className="btn btn-primary" onClick={() => handlePrepare(m.mission_id)} disabled={busy === m.mission_id}>
+                      {busy === m.mission_id ? 'Preparing…' : 'Prepare change'}
+                    </button>
+                    <p className="muted">Approved for preparation. Nothing executed yet.</p>
+                  </>
+                ) : (
+                  <p className="muted">Prepared change ready for review.</p>
+                )}
+              </div>
+              <details className="technical-details">
+                <summary>Technical details</summary>
+                <pre>{JSON.stringify(m.technical, null, 2)}</pre>
+              </details>
             </div>
-            <details className="technical-details">
-              <summary>Technical details</summary>
-              <pre>{JSON.stringify(m.technical, null, 2)}</pre>
-            </details>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+      {deferred.size > 0 && (
+        <div className="deferred-notice card">
+          <p>{deferred.size} item{deferred.size > 1 ? 's' : ''} set aside. <button className="btn btn-sm" onClick={() => setDeferred(new Set())}>Show again</button></p>
+        </div>
+      )}
     </div>
   );
 }
