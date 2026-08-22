@@ -15,9 +15,15 @@ from functools import lru_cache
 
 @lru_cache(maxsize=1)
 def build_sha() -> str:
+    # 1. Explicit baked SHA (Docker build ARG / manual override)
     env = os.environ.get("EVOSIA_BUILD_SHA", "").strip()
     if env and env.lower() != "unknown":
-        return env
+        return env[:7]
+    # 2. Railway injects the deployed commit SHA at runtime
+    railway = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "").strip()
+    if railway and railway.lower() != "unknown":
+        return railway[:7]
+    # 3. Local development git metadata
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--short=7", "HEAD"],

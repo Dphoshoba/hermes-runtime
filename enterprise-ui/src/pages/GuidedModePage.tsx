@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../App';
 import { guidedClient } from '../lib/api';
-import { buildSha } from '../lib/buildInfo';
+import { buildSha, resolveBuildSha } from '../lib/buildInfo';
 import { useMode } from '../context/ModeContext';
 import ProvenanceBadge from '../components/ProvenanceBadge';
 import DemoModeToggle from '../components/DemoModeToggle';
@@ -218,6 +218,10 @@ function GuidedLayout({
   onRefresh: () => void;
   children: React.ReactNode;
 }) {
+  const [displaySha, setDisplaySha] = useState(buildSha());
+  useEffect(() => {
+    resolveBuildSha().then(setDisplaySha);
+  }, []);
   return (
     <div className="guided-layout">
       <header className="guided-header">
@@ -279,7 +283,7 @@ function GuidedLayout({
 
       <main className="guided-content">{children}</main>
       <footer className="guided-build-footer" title="EVOSIA build identifier">
-        EVOSIA build: {buildSha()}
+        EVOSIA build: {displaySha}
       </footer>
     </div>
   );
