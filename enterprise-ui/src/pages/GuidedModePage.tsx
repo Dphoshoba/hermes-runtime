@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../App';
 import { guidedClient } from '../lib/api';
+import { buildSha } from '../lib/buildInfo';
 import { useMode } from '../context/ModeContext';
 import ProvenanceBadge from '../components/ProvenanceBadge';
 import DemoModeToggle from '../components/DemoModeToggle';
@@ -277,6 +278,9 @@ function GuidedLayout({
       )}
 
       <main className="guided-content">{children}</main>
+      <footer className="guided-build-footer" title="EVOSIA build identifier">
+        EVOSIA build: {buildSha()}
+      </footer>
     </div>
   );
 }

@@ -7,6 +7,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Build provenance: bake the git SHA into the image so the running UI/backend
+# can prove which build a participant is seeing (M8-P1-008 forensics).
+ARG GIT_SHA=unknown
+ENV EVOSIA_BUILD_SHA=${GIT_SHA}
+COPY scripts/git-sha.sh /tmp/git-sha.sh
+RUN chmod +x /tmp/git-sha.sh
+
 # Install Python dependencies
 # Source must be present before pip install (setuptools needs pyproject +
 # package dirs + README). Copy pyproject/README first so the editable install

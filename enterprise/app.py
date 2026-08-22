@@ -97,6 +97,14 @@ def health_check() -> dict[str, str]:
     return {"status": "ok", "version": "1.3.0"}
 
 
+@app.get("/api/version")
+def version_info() -> dict[str, str]:
+    """Build provenance for the running backend (diagnostic, no secrets)."""
+    from .services.build_info import provenance
+
+    return {"version": "1.3.0", **provenance()}
+
+
 # ---------------------------------------------------------------------------
 # Single-origin static frontend serving.
 #
