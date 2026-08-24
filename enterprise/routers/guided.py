@@ -464,7 +464,7 @@ def guided_missions(
                 "rollback": "Prepared changes are isolated and reversible until merged/deployed.",
                 "authority_consequence": (
                     "Approving here permits EVOSIA to PREPARE a proposed change "
-                    "in an isolated workspace. It will NOT merge, deploy, or change production.",
+                    "in an isolated workspace. It will NOT merge, deploy, or change production."
                 ),
                 "status": m.status,
                 "status_label": MISSION_STATUS_LABELS.get(m.status, m.status),
