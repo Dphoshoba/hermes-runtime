@@ -70,6 +70,8 @@ interface GuidedMission {
   status: string;
   status_label: string;
   originating_finding: string;
+  originating_finding_id: string;
+  finding_location: string;
   human_adjudication_ref: string;
   technical: Record<string, unknown>;
 }
@@ -681,8 +683,8 @@ function MissionDecisionView({ onPreparedChange }: { onPreparedChange: () => voi
                   This recommendation addresses:<br /><strong>{m.originating_finding}</strong>
                 </div>
               )}
-              {m.scope && (
-                <p className="finding-source">Found in: <strong>{m.scope}</strong></p>
+              {(m.finding_location || m.scope) && (
+                <p className="finding-source">Found in: <strong>{m.finding_location || m.scope}</strong></p>
               )}
               <div className="mission-header">
                 <h3>{m.plain_title}</h3>
@@ -886,9 +888,13 @@ function PreparedChangeReview({ onBack }: { onBack: () => void }) {
           diff: selected.diff_content,
           workspace: selected.workspace_path,
           validationOutput: selected.validation_output,
-          isLive: !isDemo,
+          isLive: true,
+          failure_reason: selected.validation_output || 'Validation could not run inside the isolated workspace.',
         }}
         onApprove={() => {}}
+        onTryAgain={() => alert('Preparation requires re-approval from Proposed Work.')}
+        onExplain={() => alert('Ask EVOSIA to explain - feature not yet connected.')}
+        onReturn={() => setSelected(null)}
       />
     </div>
   );

@@ -101,6 +101,8 @@ class GuidedMission(BaseModel):
     status: str
     status_label: str
     originating_finding: str
+    originating_finding_id: str
+    finding_location: str
     human_adjudication_ref: str
     technical: dict[str, Any]
 
@@ -442,32 +444,40 @@ def guided_missions(
     missions = q.order_by(Mission.created_at.desc()).all()
     out = []
     for m in missions:
-        meta = m.metadata_json or {}
-        out.append({
-            "mission_id": m.id,
-            "title": m.title,
-            "plain_title": m.title,
-            "what": m.description or "Proposed engineering work.",
-            "why": "Based on a human-ACTIONABLE finding.",
-            "benefit": "Addresses an operator-flagged engineering concern.",
-            "risk": "Change risk depends on scope; prepared changes remain unreviewed until you act.",
-            "scope": meta.get("scope", "To be determined during preparation."),
-            "validation": "Tests and checks would run before any change is finalized.",
-            "rollback": "Prepared changes are isolated and reversible until merged/deployed.",
-            "authority_consequence": (
-                "Approving here permits EVOSIA to PREPARE a proposed change "
-                "in an isolated workspace. It will NOT merge, deploy, or change production."
-            ),
-            "status": m.status,
-            "status_label": MISSION_STATUS_LABELS.get(m.status, m.status),
-            "originating_finding": meta.get("originating_finding_id", ""),
-            "human_adjudication_ref": meta.get("governance_approval_reference", ""),
-            "technical": {
-                "mission_type": m.mission_type,
-                "priority": m.priority,
-                "repository_id": m.repository_id,
-            },
-        })
+            meta = m.metadata_json or {}
+            finding_id = meta.get("originating_finding_id", "")
+            # Look up the originating finding for a human-readable title
+            if finding_id:
+                finding = db.query(Finding).filter(Finding.id == finding_id).first()
+            else:
+                finding = None
+            out.append({
+                "mission_id": m.id,
+                "title": m.title,
+                "plain_title": m.title,
+                "what": m.description or "Proposed engineering work.",
+                "why": "Based on a human-ACTIONABLE finding.",
+                "benefit": "Addresses an operator-flagged engineering concern.",
+                "risk": "Change risk depends on scope; prepared changes remain unreviewed until you act.",
+                "scope": meta.get("scope", "To be determined during preparation."),
+                "validation": "Tests and checks would run before any change is finalized.",
+                "rollback": "Prepared changes are isolated and reversible until merged/deployed.",
+                "authority_consequence": (
+                    "Approving here permits EVOSIA to PREPARE a proposed change "
+                    "in an isolated workspace. It will NOT merge, deploy, or change production.",
+                ),
+                "status": m.status,
+                "status_label": MISSION_STATUS_LABELS.get(m.status, m.status),
+                "originating_finding": _plain_title(finding) if finding else finding_id,
+                "originating_finding_id": finding_id,
+                "finding_location": finding.module if finding else "",
+                "human_adjudication_ref": meta.get("governance_approval_reference", ""),
+                "technical": {
+                    "mission_type": m.mission_type,
+                    "priority": m.priority,
+                    "repository_id": m.repository_id,
+                },
+            })
     return out
 
 

@@ -42,6 +42,9 @@ enterprise = [
     "python-jose[cryptography]>=3.3",
     "passlib==1.7.4",
     "bcrypt>=4.0.1,<5.0.0",
+    # Preparation validation runs pytest inside the isolated workspace
+    # (enterprise.services.preparation._run_validation).
+    "pytest>=8.0",
 ]
 
 [project.scripts]
