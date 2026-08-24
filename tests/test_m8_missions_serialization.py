@@ -14,47 +14,42 @@ M8_TEST_DB_URL = "sqlite:///./test_m8_missions_regression.db"
 
 from enterprise.app import app
 from enterprise.database import Base, get_engine
-from enterprise.models import Finding, FindingAdjudication, Mission, Repository, User
+from enterprise.models import Finding, FindingAdjudication, Mission, Repository
 
 
-@pytest.fixture(autouse=True)
-def isolated_m8_db(monkeypatch):
-    """Create isolated in-memory DB for M8 fixture test."""
+@pytest.fixture
+def m8_client(monkeypatch):
+    """Create test client with app configured for M8 test."""
     monkeypatch.setenv("HERMES_DATABASE_URL", M8_TEST_DB_URL)
     monkeypatch.setenv("EVOSIA_DATABASE_URL", M8_TEST_DB_URL)
     monkeypatch.setenv("EVOSIA_JWT_SECRET", "m8-test-secret")
-    import enterprise.services as _svc
 
+    import enterprise.services as _svc
     monkeypatch.setattr(_svc, "SECRET_KEY", "m8-test-secret")
     import enterprise.app as _app_mod
-
     monkeypatch.setattr(_app_mod, "SECRET_KEY", "m8-test-secret")
-    _app_mod.engine = get_engine()
-    eng = _app_mod.engine
+
+    eng = get_engine()
+    _app_mod.engine = eng
     Base.metadata.create_all(bind=eng)
-    yield
-    Base.metadata.drop_all(bind=eng)
-    from enterprise.database import _ENGINES
 
-    _ENGINES.pop(M8_TEST_DB_URL, None)
-    import os
+    yield TestClient(app)
 
+    # Cleanup
     try:
+        import os
         os.remove("./test_m8_missions_regression.db")
     except OSError:
         pass
 
-
-@pytest.fixture
-def m8_client():
-    return TestClient(app)
+    from enterprise.database import _ENGINES
+    _ENGINES.pop(M8_TEST_DB_URL, None)
 
 
 @pytest.fixture
 def m8_auth(m8_client):
     """Create auth token for test user."""
     import uuid
-
     email = f"m8-{uuid.uuid4().hex[:8]}@test.com"
     password = "testpass1234"
     m8_client.post("/api/auth/register", json={
@@ -66,26 +61,29 @@ def m8_auth(m8_client):
 
 
 @pytest.fixture
-def m8_repo(m8_client, m8_auth):
-    """Create M8 disposable repo fixture."""
-    r = m8_client.post("/api/repositories", json={
-        "name": "sample_service (M8 disposable)",
-        "url": "https://github.com/example/sample-service",
-        "status": "active",
-    }, headers=m8_auth)
-    return r.json()["id"]
+def m8_test_data(m8_client):
+    """Create test data directly in isolated DB session.
 
-
-@pytest.fixture
-def m8_mission(m8_repo, isolated_m8_db):
-    """Create a DRAFT mission with an originating finding."""
-    eng = get_engine(M8_TEST_DB_URL)
-    Session = sessionmaker(autocommit=False, autoflush=False, bind=eng, future=True)
+    Returns primitive values while session is active, avoiding
+    DetachedInstanceError from accessing ORM objects after session close.
+    """
+    eng = get_engine()
+    Session = sessionmaker(autocommit=False, autoflush=False, bind=eng)
     session = Session()
 
-    # Create the finding
-    f1 = Finding(
-        repository_id=m8_repo,
+    # Create repo directly
+    repo = Repository(
+        name="sample_service (M8 disposable)",
+        url="https://github.com/example/sample-service",
+        status="active",
+    )
+    session.add(repo)
+    session.flush()
+    repo_id = repo.id
+
+    # Create finding directly
+    finding = Finding(
+        repository_id=repo_id,
         finding_type="security",
         severity="high",
         category="security-credential",
@@ -93,37 +91,48 @@ def m8_mission(m8_repo, isolated_m8_db):
         description="An API key is hardcoded in the source.",
         module="src/config.py",
     )
-    session.add(f1)
+    session.add(finding)
     session.flush()
+    finding_id = finding.id
 
-    # Create the adjudication
+    # Create adjudication
     session.add(FindingAdjudication(
-        finding_id=f1.id,
+        finding_id=finding_id,
         classification="ACTIONABLE",
         operator="operator:m8",
     ))
 
-    # Create the mission
-    m1 = Mission(
+    # Create mission directly
+    mission = Mission(
         mission_id="M8-MISSION-001",
-        repository_id=m8_repo,
+        repository_id=repo_id,
         title="Replace hardcoded API key with environment configuration",
         description="Prepare a proposed change to remove a hardcoded credential.",
         mission_type="refactor",
         status="DRAFT",
         priority=5,
-        metadata_json={
-            "originating_finding_id": f1.id,
-        },
+        metadata_json={"originating_finding_id": finding_id},
     )
-    session.add(m1)
+    session.add(mission)
     session.commit()
+
+    db_mission_id = mission.id
+
+    # Capture primitives while session is active
+    test_data = {
+        "repo_id": repo_id,
+        "finding_id": finding_id,
+        "db_mission_id": db_mission_id,
+        "mission_id": "M8-MISSION-001",
+    }
+
     session.close()
-    return m1.id
+
+    return test_data
 
 
 def test_guided_missions_returns_authority_consequence_as_string(
-    m8_client, m8_auth, m8_mission
+    m8_client, m8_auth, m8_test_data
 ):
     """Regression: authority_consequence must be a string, not tuple."""
     r = m8_client.get("/api/guided/missions", headers=m8_auth)
@@ -151,7 +160,7 @@ def test_guided_missions_returns_authority_consequence_as_string(
 
 
 def test_all_mission_response_fields_are_strings(
-    m8_client, m8_auth, m8_mission
+    m8_client, m8_auth, m8_test_data
 ):
     """Verify no field accidentally becomes a tuple/list."""
     r = m8_client.get("/api/guided/missions", headers=m8_auth)
