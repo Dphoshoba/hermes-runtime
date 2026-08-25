@@ -887,34 +887,47 @@ function PreparedChangeReview({ onBack }: { onBack: () => void }) {
       <button className="btn btn-sm" onClick={() => setSelected(null)} style={{ marginBottom: 16 }}>
         ← Back to list
       </button>
-      <PreparedChangeView
-        change={{
-          id: selected?.prepared_id || successfulChanges[0]?.prepared_id || '',
-          mission_id: selected?.mission_id || successfulChanges[0]?.mission_id || '',
-          title: selected?.title || successfulChanges[0]?.title || '',
-          what: selected?.description || successfulChanges[0]?.description || '',
-          why: 'Based on a human-ACTIONABLE finding approved by an operator.',
-          benefit: 'Addresses an operator-flagged engineering concern.',
-          risk: 'Change risk depends on scope; prepared changes remain unreviewed until you act.',
-          files: selected?.affected_files || successfulChanges[0]?.affected_files || [],
-          verification: 'Tests and checks would run before any change is finalized.',
-          rollback: 'Prepared changes are isolated and reversible until merged/deployed.',
-          validation: ((selected?.validation_status || successfulChanges[0]?.validation_status) as 'pass' | 'pending' | 'fail') || 'pending',
-          status: ((selected?.status || successfulChanges[0]?.status) === 'PREPARED' ? 'PREPARED' : (selected?.status || successfulChanges[0]?.status) === 'failed' ? 'failed' : 'pending') as 'PREPARED' | 'failed' | 'pending',
-          diff: selected?.diff_content || successfulChanges[0]?.diff_content,
-          workspace: selected?.workspace_path || successfulChanges[0]?.workspace_path,
-          validationOutput: selected?.validation_output || successfulChanges[0]?.validation_output,
-          isLive: true,
-          failure_reason: selected?.validation_output || successfulChanges[0]?.validation_output || 'Validation could not run inside the isolated workspace.',
-        }}
-        historicalAttempts={failedChanges.map((c) => ({
-          id: c.prepared_id,
-          status: c.status,
-          created_at: c.created_at,
-        }))}
-        onApprove={() => {}}
-        onReturn={() => setSelected(null)}
-      />
+      {(() => {
+        const source = selected || successfulChanges[0];
+        if (!source) return null;
+        // Normalize validation_status: backend returns 'passed'/'failed'/'pending',
+        // but PreparedChangeView expects 'pass'/'fail'/'pending'
+        const rawValidation = source.validation_status || 'pending';
+        const normalizedValidation: 'pass' | 'pending' | 'fail' =
+          rawValidation === 'passed' ? 'pass' :
+          rawValidation === 'failed' ? 'fail' :
+          'pending';
+        return (
+          <PreparedChangeView
+            change={{
+              id: source.prepared_id,
+              mission_id: source.mission_id,
+              title: source.title,
+              what: source.description,
+              why: 'Based on a human-ACTIONABLE finding approved by an operator.',
+              benefit: 'Addresses an operator-flagged engineering concern.',
+              risk: 'Change risk depends on scope; prepared changes remain unreviewed until you act.',
+              files: source.affected_files || [],
+              verification: 'Tests and checks would run before any change is finalized.',
+              rollback: 'Prepared changes are isolated and reversible until merged/deployed.',
+              validation: normalizedValidation,
+              status: (source.status === 'PREPARED' || source.status === 'failed' || source.status === 'pending') ? source.status : 'pending',
+              diff: source.diff_content,
+              workspace: source.workspace_path,
+              validationOutput: source.validation_output,
+              isLive: true,
+              failure_reason: source.validation_output || 'Validation could not run inside the isolated workspace.',
+            }}
+            historicalAttempts={failedChanges.map((c) => ({
+              id: c.prepared_id,
+              status: c.status,
+              created_at: c.created_at,
+            }))}
+            onApprove={() => {}}
+            onReturn={() => setSelected(null)}
+          />
+        );
+      })()}
     </div>
   );
 }

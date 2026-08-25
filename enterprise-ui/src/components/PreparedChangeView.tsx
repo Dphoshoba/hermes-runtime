@@ -92,7 +92,15 @@ export default function PreparedChangeView({
               <div className="validation-summary">
                 {change.validation === 'pass' && (
                   <>
-                    <span className="validation-pass">✓ Passed</span>
+                    <span className="validation-pass">✓ Validation passed</span>
+                    {(() => {
+                      // Extract count from validationOutput if pattern matches "N passed"
+                      const match = change.validationOutput?.match(/(\d+)\s+passed/);
+                      if (match) {
+                        return <span className="validation-count">{match[1]} checks passed successfully.</span>;
+                      }
+                      return <span className="validation-count">Validation passed successfully.</span>;
+                    })()}
                     <button 
                       className="toggle-details"
                       onClick={() => setShowValidationDetails(!showValidationDetails)}

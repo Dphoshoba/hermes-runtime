@@ -507,10 +507,10 @@ describe('M8-P1-008: live prepared-change display integration', () => {
       description: 'Replace the hardcoded API key with an environment variable lookup.',
       status: 'PREPARED',
       affected_files: ['src/config.py'],
-      validation_status: 'pass',
+      validation_status: 'passed',
       workspace_path: '/workspace/pc-1',
       diff_content: '-API_KEY = "secret"\n+API_KEY = os.environ["API_KEY"]',
-      validation_output: 'All tests passed.',
+      validation_output: '6 passed',
       created_at: '2026-08-23T10:00:00Z',
     },
     {
@@ -634,5 +634,105 @@ describe('M8-P1-008: live prepared-change display integration', () => {
     expect(screen.queryByRole('button', { name: /^merge$/i })).toBeFalsy()
     expect(screen.queryByRole('button', { name: /^deploy$/i })).toBeFalsy()
     expect(screen.queryByRole('button', { name: /^apply$/i })).toBeFalsy()
+  })
+
+  it('validation passed text is visible for successful prepared change', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/validation passed/i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('count is shown when derivable from validation output', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/6 checks passed successfully/i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('raw validation output is hidden initially', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/validation passed/i).length).toBeGreaterThan(0)
+    })
+
+    // Raw output should not be visible initially
+    expect(screen.queryByText('6 passed')).toBeFalsy()
+  })
+
+  it('technical validation disclosure works', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/validation passed/i).length).toBeGreaterThan(0)
+    })
+
+    // Click to show technical details
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /view technical validation details/i }))
+    })
+
+    // Now raw output should be visible
+    await waitFor(() => {
+      expect(screen.getAllByText('6 passed').length).toBeGreaterThan(0)
+    })
+  })
+
+  it('project UNCHANGED remains visible', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/unchanged/i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('historical attempt remains collapsed', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/validation passed/i).length).toBeGreaterThan(0)
+    })
+
+    // History should be collapsed - failed content not visible
+    expect(screen.queryByText(/Could not create workspace/i)).toBeFalsy()
   })
 })
