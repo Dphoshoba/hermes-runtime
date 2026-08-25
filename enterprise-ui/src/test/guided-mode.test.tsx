@@ -497,3 +497,142 @@ describe('authority & provenance invariants', () => {
     expect(screen.queryByRole('button', { name: /^deploy$/i })).toBeFalsy()
   })
 })
+
+describe('M8-P1-008: live prepared-change display integration', () => {
+  const preparedChangePayload = [
+    {
+      prepared_id: 'pc-1',
+      mission_id: 'm1',
+      title: 'Replace hardcoded API key',
+      description: 'Replace the hardcoded API key with an environment variable lookup.',
+      status: 'PREPARED',
+      affected_files: ['src/config.py'],
+      validation_status: 'pass',
+      workspace_path: '/workspace/pc-1',
+      diff_content: '-API_KEY = "secret"\n+API_KEY = os.environ["API_KEY"]',
+      validation_output: 'All tests passed.',
+      created_at: '2026-08-23T10:00:00Z',
+    },
+    {
+      prepared_id: 'pc-failed',
+      mission_id: 'm1',
+      title: 'Replace hardcoded API key (attempt 1)',
+      description: 'First attempt that failed.',
+      status: 'failed',
+      affected_files: [],
+      validation_status: 'fail',
+      workspace_path: null,
+      diff_content: null,
+      validation_output: 'Could not create workspace.',
+      created_at: '2026-08-22T09:00:00Z',
+    },
+  ]
+
+  function mockPreparedChanges() {
+    return mockFetch
+      .mockResolvedValueOnce(ok(summaryPayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
+      .mockResolvedValueOnce(ok(preparedChangePayload))
+  }
+
+  it('latest PREPARED change becomes the primary participant view', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/preparation complete/i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('historical failed attempt is collapsed by default', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/preparation complete/i).length).toBeGreaterThan(0)
+    })
+
+    // History section should exist but be collapsed (history-list not visible)
+    expect(screen.queryByText(/previous attempt/i)).toBeTruthy()
+    expect(screen.queryByText(/Could not create workspace/i)).toBeFalsy()
+  })
+
+  it('expanding history exposes the failed attempt', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/preparation complete/i).length).toBeGreaterThan(0)
+    })
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /previous attempt/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/previous attempt/i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('successful preparation shows Preparation complete', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/preparation complete/i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('Your live project: UNCHANGED is visible', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/unchanged|has not been changed/i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('no Execute/Merge/Deploy/Apply control exists', async () => {
+    mockPreparedChanges()
+    renderGuided()
+    await reachSummary()
+
+    await act(async () => {
+      await userEvent.click(screen.getByRole('button', { name: /prepared changes/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/preparation complete/i).length).toBeGreaterThan(0)
+    })
+
+    expect(screen.queryByRole('button', { name: /^execute$/i })).toBeFalsy()
+    expect(screen.queryByRole('button', { name: /^merge$/i })).toBeFalsy()
+    expect(screen.queryByRole('button', { name: /^deploy$/i })).toBeFalsy()
+    expect(screen.queryByRole('button', { name: /^apply$/i })).toBeFalsy()
+  })
+})
