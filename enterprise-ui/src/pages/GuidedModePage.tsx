@@ -875,6 +875,7 @@ function PreparedChangeReview({ onBack }: { onBack: () => void }) {
       <PreparedChangeView
         change={{
           id: selected.prepared_id,
+          mission_id: selected.mission_id,
           title: selected.title,
           what: selected.description,
           why: 'Based on a human-ACTIONABLE finding approved by an operator.',
@@ -884,7 +885,7 @@ function PreparedChangeReview({ onBack }: { onBack: () => void }) {
           verification: 'Tests and checks would run before any change is finalized.',
           rollback: 'Prepared changes are isolated and reversible until merged/deployed.',
           validation: (selected.validation_status as 'pass' | 'pending' | 'fail') || 'pending',
-          status: selected.status,
+          status: selected.status as 'PREPARED' | 'failed' | 'pending' | undefined,
           diff: selected.diff_content,
           workspace: selected.workspace_path,
           validationOutput: selected.validation_output,
@@ -892,8 +893,6 @@ function PreparedChangeReview({ onBack }: { onBack: () => void }) {
           failure_reason: selected.validation_output || 'Validation could not run inside the isolated workspace.',
         }}
         onApprove={() => {}}
-        onTryAgain={() => alert('Preparation requires re-approval from Proposed Work.')}
-        onExplain={() => alert('Ask EVOSIA to explain - feature not yet connected.')}
         onReturn={() => setSelected(null)}
       />
     </div>
