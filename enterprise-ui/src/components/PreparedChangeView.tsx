@@ -218,9 +218,9 @@ export default function PreparedChangeView({
             </button>
           </h3>
           
-          {showHistory && (
+            {showHistory && (
             <div className="history-list">
-              {historicalAttempts.map((attempt, idx) => (
+              {historicalAttempts.map((attempt) => (
                 <div key={attempt.id} className="history-item">
                   <div className="history-header">
                     <span className="history-status">

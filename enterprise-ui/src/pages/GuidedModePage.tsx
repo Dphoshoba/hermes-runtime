@@ -885,7 +885,7 @@ function PreparedChangeReview({ onBack }: { onBack: () => void }) {
           verification: 'Tests and checks would run before any change is finalized.',
           rollback: 'Prepared changes are isolated and reversible until merged/deployed.',
           validation: (selected.validation_status as 'pass' | 'pending' | 'fail') || 'pending',
-          status: selected.status as 'PREPARED' | 'failed' | 'pending' | undefined,
+          status: (selected.status === 'PREPARED' || selected.status === 'failed' || selected.status === 'pending') ? selected.status : 'pending',
           diff: selected.diff_content,
           workspace: selected.workspace_path,
           validationOutput: selected.validation_output,

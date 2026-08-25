@@ -45,6 +45,9 @@ def isolated_m8_db(monkeypatch):
     
     yield
     
+    # Dispose all pooled connections before dropping tables to avoid
+    # "attempt to write a readonly database" errors on SQLite teardown.
+    eng.dispose()
     Base.metadata.drop_all(bind=eng)
     from enterprise.database import _ENGINES
     _ENGINES.pop(M8_TEST_DB_URL, None)
@@ -154,15 +157,6 @@ def m8_fixture_data(monkeypatch):
 
     session.close()
     yield fixture_data
-
-    # Cleanup
-    try:
-        import os
-        os.remove("./test_m8_missions_regression.db")
-    except OSError:
-        pass
-    from enterprise.database import _ENGINES
-    _ENGINES.pop(M8_TEST_DB_URL, None)
 
 
 def test_guided_missions_returns_authority_consequence_as_string(
