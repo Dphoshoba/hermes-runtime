@@ -12,27 +12,37 @@ interface PreparedChangeDetail {
   verification: string;
   rollback: string;
   validation: 'pass' | 'pending' | 'fail';
-  status?: 'PREPARED' | 'failed' | 'pending' | undefined;
+  status: 'PREPARED' | 'failed' | 'pending';
   diff?: string | null;
   workspace?: string | null;
   validationOutput?: string | null;
   isLive?: boolean;
   failure_reason?: string | null;
+  created_at?: string;
+}
+
+interface HistoricalAttempt {
+  id: string;
+  status: string;
+  created_at: string;
 }
 
 interface PreparedChangeViewProps {
   change: PreparedChangeDetail;
+  historicalAttempts?: HistoricalAttempt[];
   onApprove?: () => void;
   onReturn?: () => void;
 }
 
 export default function PreparedChangeView({
   change,
+  historicalAttempts = [],
   onApprove,
   onReturn,
 }: PreparedChangeViewProps) {
   const [showDiff, setShowDiff] = useState(false);
   const [showValidationDetails, setShowValidationDetails] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const isPrepared = change.status === 'PREPARED';
   const isFailed = change.status === 'failed';
@@ -59,7 +69,7 @@ export default function PreparedChangeView({
             <div className="prepared-section">
               <h3>Where</h3>
               <div className="affected-files">
-                {change.files.length > 0 ? (
+                {change.files && change.files.length > 0 ? (
                   change.files.map((f, i) => (
                     <div key={i} className="file-path">{f}</div>
                   ))
@@ -170,7 +180,7 @@ export default function PreparedChangeView({
                 Try again
               </button>
             )}
-            <button className="btn btn-secondary" onClick={() => { /* Ask EVOSIA to explain */ }}>
+            <button className="btn btn-secondary">
               Ask EVOSIA to explain
             </button>
             {onReturn && (
@@ -193,6 +203,38 @@ export default function PreparedChangeView({
             </button>
           )}
         </div>
+      )}
+
+      {/* === HISTORICAL ATTEMPTS === */}
+      {historicalAttempts && historicalAttempts.length > 0 && (
+        <section className="historical-section">
+          <h3>
+            <button 
+              className="history-toggle"
+              onClick={() => setShowHistory(!showHistory)}
+            >
+              {historicalAttempts.length} previous attempt{ historicalAttempts.length > 1 ? 's' : ''}
+              <span className={`chevron ${showHistory ? 'rotated' : ''}`}>▼</span>
+            </button>
+          </h3>
+          
+          {showHistory && (
+            <div className="history-list">
+              {historicalAttempts.map((attempt, idx) => (
+                <div key={attempt.id} className="history-item">
+                  <div className="history-header">
+                    <span className="history-status">
+                      {attempt.status === 'failed' ? '✗' : '⏳'} Previous attempt — {attempt.status}
+                    </span>
+                    {attempt.created_at && (
+                      <span className="history-date">{attempt.created_at}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       )}
     </div>
   );
