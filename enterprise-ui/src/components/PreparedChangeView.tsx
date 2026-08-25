@@ -92,21 +92,24 @@ export default function PreparedChangeView({
               <div className="validation-summary">
                 {change.validation === 'pass' && (
                   <>
-                    <span className="validation-pass">✓ Validation passed</span>
-                    {(() => {
-                      // Extract count from validationOutput if pattern matches "N passed"
-                      const match = change.validationOutput?.match(/(\d+)\s+passed/);
-                      if (match) {
-                        return <span className="validation-count">{match[1]} checks passed successfully.</span>;
-                      }
-                      return <span className="validation-count">Validation passed successfully.</span>;
-                    })()}
-                    <button 
-                      className="toggle-details"
-                      onClick={() => setShowValidationDetails(!showValidationDetails)}
-                    >
-                      {showValidationDetails ? 'Hide' : 'View'} technical validation details
-                    </button>
+                    <div className="validation-pass">✓ Validation passed</div>
+                    <div className="validation-count">
+                      {(() => {
+                        const match = change.validationOutput?.match(/(\d+)\s+passed/);
+                        if (match) {
+                          return <>{match[1]} checks passed successfully.</>;
+                        }
+                        return <>Validation passed successfully.</>;
+                      })()}
+                    </div>
+                    <div className="validation-toggle">
+                      <button 
+                        className="toggle-details"
+                        onClick={() => setShowValidationDetails(!showValidationDetails)}
+                      >
+                        {showValidationDetails ? 'Hide' : 'View'} technical validation details
+                      </button>
+                    </div>
                     {showValidationDetails && (
                       <details className="validation-details">
                         <summary>Technical validation output</summary>
