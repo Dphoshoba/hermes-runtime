@@ -183,15 +183,49 @@ def _build_headline(total: int, attn: int, ctx: int, important: int, proposed: i
     return " · ".join(parts)
 
 
+def _resolve_repository_from_scan_job(
+    db: Session, repository_id: str | None = None
+) -> tuple[str | None, str | None, dict | None]:
+    """Resolve repository context from the most recent ScanJob.
+
+    Mirrors the auto-discovery logic used by /review-scope: when no explicit
+    repository_id is provided, finds the most recent completed ScanJob and
+    derives the repository from its relationship. Returns
+    (repository_id, repository_name, repository_metadata).
+    """
+    job_q = db.query(ScanJob)
+    if repository_id:
+        job_q = job_q.filter(ScanJob.repository_id == repository_id)
+    job = (
+        job_q.filter(ScanJob.status == "completed")
+        .order_by(ScanJob.completed_at.desc().nullslast(), ScanJob.created_at.desc())
+        .first()
+    ) or (
+        job_q.order_by(ScanJob.created_at.desc()).first()
+    )
+    if job and job.repository_rel:
+        repo = job.repository_rel
+        return repo.id, repo.name, repo.metadata_json
+    if repository_id:
+        repo = db.query(Repository).filter(Repository.id == repository_id).first()
+        if repo:
+            return repo.id, repo.name, repo.metadata_json
+    return repository_id, None, None
+
+
 @router.get("/summary", response_model=GuidedSummaryResponse)
 def guided_summary(
     repository_id: str | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
+    resolved_id, repo_name, repo_metadata = _resolve_repository_from_scan_job(
+        db, repository_id
+    )
+
     q = db.query(Finding)
-    if repository_id:
-        q = q.filter(Finding.repository_id == repository_id)
+    if resolved_id:
+        q = q.filter(Finding.repository_id == resolved_id)
     findings = q.all()
 
     needs_attention = 0
@@ -207,24 +241,17 @@ def guided_summary(
             needs_attention += 1
 
     mission_q = db.query(Mission)
-    if repository_id:
-        mission_q = mission_q.filter(Mission.repository_id == repository_id)
+    if resolved_id:
+        mission_q = mission_q.filter(Mission.repository_id == resolved_id)
     proposed_work = mission_q.filter(
         Mission.status.in_(["DRAFT", "APPROVED_FOR_FUTURE_EXECUTION", "NEEDS_REFINEMENT"])
     ).count()
-
-    repo_name = None
-    repo_metadata = None
-    if repository_id:
-        repo = db.query(Repository).filter(Repository.id == repository_id).first()
-        repo_name = repo.name if repo else None
-        repo_metadata = repo.metadata_json if repo else None
 
     total = len(findings)
     headline = _build_headline(total, needs_attention, needs_context, important_issue, proposed_work)
 
     return {
-        "repository_id": repository_id,
+        "repository_id": resolved_id,
         "repository_name": repo_name,
         "repository_metadata": repo_metadata,
         "total_findings": total,
