@@ -48,6 +48,7 @@ AUTHORITY_LEVEL_LABELS = {
 class GuidedSummaryResponse(BaseModel):
     repository_id: str | None
     repository_name: str | None
+    repository_metadata: dict[str, Any] | None
     total_findings: int
     needs_attention: int
     needs_context: int
@@ -213,9 +214,11 @@ def guided_summary(
     ).count()
 
     repo_name = None
+    repo_metadata = None
     if repository_id:
         repo = db.query(Repository).filter(Repository.id == repository_id).first()
         repo_name = repo.name if repo else None
+        repo_metadata = repo.metadata_json if repo else None
 
     total = len(findings)
     headline = _build_headline(total, needs_attention, needs_context, important_issue, proposed_work)
@@ -223,6 +226,7 @@ def guided_summary(
     return {
         "repository_id": repository_id,
         "repository_name": repo_name,
+        "repository_metadata": repo_metadata,
         "total_findings": total,
         "needs_attention": needs_attention,
         "needs_context": needs_context,

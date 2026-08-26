@@ -17,6 +17,7 @@ const LOADING_TIMEOUT_MS = 30000;
 interface GuidedSummary {
   repository_id: string | null;
   repository_name: string | null;
+  repository_metadata: Record<string, unknown> | null;
   total_findings: number;
   needs_attention: number;
   needs_context: number;
@@ -315,6 +316,9 @@ function SummaryView({
   const fmtDate = (iso: string | null) =>
     iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' }) : null;
 
+  const isDisposable = summary.repository_metadata?.is_disposable === true;
+  const repositoryUrl = summary.repository_metadata?.local_path as string | undefined;
+
   return (
     <div className="guided-summary">
       <div className="summary-hero card">
@@ -327,6 +331,17 @@ function SummaryView({
             ? `Project: ${summary.repository_name}`
             : 'Your project'}
         </p>
+        {isDisposable && (
+          <div className="project-source-notice" data-testid="project-source-notice">
+            <p><strong>Test project provided for this evaluation.</strong></p>
+            <p className="muted">No files on your computer are being accessed.</p>
+          </div>
+        )}
+        {!isDisposable && repositoryUrl && (
+          <div className="project-source-notice" data-testid="project-source-notice">
+            <p className="muted">Local project: {repositoryUrl}</p>
+          </div>
+        )}
       </div>
 
       {/* WHAT I REVIEWED — authoritative review scope */}

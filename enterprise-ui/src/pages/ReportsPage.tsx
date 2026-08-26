@@ -25,7 +25,18 @@ export default function ReportsPage() {
       </div>
 
       {loading ? <div className="empty-state">Loading...</div> : reports.length === 0 ? (
-        <div className="empty-state">No reports yet</div>
+        <div className="empty-state reports-empty-state">
+          <h3>No reports yet</h3>
+          <p>Reports provide a record of EVOSIA's reviews, findings, decisions and outcomes.</p>
+          <div className="example-report" data-testid="example-report">
+            <h4>Example report</h4>
+            <div className="card">
+              <strong>Project review summary</strong>
+              <p className="muted">4 files examined · 1 issue requiring attention · 3 questions requiring context</p>
+            </div>
+            <p className="example-label">EXAMPLE ONLY — not live EVOSIA evidence.</p>
+          </div>
+        </div>
       ) : (
         <div className="table-container">
           <table>

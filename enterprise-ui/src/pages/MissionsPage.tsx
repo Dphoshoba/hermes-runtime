@@ -39,7 +39,18 @@ export default function MissionsPage() {
       </div>
 
       {loading ? <div className="empty-state">Loading...</div> : missions.length === 0 ? (
-        <div className="empty-state">No missions</div>
+        <div className="empty-state missions-empty-state">
+          <h3>No missions yet</h3>
+          <p>Missions will appear here when work progresses into EVOSIA's mission workflow.</p>
+          <div className="example-mission" data-testid="example-mission">
+            <h4>Example mission</h4>
+            <div className="card">
+              <strong>Replace hardcoded API key with environment configuration</strong>
+              <p className="muted">Read the API key from an environment variable instead of a hardcoded module constant.</p>
+            </div>
+            <p className="example-label">EXAMPLE ONLY — not a live EVOSIA mission.</p>
+          </div>
+        </div>
       ) : (
         <div className="table-container">
           <table>

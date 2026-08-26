@@ -736,3 +736,64 @@ describe('M8-P1-008: live prepared-change display integration', () => {
     expect(screen.queryByText(/Could not create workspace/i)).toBeFalsy()
   })
 })
+
+describe('P1-F01: project source clarity', () => {
+  it('M8 fixture identifies itself as a test/example project', async () => {
+    const disposablePayload = {
+      ...summaryPayload,
+      repository_metadata: { is_disposable: true, local_path: '/tmp/m8-disposable-repo' },
+    }
+    mockFetch.mockResolvedValueOnce(ok(disposablePayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
+    renderGuided()
+    await reachSummary()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('project-source-notice')).toBeTruthy()
+    })
+    expect(screen.getByText(/test project provided for this evaluation/i)).toBeTruthy()
+  })
+
+  it('M8 fixture explicitly states no files on computer are accessed', async () => {
+    const disposablePayload = {
+      ...summaryPayload,
+      repository_metadata: { is_disposable: true, local_path: '/tmp/m8-disposable-repo' },
+    }
+    mockFetch.mockResolvedValueOnce(ok(disposablePayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
+    renderGuided()
+    await reachSummary()
+
+    await waitFor(() => {
+      expect(screen.getByText(/no files on your computer are being accessed/i)).toBeTruthy()
+    })
+  })
+
+  it('real repository does not receive M8 fixture wording', async () => {
+    const realRepoPayload = {
+      ...summaryPayload,
+      repository_metadata: { is_disposable: false, local_path: '/Users/dev/my-project' },
+    }
+    mockFetch.mockResolvedValueOnce(ok(realRepoPayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
+    renderGuided()
+    await reachSummary()
+
+    await waitFor(() => {
+      expect(screen.getByText(/what i reviewed/i)).toBeTruthy()
+    })
+    expect(screen.queryByText(/test project provided for this evaluation/i)).toBeFalsy()
+    expect(screen.queryByText(/no files on your computer are being accessed/i)).toBeFalsy()
+  })
+
+  it('no execution/apply/merge/deploy control is introduced', async () => {
+    mockSummaryPath()
+    renderGuided()
+    await reachSummary()
+
+    expect(screen.queryByRole('button', { name: /^execute$/i })).toBeFalsy()
+    expect(screen.queryByRole('button', { name: /^apply$/i })).toBeFalsy()
+    expect(screen.queryByRole('button', { name: /^merge$/i })).toBeFalsy()
+    expect(screen.queryByRole('button', { name: /^deploy$/i })).toBeFalsy()
+  })
+})
