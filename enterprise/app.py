@@ -94,7 +94,27 @@ app.include_router(guided.router, prefix="/api/guided", tags=["Guided Mode"])
 
 @app.get("/api/health")
 def health_check() -> dict[str, str]:
+    """Lightweight liveness probe — always returns 200 when the process is up."""
     return {"status": "ok", "version": "1.3.0"}
+
+
+@app.get("/api/ready")
+def readiness_check() -> dict[str, str]:
+    """Readiness probe — verifies database connectivity.
+
+    Returns 200 when the database is reachable, 503 otherwise.
+    Never exposes database URLs or credentials.
+    """
+    try:
+        from .database import get_engine
+        from sqlalchemy import text
+
+        engine = get_engine()
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "connected"}
+    except Exception:
+        return {"status": "degraded", "database": "unavailable"}
 
 
 @app.get("/api/version")

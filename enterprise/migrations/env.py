@@ -1,5 +1,6 @@
 """Alembic env.py — migration environment configuration."""
 
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
@@ -8,6 +9,15 @@ from alembic import context
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Resolve the database URL from the environment, mirroring the runtime
+# resolution order in enterprise/database.py.  Alembic never writes to
+# the database; it only needs a connectable URL.
+_db_url = os.environ.get("EVOSIA_DATABASE_URL") or os.environ.get(
+    "HERMES_DATABASE_URL"
+)
+if _db_url:
+    config.set_main_option("sqlalchemy.url", _db_url)
 
 from enterprise.database import Base
 from enterprise.models import *  # noqa: F401, F403

@@ -9,11 +9,15 @@ from datetime import datetime, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-# Set test database before importing app
-os.environ["HERMES_DATABASE_URL"] = "sqlite:///./test_enterprise.db"
+# Set test database before importing app.  EVOSIA_DATABASE_URL takes
+# precedence over HERMES_DATABASE_URL in database.py._current_url(), so
+# we set both to ensure the app and the test fixture use the same database.
+_TEST_DB_URL = "sqlite:///./test_enterprise.db"
+os.environ["HERMES_DATABASE_URL"] = _TEST_DB_URL
+os.environ["EVOSIA_DATABASE_URL"] = _TEST_DB_URL
 
 from enterprise.app import app
-from enterprise.database import Base, get_engine, SessionLocal
+from enterprise.database import Base, get_engine, SessionLocal, _ENGINES
 from enterprise.models import User, Repository, JournalEvent, Finding, Mission, Report, ScanJob, ScanHistory
 from enterprise.services import hash_password, create_access_token
 from enterprise.services.scanner import SCAN_STAGES
@@ -26,7 +30,8 @@ from enterprise.services.scanner import SCAN_STAGES
 @pytest.fixture(autouse=True)
 def setup_db():
     """Create fresh tables for each test on this suite's database engine."""
-    eng = get_engine(os.environ["HERMES_DATABASE_URL"])
+    _ENGINES.clear()
+    eng = get_engine(_TEST_DB_URL)
     Base.metadata.create_all(bind=eng)
     yield
     Base.metadata.drop_all(bind=eng)
