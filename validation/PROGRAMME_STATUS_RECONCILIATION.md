@@ -1,7 +1,7 @@
 # EVOSIA Programme Status Reconciliation
 
 **Date:** 2026-08-26
-**Certified HEAD:** `22a38ce1eade13d67899acdb04fef0d027123d07`
+**Certified HEAD:** `e72a4e9f0018f5dd9103b71aef4f6f84ee8bb7b1`
 **Purpose:** Reconcile overlapping milestone systems, clarify contradictions, and establish current programme state.
 
 ---
@@ -44,6 +44,7 @@ Historical evidence collection and analysis cycles. Defined in `CONTROLLED_BETA_
 | M11 Install Friction | PASS (documented) | COMPLETE | Gaps documented |
 | M12 Safety Regression | PASS | COMPLETE | 1419 passed, invariants verified |
 | M13 Execution Readiness | NOT_READY | BLOCKED — HUMAN | Technical blocker SATISFIED; human-validation dependency DEFERRED |
+| C3 Production Verification | COMPLETE | COMPLETE | Production deployment, migration adoption, build provenance, readiness verified |
 
 ### M5 / M13 Clarification
 
@@ -148,6 +149,10 @@ All phases are completed. No active evidence cycles remain.
 
 All engineering work required by existing active contracts that can be completed without additional human participants or external operator actions is complete.
 
+### C3 Production Verification: COMPLETE
+
+Production deployment verified. Migration adoption verified. Build provenance verified. Readiness verified. See `validation/C3_PRODUCTION_VERIFICATION.md`.
+
 ### Technical Acceptance: COMPLETE
 
 All relevant tests pass. Authority boundaries verified. Safety invariants held.
@@ -198,6 +203,7 @@ No execution authority has been introduced. All invariants hold.
 | Beta Deployment README | `validation/beta/README.md` |
 | Participant 1 Acceptance Record | `docs/m8/M8_PARTICIPANT_1_ACCEPTANCE_RECORD.md` |
 | Controlled Beta Phase Reports | `CONTROLLED_BETA_PHASE_*_REPORT.md` |
+| C3 Production Verification Record | `validation/C3_PRODUCTION_VERIFICATION.md` |
 
 ---
 
