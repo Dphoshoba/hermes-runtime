@@ -11,10 +11,12 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
-os.environ["HERMES_DATABASE_URL"] = "sqlite:///./test_dogfood.db"
+_TEST_DB_URL = "sqlite:///./test_dogfood.db"
+os.environ["HERMES_DATABASE_URL"] = _TEST_DB_URL
+os.environ["EVOSIA_DATABASE_URL"] = _TEST_DB_URL
 
 from enterprise.app import app
-from enterprise.database import Base, get_engine
+from enterprise.database import Base, get_engine, _ENGINES
 
 TEST_REPOS = [
     {"name": "octocat/Hello-World", "url": "https://github.com/octocat/Hello-World"},
@@ -26,7 +28,8 @@ TEST_REPOS = [
 @pytest.fixture(autouse=True)
 def setup_db():
     """Create fresh tables for each test on this suite's database engine."""
-    eng = get_engine(os.environ["HERMES_DATABASE_URL"])
+    _ENGINES.clear()
+    eng = get_engine(_TEST_DB_URL)
     Base.metadata.create_all(bind=eng)
     yield
     Base.metadata.drop_all(bind=eng)
