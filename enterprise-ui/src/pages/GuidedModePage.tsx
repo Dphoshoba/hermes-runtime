@@ -331,10 +331,15 @@ function SummaryView({
             ? `Project: ${summary.repository_name}`
             : 'Your project'}
         </p>
+      </div>
+
+      {/* WHAT I REVIEWED — authoritative review scope */}
+      <div className="review-scope card" data-testid="review-scope">
+        <h3>What I reviewed</h3>
         {isDisposable && (
           <div className="project-source-notice" data-testid="project-source-notice">
             <p><strong>Test project provided for this evaluation.</strong></p>
-            <p className="muted">No files on your computer are being accessed.</p>
+            <p className="muted">You are reviewing a safe example project created for this EVOSIA evaluation. EVOSIA is not accessing files on your computer.</p>
           </div>
         )}
         {!isDisposable && repositoryUrl && (
@@ -342,11 +347,6 @@ function SummaryView({
             <p className="muted">Local project: {repositoryUrl}</p>
           </div>
         )}
-      </div>
-
-      {/* WHAT I REVIEWED — authoritative review scope */}
-      <div className="review-scope card" data-testid="review-scope">
-        <h3>What I reviewed</h3>
         {scopeState === 'loading' && <p className="muted">Checking review coverage…</p>}
         {scopeState === 'error' && (
           <p className="muted">

@@ -754,7 +754,7 @@ describe('P1-F01: project source clarity', () => {
     expect(screen.getByText(/test project provided for this evaluation/i)).toBeTruthy()
   })
 
-  it('M8 fixture explicitly states no files on computer are accessed', async () => {
+  it('M8 fixture explicitly states EVOSIA is not accessing files on computer', async () => {
     const disposablePayload = {
       ...summaryPayload,
       repository_metadata: { is_disposable: true, local_path: '/tmp/m8-disposable-repo' },
@@ -765,8 +765,39 @@ describe('P1-F01: project source clarity', () => {
     await reachSummary()
 
     await waitFor(() => {
-      expect(screen.getByText(/no files on your computer are being accessed/i)).toBeTruthy()
+      expect(screen.getByText(/evosia is not accessing files on your computer/i)).toBeTruthy()
     })
+  })
+
+  it('disposable notice is visible in What I reviewed section without expansion', async () => {
+    const disposablePayload = {
+      ...summaryPayload,
+      repository_metadata: { is_disposable: true, local_path: '/tmp/m8-disposable-repo' },
+    }
+    mockFetch.mockResolvedValueOnce(ok(disposablePayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
+    renderGuided()
+    await reachSummary()
+
+    const reviewScope = screen.getByTestId('review-scope')
+    const notice = screen.getByTestId('project-source-notice')
+    expect(reviewScope.contains(notice)).toBeTruthy()
+  })
+
+  it('project name remains visible alongside disposable notice', async () => {
+    const disposablePayload = {
+      ...summaryPayload,
+      repository_metadata: { is_disposable: true, local_path: '/tmp/m8-disposable-repo' },
+    }
+    mockFetch.mockResolvedValueOnce(ok(disposablePayload))
+      .mockResolvedValueOnce(ok(reviewScopePayload))
+    renderGuided()
+    await reachSummary()
+
+    await waitFor(() => {
+      expect(screen.getByText(/project: sample-service/i)).toBeTruthy()
+    })
+    expect(screen.getByTestId('project-source-notice')).toBeTruthy()
   })
 
   it('real repository does not receive M8 fixture wording', async () => {
@@ -783,7 +814,7 @@ describe('P1-F01: project source clarity', () => {
       expect(screen.getByText(/what i reviewed/i)).toBeTruthy()
     })
     expect(screen.queryByText(/test project provided for this evaluation/i)).toBeFalsy()
-    expect(screen.queryByText(/no files on your computer are being accessed/i)).toBeFalsy()
+    expect(screen.queryByText(/evosia is not accessing files on your computer/i)).toBeFalsy()
   })
 
   it('no execution/apply/merge/deploy control is introduced', async () => {
