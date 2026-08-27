@@ -35,6 +35,65 @@ export function clearToken() {
 }
 
 // ---------------------------------------------------------------------------
+// Device / Local Agent API client (LA5)
+// ---------------------------------------------------------------------------
+
+import type {
+  Device, DeviceProject, AgentJob,
+  DeviceRegisterResponse, ProjectAuthTokenResponse,
+} from './types';
+
+export const deviceClient = {
+  list: () => apiFetch<Device[]>('/devices/', { token: getToken()! }),
+
+  get: (deviceId: string) =>
+    apiFetch<Device>(`/devices/${encodeURIComponent(deviceId)}`, { token: getToken()! }),
+
+  register: (deviceName: string, platform: string, agentVersion: string) =>
+    apiFetch<DeviceRegisterResponse>('/devices/register', {
+      method: 'POST',
+      token: getToken()!,
+      body: JSON.stringify({ device_name: deviceName, platform, agent_version: agentVersion }),
+    }),
+
+  revoke: (deviceId: string) =>
+    apiFetch<Device>(`/devices/${encodeURIComponent(deviceId)}/revoke`, {
+      method: 'POST', token: getToken()!,
+    }),
+
+  createProjectAuthToken: (deviceId: string) =>
+    apiFetch<ProjectAuthTokenResponse>(
+      `/devices/${encodeURIComponent(deviceId)}/project-auth-token`,
+      { method: 'POST', token: getToken()! },
+    ),
+
+  listProjects: (deviceId: string) =>
+    apiFetch<DeviceProject[]>(
+      `/device-projects/?device_id=${encodeURIComponent(deviceId)}`,
+      { token: getToken()! },
+    ),
+
+  requestScan: (projectId: string) =>
+    apiFetch<AgentJob>(`/device-projects/${encodeURIComponent(projectId)}/scans`, {
+      method: 'POST',
+      token: getToken()!,
+      body: JSON.stringify({ operation_type: 'PROJECT_SCAN' }),
+    }),
+
+  listJobs: (projectId: string) =>
+    apiFetch<AgentJob[]>(
+      `/device-projects/${encodeURIComponent(projectId)}/jobs`,
+      { token: getToken()! },
+    ),
+
+  revokeProject: (projectId: string) =>
+    apiFetch<DeviceProject>(
+      `/device-projects/${encodeURIComponent(projectId)}/revoke`,
+      { method: 'POST', token: getToken()! },
+    ),
+};
+
+// ---------------------------------------------------------------------------
 // Guided Mode API client
 // ---------------------------------------------------------------------------
 

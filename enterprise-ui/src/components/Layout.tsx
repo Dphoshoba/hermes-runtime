@@ -4,6 +4,7 @@ import { useAuth } from '../App'
 const links = [
   { to: '/', label: 'Dashboard' },
   { to: '/repositories', label: 'Repositories' },
+  { to: '/devices', label: 'Computers' },
   { to: '/scans', label: 'Scans' },
   { to: '/journal', label: 'Journal' },
   { to: '/findings', label: 'Findings' },

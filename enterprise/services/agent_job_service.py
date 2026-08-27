@@ -98,6 +98,23 @@ def create_scan_job(
     return job
 
 
+def list_jobs_for_project(
+    db: Session,
+    device_project_id: str,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[AgentJob]:
+    """List agent jobs for a device project, newest first."""
+    return (
+        db.query(AgentJob)
+        .filter(AgentJob.device_project_id == device_project_id)
+        .order_by(AgentJob.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+
 def get_next_job(db: Session, device_id: str) -> AgentJob | None:
     """Get the next pending job for a device.
 
@@ -153,7 +170,7 @@ def mark_job_started(db: Session, job: AgentJob) -> AgentJob:
     return job
 
 
-def complete_job(db: Session, job: AgentJob) -> AgentJob:
+def complete_job(db: Session, job: AgentJob, truncated: bool = False) -> AgentJob:
     """Mark a job as completed.
 
     Only allowed for STARTED jobs.
@@ -165,6 +182,7 @@ def complete_job(db: Session, job: AgentJob) -> AgentJob:
         )
     job.status = JOB_STATUS_COMPLETED
     job.completed_at = datetime.now(timezone.utc)
+    job.truncated = truncated
     db.commit()
     db.refresh(job)
     return job

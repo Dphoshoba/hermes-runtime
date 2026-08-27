@@ -622,6 +622,7 @@ class AgentJob(Base):
     completed_at = Column(DateTime, nullable=True)
     failed_at = Column(DateTime, nullable=True)
     failure_reason = Column(Text, nullable=True)
+    truncated = Column(Boolean, default=False, nullable=False)
 
     # Relationships
     user = relationship("User")

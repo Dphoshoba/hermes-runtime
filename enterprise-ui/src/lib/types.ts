@@ -163,3 +163,61 @@ export interface OvernightSummary {
   top_repositories_requiring_attention: { id: string; name: string; reason: string }[];
   summary: string;
 }
+
+// ---------------------------------------------------------------------------
+// Local Agent (LA1–LA5) types
+// ---------------------------------------------------------------------------
+
+export interface Device {
+  id: string;
+  device_id: string;
+  device_name: string;
+  platform: string;
+  agent_version: string;
+  user_id: string;
+  status: string;
+  capabilities: string[];
+  registered_at: string;
+  last_seen_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
+}
+
+export interface DeviceProject {
+  id: string;
+  device_id: string;
+  user_id: string;
+  display_name: string;
+  local_root_fingerprint: string | null;
+  status: string;
+  authority: string;
+  registered_at: string;
+  revoked_at: string | null;
+  created_at: string;
+}
+
+export interface AgentJob {
+  id: string;
+  user_id: string;
+  device_id: string;
+  device_project_id: string;
+  operation_type: string;
+  status: string;
+  created_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  failed_at: string | null;
+  failure_reason: string | null;
+  truncated: boolean;
+}
+
+export interface DeviceRegisterResponse {
+  bootstrap_token: string;
+  expires_at: string;
+  device_id: string;
+}
+
+export interface ProjectAuthTokenResponse {
+  project_authorization_token: string;
+  expires_at: string;
+}

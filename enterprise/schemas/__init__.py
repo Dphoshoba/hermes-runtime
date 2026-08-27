@@ -866,6 +866,7 @@ class AgentJobResponse(BaseModel):
     completed_at: datetime | None = None
     failed_at: datetime | None = None
     failure_reason: str | None = None
+    truncated: bool = False
 
     class Config:
         from_attributes = True

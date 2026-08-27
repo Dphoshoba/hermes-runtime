@@ -15,6 +15,7 @@ import MissionsPage from './pages/MissionsPage';
 import ReportsPage from './pages/ReportsPage';
 import HumanReviewPage from './pages/HumanReviewPage';
 import GuidedModePage from './pages/GuidedModePage';
+import DevicesPage from './pages/DevicesPage';
 
 interface AuthCtx {
   user: User | null;
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
           <Route path="/review" element={<ProtectedRoute><HumanReviewPage /></ProtectedRoute>} />
           <Route path="/guided" element={<ProtectedRoute><GuidedModePage /></ProtectedRoute>} />
+          <Route path="/devices" element={<ProtectedRoute><DevicesPage /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </ModeProvider>

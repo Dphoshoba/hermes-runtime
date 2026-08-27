@@ -183,7 +183,7 @@ def submit_job_results(
             detail="Evidence job_id does not match",
         )
 
-    job = complete_job(db, job)
+    job = complete_job(db, job, truncated=bool(evidence.get("truncated", False)))
     return AgentJobResponse.model_validate(job)
 
 

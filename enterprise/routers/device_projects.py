@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import User
+from ..models import User, Device
 from ..schemas import (
     DeviceProjectCreate, DeviceProjectResponse,
     AgentScanJobCreate, AgentJobResponse,
@@ -18,7 +18,7 @@ from ..services.device_project_service import (
     list_device_projects,
     revoke_device_project,
 )
-from ..services.agent_job_service import create_scan_job
+from ..services.agent_job_service import create_scan_job, list_jobs_for_project
 
 router = APIRouter(tags=["device-projects"])
 
@@ -112,3 +112,28 @@ def create_project_scan(
         operation_type=body.operation_type,
     )
     return AgentJobResponse.model_validate(job)
+
+
+@router.get("/{project_id}/jobs", response_model=list[AgentJobResponse])
+def list_project_jobs(
+    project_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[AgentJobResponse]:
+    """User-authorized: list agent scan jobs for a device project."""
+    from ..models import DeviceProject
+    project = db.query(DeviceProject).filter(
+        DeviceProject.id == project_id
+    ).first()
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device project not found",
+        )
+    device = db.query(Device).filter(Device.device_id == project.device_id).first()
+    if not device or device.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    jobs = list_jobs_for_project(db, project_id, limit=limit, offset=offset)
+    return [AgentJobResponse.model_validate(j) for j in jobs]
