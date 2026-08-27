@@ -1,7 +1,7 @@
 # EVOSIA Programme Status Reconciliation
 
 **Date:** 2026-08-26
-**Certified HEAD:** `e72a4e9f0018f5dd9103b71aef4f6f84ee8bb7b1`
+**Certified HEAD:** `ac7100e9c149b144ac77c2811447042bf03a3cb1`
 **Purpose:** Reconcile overlapping milestone systems, clarify contradictions, and establish current programme state.
 
 ---
@@ -204,6 +204,7 @@ No execution authority has been introduced. All invariants hold.
 | Participant 1 Acceptance Record | `docs/m8/M8_PARTICIPANT_1_ACCEPTANCE_RECORD.md` |
 | Controlled Beta Phase Reports | `CONTROLLED_BETA_PHASE_*_REPORT.md` |
 | C3 Production Verification Record | `validation/C3_PRODUCTION_VERIFICATION.md` |
+| Final Engineering Certification | `validation/FINAL_ENGINEERING_CERTIFICATION.md` |
 
 ---
 
