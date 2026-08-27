@@ -69,6 +69,7 @@ hermes-ready = "evosia.readiness_cli:main"
 hermes-github = "evosia.github_cli:main"
 hermes-journal = "evosia.journal_cli:main"
 hermes-human-review = "evosia.human_review_cli:main"
+evosia-agent = "evosia_agent.__main__:main"
 
 [tool.setuptools]
 packages = [
@@ -78,6 +79,7 @@ packages = [
     "enterprise.routers",
     "enterprise.schemas",
     "enterprise.services",
+    "evosia_agent",
 ]
 
 [tool.setuptools.exclude-package-data]
