@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthContext } from '../App'
@@ -20,7 +20,6 @@ function ok(body: unknown) {
 const authUser: User = { id: 'u1', email: 'test@test.com', name: 'Test User', is_active: true, is_admin: false }
 
 function renderDevices(entry = '/devices') {
-  const { render } = require('@testing-library/react')
   return render(
     <MemoryRouter initialEntries={[entry]}>
       <AuthContext.Provider value={{ user: authUser, login: vi.fn(), logout: vi.fn() }}>
