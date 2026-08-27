@@ -6,6 +6,7 @@ import logging
 import signal
 import sys
 import threading
+from datetime import datetime, timezone
 from typing import NoReturn
 
 from .api_client import ApiClient, ApiError
@@ -187,6 +188,14 @@ class LocalAgent:
         cred = self._store.load()
         api = ApiClient(self._config.cloud_url)
 
+        def _on_job_received(job: dict) -> None:
+            """Handle received job from heartbeat polling."""
+            logger.info("Received job %s — executing", job.get("id"))
+            try:
+                execute_job(job, self._config, cred)
+            except Exception as exc:
+                logger.error("Job execution failed: %s", exc)
+
         self._heartbeat = HeartbeatLoop(
             api_client=api,
             device_id=cred.device_id,
@@ -195,6 +204,7 @@ class LocalAgent:
             interval_seconds=HEARTBEAT_INTERVAL_SECONDS,
             on_revoked=self._on_revoked,
             on_expired=self._on_expired,
+            on_job_received=_on_job_received,
         )
 
         # Run heartbeat in this thread (blocks until stopped)
@@ -277,3 +287,269 @@ def logout() -> None:
     except FileNotFoundError:
         store.delete()
         print("Credential store cleaned up.")
+
+
+def project_add(path: str) -> None:
+    """Add an explicitly authorized project."""
+    from pathlib import Path
+    from .project_registry import ProjectRegistry
+    from .path_validation import (
+        validate_project_root,
+        has_symlink_escape,
+        is_sensitive_path,
+    )
+    from .project_api import ProjectApiClient, ApiError
+
+    config = AgentConfig()
+    store = CredentialStore(config.data_dir)
+
+    if not store.is_registered:
+        print("Device not registered. Run 'python -m evosia_agent' first.")
+        return
+
+    try:
+        cred = store.load()
+    except FileNotFoundError:
+        print("Credential store corrupted. Please re-register.")
+        return
+
+    # Validate and canonicalize path
+    try:
+        canonical = validate_project_root(path)
+    except ValueError as exc:
+        print(f"Invalid project path: {exc}")
+        return
+
+    # Check for symlink escapes (fail-closed)
+    from .path_validation import SymlinkStatus
+    symlink_results = has_symlink_escape(canonical)
+    problems = [r for r in symlink_results if r.status != SymlinkStatus.SAFE_INTERNAL]
+    if problems:
+        print("Project contains problematic symlinks:")
+        for r in problems:
+            if r.status == SymlinkStatus.ESCAPES_ROOT:
+                print(f"  ESCAPES ROOT: {r.path}")
+            elif r.status == SymlinkStatus.BROKEN_OR_UNRESOLVABLE:
+                print(f"  BROKEN/UNRESOLVABLE: {r.path}")
+        print("Registration denied.")
+        return
+
+    display_name = canonical.name
+    print()
+    print("Project:")
+    print(f"  {display_name}")
+    print()
+    print("Location:")
+    print(f"  {canonical}")
+    print()
+    print("Authority:")
+    print(f"  Review only")
+    print()
+    print("EVOSIA will be able to inspect this project only after future scan")
+    print("functionality is separately authorized.")
+    print("No files have been changed.")
+    print()
+
+    # Register with cloud
+    api = ProjectApiClient(config.cloud_url, cred.credential)
+    try:
+        # Step 1: Request project authorization token (using device credential)
+        auth_response = api.request_project_authorization_token(cred.device_id)
+        project_auth_token = auth_response.get("project_authorization_token")
+
+        if not project_auth_token:
+            print("Failed to get project authorization token.")
+            print("Project registered locally only.")
+            cloud_project_id = f"local_{display_name}"
+        else:
+            # Step 2: Register project with authorization token
+            response = api.register_project(
+                device_id=cred.device_id,
+                display_name=display_name,
+                local_root_fingerprint="",  # Will be computed locally
+                project_authorization_token=project_auth_token,
+            )
+            cloud_project_id = response.get("project_id", response.get("id", ""))
+
+    except ApiError as exc:
+        print(f"Cloud registration failed: {exc.detail}")
+        print("Project registered locally only.")
+        cloud_project_id = f"local_{display_name}"
+
+    # Store locally
+    registry = ProjectRegistry(config.data_dir)
+    registry.add(
+        cloud_project_id=cloud_project_id,
+        canonical_local_root=canonical,
+        display_name=display_name,
+    )
+
+    print("Project registered successfully.")
+    print()
+
+
+def project_list() -> None:
+    """List all authorized projects."""
+    from .project_registry import ProjectRegistry
+
+    config = AgentConfig()
+    registry = ProjectRegistry(config.data_dir)
+    projects = registry.projects
+
+    print()
+    print("EVOSIA Local Agent")
+    print("-" * 40)
+    print()
+
+    if not projects:
+        print("No projects registered.")
+        print()
+        print("Use 'python -m evosia_agent project add <path>' to register a project.")
+        print()
+        return
+
+    print("Authorised projects:")
+    print()
+
+    for i, proj in enumerate(projects, 1):
+        from pathlib import Path
+        display_path = Path(proj.canonical_local_root).name
+        print(f"{i}. {proj.display_name}")
+        print(f"   Path: {display_path}")
+        print(f"   Authority: {proj.authority.replace('_', ' ').title()}")
+        print(f"   Status: {proj.status.title()}")
+        print()
+
+    print(f"Total: {len(projects)} project(s)")
+    print()
+
+
+def project_remove(project_id: str) -> None:
+    """Remove a project from local registry."""
+    from .project_registry import ProjectRegistry
+
+    config = AgentConfig()
+    registry = ProjectRegistry(config.data_dir)
+
+    proj = registry.get(project_id)
+    if not proj:
+        # Try to find by display name
+        for p in registry.projects:
+            if p.display_name.lower() == project_id.lower():
+                proj = p
+                project_id = p.cloud_project_id
+                break
+
+    if not proj:
+        print(f"Project not found: {project_id}")
+        return
+
+    if registry.remove(project_id):
+        print(f"Project removed: {proj.display_name}")
+        print("Cloud registration unchanged. Use EVOSIA dashboard to revoke.")
+    else:
+        print(f"Failed to remove project.")
+
+
+# ---------------------------------------------------------------------------
+# LA4: Job Execution
+# ---------------------------------------------------------------------------
+
+def execute_job(job: dict, config: AgentConfig, credential: DeviceCredential) -> None:
+    """Execute a governed PROJECT_SCAN job.
+
+    This is the ONLY way the agent performs work.
+    It must NEVER create jobs — only fetch and perform predefined work.
+    """
+    from .project_registry import ProjectRegistry
+    from .scanner import scan_project, ScanLimits
+    from pathlib import Path
+
+    job_id = job.get("id")
+    device_project_id = job.get("device_project_id")
+    operation_type = job.get("operation_type")
+
+    if operation_type != "PROJECT_SCAN":
+        logger.warning("Unknown operation type: %s — skipping", operation_type)
+        _report_job_failed(config, credential, job_id, f"Unknown operation type: {operation_type}")
+        return
+
+    # Map cloud project ID to local project root
+    registry = ProjectRegistry(config.data_dir)
+    local_project = registry.get(device_project_id)
+    if not local_project:
+        logger.warning("Project %s not found locally — skipping", device_project_id)
+        _report_job_failed(config, credential, job_id, "Project not found locally")
+        return
+
+    if local_project.status != "active":
+        logger.warning("Project %s is %s — skipping", device_project_id, local_project.status)
+        _report_job_failed(config, credential, job_id, f"Project is {local_project.status}")
+        return
+
+    project_root = Path(local_project.canonical_local_root)
+    if not project_root.exists():
+        logger.warning("Project root does not exist: %s", project_root)
+        _report_job_failed(config, credential, job_id, "Project root does not exist")
+        return
+
+    # Mark job as started
+    api = ApiClient(config.cloud_url)
+    try:
+        api.mark_job_started(job_id, credential.credential, AGENT_VERSION)
+    except ApiError as exc:
+        logger.error("Failed to mark job started: %s", exc.detail)
+        return
+
+    # Perform bounded read-only scan
+    start_time = datetime.now(timezone.utc)
+    try:
+        result = scan_project(project_root, ScanLimits())
+    except Exception as exc:
+        logger.error("Scan failed: %s", exc)
+        _report_job_failed(config, credential, job_id, f"Scan failed: {exc}")
+        return
+
+    end_time = datetime.now(timezone.utc)
+    duration = (end_time - start_time).total_seconds()
+
+    # Build evidence
+    evidence = {
+        "job_id": job_id,
+        "device_id": credential.device_id,
+        "device_project_id": device_project_id,
+        "project_display_name": local_project.display_name,
+        "agent_version": AGENT_VERSION,
+        "started_at": start_time.isoformat(),
+        "completed_at": end_time.isoformat(),
+        "file_count": result.file_count,
+        "languages": result.languages,
+        "project_structure_summary": result.project_structure_summary,
+        "git_metadata": result.git_metadata,
+        "findings": result.findings,
+        "truncated": result.truncated,
+        "limits": result.limits,
+        "sensitive_files_found": result.sensitive_files_found,
+        "total_bytes_read": result.total_bytes_read,
+        "provenance": "LIVE_EVOSIA_EVIDENCE",
+        "evidence_source": "device_local_scan",
+    }
+
+    # Submit results
+    try:
+        api.submit_job_results(job_id, credential.credential, evidence, duration)
+        logger.info("Job %s completed successfully", job_id)
+    except ApiError as exc:
+        logger.error("Failed to submit results: %s", exc.detail)
+
+
+def _report_job_failed(
+    config: AgentConfig, credential: DeviceCredential,
+    job_id: str, reason: str,
+) -> None:
+    """Report job failure to cloud."""
+    api = ApiClient(config.cloud_url)
+    try:
+        api.report_job_failed(job_id, credential.credential, reason)
+    except ApiError as exc:
+        logger.error("Failed to report job failure: %s", exc.detail)

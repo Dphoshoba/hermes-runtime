@@ -1,4 +1,4 @@
-"""Heartbeat — periodic heartbeat with retry/backoff for LA2."""
+"""Heartbeat — periodic heartbeat with retry/backoff and job polling for LA2/LA4."""
 
 from __future__ import annotations
 
@@ -13,13 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 class HeartbeatLoop:
-    """Manages periodic heartbeat to EVOSIA Cloud.
+    """Manages periodic heartbeat to EVOSIA Cloud with job polling.
 
     Handles:
     - Periodic heartbeat at configured interval
     - Bounded retry/backoff on network failure
     - Revocation detection and stop
     - Credential expiry detection
+    - Job polling and execution (LA4)
     """
 
     def __init__(
@@ -31,6 +32,7 @@ class HeartbeatLoop:
         interval_seconds: int = 60,
         on_revoked: Callable[[], None] | None = None,
         on_expired: Callable[[], None] | None = None,
+        on_job_received: Callable[[dict], None] | None = None,
     ) -> None:
         self._api = api_client
         self._device_id = device_id
@@ -39,6 +41,7 @@ class HeartbeatLoop:
         self._interval = interval_seconds
         self._on_revoked = on_revoked
         self._on_expired = on_expired
+        self._on_job_received = on_job_received
         self._running = False
 
     def start(self) -> None:
@@ -61,6 +64,17 @@ class HeartbeatLoop:
                 if status == "ok":
                     logger.debug("Heartbeat successful")
                     retry_delay = RETRY_BASE_SECONDS  # Reset backoff on success
+
+                    # Check for pending jobs
+                    pending_jobs = response.get("pending_jobs", [])
+                    if pending_jobs and self._on_job_received:
+                        for job_id in pending_jobs:
+                            try:
+                                job = self._api.get_job(job_id, self._device_credential)
+                                self._on_job_received(job)
+                            except ApiError as exc:
+                                logger.warning("Failed to fetch job %s: %s", job_id, exc.detail)
+
                     self._sleep(self._interval)
 
                 elif status == "revoked":

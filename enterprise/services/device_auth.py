@@ -81,7 +81,11 @@ def verify_bootstrap_token(db: Session, token: str) -> dict:
             detail="Bootstrap token already used",
         )
 
-    if record.expires_at < datetime.now(timezone.utc):
+    # SQLite strips timezone info, so record.expires_at may be naive even though
+    # it was stored as aware.  Normalize both sides to naive UTC for safe comparison.
+    expires_at = record.expires_at.replace(tzinfo=None) if record.expires_at.tzinfo else record.expires_at
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    if expires_at < now_utc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Bootstrap token expired",

@@ -1,4 +1,4 @@
-"""API client — narrow HTTPS client for LA2 cloud operations."""
+"""API client — narrow HTTPS client for LA2/LA4 cloud operations."""
 
 from __future__ import annotations
 
@@ -28,10 +28,10 @@ class ApiError(Exception):
 
 
 class ApiClient:
-    """Narrow HTTPS client for LA2 operations.
+    """Narrow HTTPS client for LA2/LA4 operations.
 
-    Only supports: registration exchange, heartbeat.
-    No generic method that exposes arbitrary cloud requests.
+    Only supports: registration exchange, heartbeat, job polling,
+    job lifecycle operations. No generic method for arbitrary cloud requests.
     """
 
     def __init__(self, cloud_url: str) -> None:
@@ -67,6 +67,80 @@ class ApiClient:
 
         return self._post(url, body, auth_header=f"Bearer {device_credential}")
 
+    # ------------------------------------------------------------------
+    # LA4: Job Polling and Lifecycle
+    # ------------------------------------------------------------------
+
+    def get_next_job(
+        self, device_id: str, device_credential: str
+    ) -> dict[str, Any] | None:
+        """Fetch the next pending job for this device.
+
+        GET /api/agent/jobs/next
+        Returns None if no jobs available.
+        """
+        url = f"{self._cloud_url}/api/agent/jobs/next"
+        try:
+            return self._get(url, auth_header=f"Bearer {device_credential}")
+        except ApiError as exc:
+            if exc.status_code == 404:
+                return None
+            raise
+
+    def get_job(
+        self, job_id: str, device_credential: str
+    ) -> dict[str, Any]:
+        """Fetch a specific job.
+
+        GET /api/agent/jobs/{job_id}
+        """
+        url = f"{self._cloud_url}/api/agent/jobs/{job_id}"
+        return self._get(url, auth_header=f"Bearer {device_credential}")
+
+    def mark_job_started(
+        self, job_id: str, device_credential: str, agent_version: str
+    ) -> dict[str, Any]:
+        """Report job started.
+
+        POST /api/agent/jobs/{job_id}/started
+        """
+        url = f"{self._cloud_url}/api/agent/jobs/{job_id}/started"
+        body = {"agent_version": agent_version}
+        return self._post(url, body, auth_header=f"Bearer {device_credential}")
+
+    def submit_job_results(
+        self,
+        job_id: str,
+        device_credential: str,
+        evidence: dict[str, Any],
+        duration_seconds: float,
+    ) -> dict[str, Any]:
+        """Submit governed scan results.
+
+        POST /api/agent/jobs/{job_id}/results
+        """
+        url = f"{self._cloud_url}/api/agent/jobs/{job_id}/results"
+        body = {
+            "evidence": evidence,
+            "duration_seconds": duration_seconds,
+        }
+        return self._post(url, body, auth_header=f"Bearer {device_credential}")
+
+    def report_job_failed(
+        self, job_id: str, device_credential: str, failure_reason: str
+    ) -> dict[str, Any]:
+        """Report job failure.
+
+        POST /api/agent/jobs/{job_id}/failed
+        """
+        url = f"{self._cloud_url}/api/agent/jobs/{job_id}/failed"
+        body = {"failure_reason": failure_reason}
+        return self._post(url, body, auth_header=f"Bearer {device_credential}")
+
+    # ------------------------------------------------------------------
+    # HTTP primitives
+    # ------------------------------------------------------------------
+
     def _post(
         self,
         url: str,
@@ -89,6 +163,32 @@ class ApiClient:
             with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
                 response_data = response.read().decode("utf-8")
                 return json.loads(response_data) if response_data else {}
+        except urllib.error.HTTPError as exc:
+            detail = _safe_error_detail(exc)
+            raise ApiError(status_code=exc.code, detail=detail) from exc
+        except urllib.error.URLError as exc:
+            raise ApiError(status_code=0, detail=f"Connection failed: {exc.reason}") from exc
+        except json.JSONDecodeError as exc:
+            raise ApiError(status_code=0, detail="Invalid JSON response") from exc
+
+    def _get(
+        self,
+        url: str,
+        auth_header: str | None = None,
+    ) -> Any:
+        """Make a GET request with TLS verification enabled."""
+        headers = {
+            "User-Agent": AGENT_VERSION,
+        }
+        if auth_header:
+            headers["Authorization"] = auth_header
+
+        request = urllib.request.Request(url, headers=headers, method="GET")
+
+        try:
+            with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+                response_data = response.read().decode("utf-8")
+                return json.loads(response_data) if response_data else []
         except urllib.error.HTTPError as exc:
             detail = _safe_error_detail(exc)
             raise ApiError(status_code=exc.code, detail=detail) from exc

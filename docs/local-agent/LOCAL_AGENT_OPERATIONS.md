@@ -1,11 +1,11 @@
-# EVOSIA Local Agent — LA2 Operations Guide
+# EVOSIA Local Agent — LA4 Operations Guide
 
 ## What is the Local Agent?
 
-The EVOSIA Local Agent is a cross-platform client program that runs on your Mac or Windows PC. It allows your computer to connect to EVOSIA Cloud for device identification and status reporting.
+The EVOSIA Local Agent is a cross-platform client program that runs on your Mac or Windows PC. It allows your computer to connect to EVOSIA Cloud for device identification, status reporting, and governed read-only project scanning.
 
-**LA2 HAS NO PROJECT FILE ACCESS.**
-**LA2 HAS NO EXECUTION AUTHORITY.**
+**LA4 ADDS GOVERNED READ-ONLY PROJECT SCANNING.**
+**LA4 HAS NO WRITE, EXECUTE, MERGE, OR DEPLOY AUTHORITY.**
 
 The Local Agent can only:
 - Identify itself to EVOSIA Cloud
@@ -14,20 +14,19 @@ The Local Agent can only:
 - Survive temporary network failures
 - Reconnect automatically
 - Shut down cleanly
+- Execute governed read-only project scans (LA4)
 
-## What LA2 Cannot Do
+## What LA4 Cannot Do
 
-- Access project folders
-- Register projects
-- Read project files
-- Scan repositories
-- Receive jobs
-- Execute commands
+- Access project folders without explicit user authorization
+- Read project files without a scan job
+- Execute commands, scripts, or shell instructions
 - Modify files
 - Create preparation workspaces
 - Merge code
 - Deploy changes
 - Expose inbound network ports
+- Create its own scan jobs (requires human/cloud authority)
 
 ## Registration Process
 
@@ -55,9 +54,9 @@ The Local Agent can only:
 
    Device: David's MacBook Pro
    Status: Connected
-   Authority: Device connection only
+   Authority: Device connection + governed scanning
 
-   No project folders have been authorised.
+   Project folders can be authorised for read-only scanning.
    ```
 
 ## Starting the Agent
@@ -98,9 +97,9 @@ Device: David's MacBook Pro
 Device ID: dev_abc12345...
 Cloud: https://evosia-cloud.fly.dev
 Agent version: evosia-agent/0.1.0
-Authority: Device connection only
-Projects authorised: None
-Project access: Not enabled in LA2
+Authority: Device connection + governed scanning
+Projects authorised: 1
+Project access: LA4 governed read-only scanning
 ```
 
 ## Shutdown
@@ -153,7 +152,161 @@ To reconnect, re-register with a new bootstrap token.
 - The agent handles temporary network failures gracefully
 - Uses bounded retry/backoff (5s → 10s → 30s → 60s max)
 - When connectivity returns, heartbeat resumes automatically
-- No project work exists to queue yet
+- Project registration is cached locally for offline use
+
+## Project Authorization (LA3)
+
+LA3 introduces explicit project authorization. The user selects ONE project folder.
+
+### Registering a Project
+
+```bash
+python -m evosia_agent project add "/Users/david/Projects/BibleQuest"
+```
+
+Output:
+```
+Project:
+  BibleQuest
+
+Location:
+  /Users/david/Projects/BibleQuest
+
+Authority:
+  Review only
+
+EVOSIA will be able to inspect this project only after future scan
+functionality is separately authorized.
+No files have been changed.
+
+Project registered successfully.
+```
+
+### Listing Registered Projects
+
+```bash
+python -m evosia_agent projects
+```
+
+Output:
+```
+EVOSIA Local Agent
+----------------------------------------
+
+Authorised projects:
+
+1. BibleQuest
+   Path: BibleQuest
+   Authority: Review Only
+   Status: Active
+
+Total: 1 project(s)
+```
+
+### Removing a Project
+
+```bash
+python -m evosia_agent project remove BibleQuest
+```
+
+Output:
+```
+Project removed: BibleQuest
+Cloud registration unchanged. Use EVOSIA dashboard to revoke.
+```
+
+### Project Security
+
+- **No automatic discovery**: User explicitly selects project root
+- **No source file reading**: LA3 does not scan or read project contents
+- **No Git commands**: No git status, branch, or log commands
+- **Path containment**: Traversal escape (`../`) is denied
+- **Symlink protection**: Symlinks escaping root are detected and denied
+- **Sensitive file policy**: `.env`, `.pem`, `.key`, SSH keys are classified
+- **Path privacy**: Raw absolute paths are not sent to cloud
+- **Immutability**: Registration does not modify the target project
+
+### Project Authority
+
+All registered projects start with:
+- **Authority**: REVIEW_ONLY
+- **No**: WRITE, PREPARE, EXECUTE, MERGE, DEPLOY
+
+### Project Revocation
+
+Projects can be revoked locally:
+```bash
+python -m evosia_agent project remove <project-id>
+```
+
+Cloud revocation requires using the EVOSIA dashboard.
+
+## Governed Read-Only Scanning (LA4)
+
+LA4 introduces governed read-only project scanning. The agent can scan project files ONLY when a scan job exists that was created by an authenticated user or cloud system.
+
+### How Scanning Works
+
+1. **User creates scan job**: An authenticated user creates a scan job via the EVOSIA dashboard or API
+2. **Agent polls for jobs**: During heartbeat, the agent checks for pending scan jobs
+3. **Agent executes scan**: If a job exists, the agent performs a bounded, read-only scan
+4. **Agent submits evidence**: Scan results are submitted as cryptographically signed evidence
+
+### Scan Authority Requirements
+
+- **Scan jobs CANNOT be created by the agent** — only by authenticated users or cloud systems
+- **Each scan requires explicit authorization** — no implicit or cached authority
+- **Agent verifies job authenticity** — checks device_id, project_id, and job status
+- **Read-only enforcement** — scanner cannot write, execute, or modify files
+
+### Scan Limits
+
+The scanner enforces strict resource limits:
+- **File size**: 1MB per file maximum
+- **Total read**: 10MB aggregate maximum
+- **File count**: 5000 files maximum
+- **Timeout**: 120 seconds maximum
+- **Path containment**: Cannot escape project root
+- **Symlink protection**: Symlinks escaping root are denied
+
+### Git Metadata
+
+The scanner reads only these git metadata fields (hardcoded allowlist):
+- `git rev-parse --abbrev-ref HEAD` (current branch)
+- `git rev-parse HEAD` (commit hash)
+- `git status --porcelain` (changed files)
+
+No other git commands are executed.
+
+### Evidence Format
+
+Scan results are submitted as evidence with:
+- `provenance = "LIVE_EVOSIA_EVIDENCE"`
+- `evidence_source = "device_local_scan"`
+- Cryptographic signature for tamper detection
+- Timestamp and scan metadata
+
+### Starting a Scan
+
+The agent automatically scans when a pending job is detected during heartbeat. No manual action is required.
+
+### Monitoring Scans
+
+Check scan status via the EVOSIA dashboard or API:
+```bash
+# List scan jobs for a project
+curl -H "Authorization: Bearer <token>" \
+  https://evosia-cloud.fly.dev/api/device-projects/<project-id>/scans
+```
+
+### Scan Security
+
+- **No shell execution**: Scanner cannot run shell commands
+- **No file writes**: Scanner is strictly read-only
+- **Path containment**: All file access is within project root
+- **Symlink fail-closed**: Symlinks that escape root are denied
+- **Resource bounded**: File count, size, and time limits enforced
+- **Human authority required**: Agent cannot create its own scan jobs
 
 ## Logout
 
@@ -178,6 +331,8 @@ To fully revoke, use the EVOSIA dashboard.
 - **Communication**: All outbound HTTPS, no inbound ports
 - **TLS verification**: Always enabled, never disabled
 - **No secrets in logs**: Bootstrap tokens and JWTs are never logged
+- **Scan authority**: Human-initiated only, no self-authorization
+- **Read-only enforcement**: Scanner cannot write, execute, or modify files
 
 ## Development Setup
 

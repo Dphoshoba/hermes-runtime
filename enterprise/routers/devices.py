@@ -13,9 +13,12 @@ from ..schemas import (
     DeviceResponse,
     DeviceTokenExchange,
     DeviceTokenResponse,
+    ProjectAuthorizationTokenCreate,
+    ProjectAuthorizationTokenResponse,
 )
 from ..services import get_current_user
 from ..services.device_auth import verify_bootstrap_token
+from ..services.project_auth import create_project_authorization_token
 from ..services.device_service import (
     register_device,
     exchange_bootstrap_token,
@@ -24,7 +27,7 @@ from ..services.device_service import (
     revoke_device,
 )
 
-router = APIRouter(prefix="/devices", tags=["devices"])
+router = APIRouter(tags=["devices"])
 
 
 @router.post("/register", response_model=DeviceRegisterResponse, status_code=201)
@@ -84,3 +87,32 @@ def revoke_device_endpoint(
     """User-authorized: revoke a device."""
     device = revoke_device(db, device_id, user.id)
     return DeviceResponse.model_validate(device)
+
+
+@router.post("/{device_id}/project-auth-token", response_model=ProjectAuthorizationTokenResponse)
+def create_project_auth_token(
+    device_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProjectAuthorizationTokenResponse:
+    """User-authorized: create a short-lived project authorization token.
+
+    This token allows the device to register a new project without
+    needing the user's password or full credentials.
+    """
+    # Verify user owns the device
+    device = get_device(db, device_id)
+    if device.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if device.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Device is {device.status}",
+        )
+
+    token, expires_at = create_project_authorization_token(db, device_id, user.id)
+    return ProjectAuthorizationTokenResponse(
+        project_authorization_token=token,
+        expires_at=expires_at,
+    )

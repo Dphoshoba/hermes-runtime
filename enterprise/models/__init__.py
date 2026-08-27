@@ -539,3 +539,91 @@ class BootstrapToken(Base):
     consumed = Column(Boolean, default=False, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=_utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Local Agent — Project Authorization (LA3)
+# ---------------------------------------------------------------------------
+
+class DeviceProject(Base):
+    """Device-project relationship for authorized projects.
+
+    Maps a device to an explicitly authorized project root.
+    No raw local paths stored in cloud DB.
+    """
+    __tablename__ = "device_projects"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    device_id = Column(String(128), ForeignKey("devices.device_id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    display_name = Column(String(255), nullable=False)
+    local_root_fingerprint = Column(String(128))  # SHA-256 of canonical path
+
+    # Status
+    status = Column(String(30), default="active", nullable=False)  # active, revoked
+    authority = Column(String(50), default="REVIEW_ONLY", nullable=False)
+
+    # Timestamps
+    registered_at = Column(DateTime, default=_utcnow)
+    revoked_at = Column(DateTime)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    device = relationship("Device")
+    user = relationship("User")
+
+
+class ProjectAuthorizationToken(Base):
+    """Server-side record of issued project authorization tokens (hashed).
+
+    Short-lived, single-use tokens for authorizing project registration.
+    Created by authenticated user, consumed by agent during registration.
+    """
+    __tablename__ = "project_authorization_tokens"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    token_hash = Column(String(128), unique=True, nullable=False, index=True)
+    device_id = Column(String(128), ForeignKey("devices.device_id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    consumed = Column(Boolean, default=False, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=_utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Local Agent — Governed Scan Jobs (LA4)
+# ---------------------------------------------------------------------------
+
+class AgentJob(Base):
+    """Governed scan job for Local Agent execution.
+
+    Created by authenticated user via control plane.
+    Executed by device via agent work plane.
+    Device may NEVER create these — only fetch and perform predefined work.
+    """
+    __tablename__ = "agent_jobs"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    device_id = Column(String(128), ForeignKey("devices.device_id"), nullable=False, index=True)
+    device_project_id = Column(String(36), ForeignKey("device_projects.id"), nullable=False, index=True)
+
+    # Governed operation — only PROJECT_SCAN for LA4
+    operation_type = Column(String(50), nullable=False, default="PROJECT_SCAN")
+
+    # Lifecycle status
+    status = Column(String(30), nullable=False, default="PENDING", index=True)
+    # PENDING → STARTED → COMPLETED | FAILED | EXPIRED
+
+    # Timestamps
+    created_at = Column(DateTime, default=_utcnow)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    failed_at = Column(DateTime, nullable=True)
+    failure_reason = Column(Text, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+    device = relationship("Device")
+    device_project = relationship("DeviceProject")

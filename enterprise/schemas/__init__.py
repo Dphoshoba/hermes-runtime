@@ -779,3 +779,133 @@ class DeviceHeartbeatResponse(BaseModel):
     """Cloud response to agent heartbeat."""
     status: str
     pending_jobs: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Local Agent — Project Authorization (LA3)
+# ---------------------------------------------------------------------------
+
+class DeviceProjectCreate(BaseModel):
+    """Request to register a device-project."""
+    device_id: str = Field(min_length=1, max_length=128)
+    display_name: str = Field(min_length=1, max_length=255)
+    local_root_fingerprint: str | None = None
+    project_authorization_token: str = Field(min_length=1, max_length=255)
+
+
+class DeviceProjectResponse(BaseModel):
+    """Device-project registration response."""
+    id: str
+    device_id: str
+    user_id: str
+    display_name: str
+    local_root_fingerprint: str | None
+    status: str
+    authority: str
+    registered_at: datetime
+    revoked_at: datetime | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ProjectAuthorizationTokenCreate(BaseModel):
+    """Request to create a project authorization token."""
+    device_id: str = Field(min_length=1, max_length=128)
+
+
+class ProjectAuthorizationTokenResponse(BaseModel):
+    """Response containing a single-use project authorization token."""
+    project_authorization_token: str
+    expires_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Local Agent — Governed Scan Jobs (LA4) — Control Plane
+# ---------------------------------------------------------------------------
+
+# Allowed operation types — only PROJECT_SCAN for LA4
+ALLOWED_OPERATION_TYPES = frozenset({"PROJECT_SCAN"})
+
+# Allowed job statuses
+JOB_STATUS_PENDING = "PENDING"
+JOB_STATUS_STARTED = "STARTED"
+JOB_STATUS_COMPLETED = "COMPLETED"
+JOB_STATUS_FAILED = "FAILED"
+JOB_STATUS_EXPIRED = "EXPIRED"
+
+VALID_JOB_STATUSES = frozenset({
+    JOB_STATUS_PENDING, JOB_STATUS_STARTED,
+    JOB_STATUS_COMPLETED, JOB_STATUS_FAILED, JOB_STATUS_EXPIRED,
+})
+
+
+class AgentScanJobCreate(BaseModel):
+    """Request to create a governed PROJECT_SCAN job.
+
+    Only the operation type is accepted — no arbitrary commands, paths,
+    scripts, or shell instructions.
+    """
+    operation_type: str = Field(
+        default="PROJECT_SCAN",
+        pattern=r"^PROJECT_SCAN$",
+    )
+
+
+class AgentJobResponse(BaseModel):
+    """Job representation returned to agents and control plane."""
+    id: str
+    user_id: str
+    device_id: str
+    device_project_id: str
+    operation_type: str
+    status: str
+    created_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    failed_at: datetime | None = None
+    failure_reason: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class AgentJobStartedRequest(BaseModel):
+    """Agent reports job started."""
+    agent_version: str = Field(min_length=1, max_length=50)
+
+
+class AgentJobResultsRequest(BaseModel):
+    """Agent submits governed scan results."""
+    evidence: dict[str, Any]
+    duration_seconds: float = Field(ge=0)
+
+
+class AgentJobFailedRequest(BaseModel):
+    """Agent reports job failure."""
+    failure_reason: str = Field(min_length=1, max_length=1000)
+
+
+# ---------------------------------------------------------------------------
+# Local Agent — Governed Scan Jobs (LA4) — Evidence Schema
+# ---------------------------------------------------------------------------
+
+class ScanEvidence(BaseModel):
+    """Bounded evidence schema for PROJECT_SCAN results."""
+    job_id: str
+    device_id: str
+    device_project_id: str
+    project_display_name: str
+    agent_version: str
+    started_at: str
+    completed_at: str
+    file_count: int
+    languages: list[str]
+    project_structure_summary: dict[str, Any]
+    git_metadata: dict[str, Any] | None = None
+    findings: list[dict[str, Any]]
+    truncated: bool
+    limits: dict[str, Any]
+    provenance: str = "LIVE_EVOSIA_EVIDENCE"
+    evidence_source: str = "device_local_scan"
