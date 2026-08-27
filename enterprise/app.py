@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse
 from .database import engine, sessionmaker
 from .routers import auth, repositories, dashboard, journal, findings, missions, reports, scans
 from .routers import trial, feedback, friction, operations, proposals, scheduling, review, guided
+from .routers import devices, agent
 from .services import SECRET_KEY
 
 
@@ -90,6 +91,8 @@ app.include_router(proposals.router, prefix="/api/proposals", tags=["Feature Pro
 app.include_router(scheduling.router, prefix="/api/scheduling", tags=["Scheduling"])
 app.include_router(review.router, prefix="/api/review", tags=["Human Review"])
 app.include_router(guided.router, prefix="/api/guided", tags=["Guided Mode"])
+app.include_router(devices.router, prefix="/api/devices", tags=["Devices"])
+app.include_router(agent.router, prefix="/api/agent", tags=["Agent"])
 
 
 @app.get("/api/health")

@@ -491,3 +491,51 @@ class PreparedChange(Base):
     created_by = Column(String(255))
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Local Agent — Device Trust Domain (LA1)
+# ---------------------------------------------------------------------------
+
+class Device(Base):
+    __tablename__ = "devices"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    device_id = Column(String(128), unique=True, nullable=False, index=True)
+    device_name = Column(String(255), nullable=False)
+    platform = Column(String(50), nullable=False)  # "macos", "windows", "linux"
+    agent_version = Column(String(50), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+
+    # Status
+    status = Column(String(30), default="pending", nullable=False)  # pending, active, revoked
+
+    # Capabilities (JSON array of capability strings)
+    capabilities = Column(JSON, default=list)
+
+    # Timestamps
+    registered_at = Column(DateTime, default=_utcnow)
+    last_seen_at = Column(DateTime)
+    revoked_at = Column(DateTime)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    user = relationship("User")
+
+
+class BootstrapToken(Base):
+    """Server-side record of issued bootstrap tokens (hashed).
+
+    The plaintext token is returned once at creation and never persisted.
+    This table enforces single-use consumption and tracks expiry.
+    """
+    __tablename__ = "bootstrap_tokens"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    token_hash = Column(String(128), unique=True, nullable=False, index=True)
+    device_id = Column(String(128), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    consumed = Column(Boolean, default=False, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=_utcnow)

@@ -716,3 +716,66 @@ class ReviewSummaryResponse(BaseModel):
     finding_precision: float | None
     actionability_rate: float | None
     pending_review: int
+
+
+# ---------------------------------------------------------------------------
+# Local Agent — Device Trust Domain (LA1)
+# ---------------------------------------------------------------------------
+
+class DeviceRegister(BaseModel):
+    """User-authorized request to register a new device."""
+    device_name: str = Field(min_length=1, max_length=255)
+    platform: str = Field(pattern=r"^(macos|windows|linux)$")
+    agent_version: str = Field(min_length=1, max_length=50)
+    capabilities: list[str] = Field(default_factory=list)
+
+
+class DeviceRegisterResponse(BaseModel):
+    """Response containing a single-use bootstrap token."""
+    bootstrap_token: str
+    expires_at: datetime
+    device_id: str
+
+
+class DeviceTokenExchange(BaseModel):
+    """Agent request to exchange bootstrap token for device credential."""
+    bootstrap_token: str
+
+
+class DeviceTokenResponse(BaseModel):
+    """Device credential issued after bootstrap exchange."""
+    access_token: str
+    token_type: str = "device"
+    expires_at: datetime
+
+
+class DeviceResponse(BaseModel):
+    """Device metadata returned by control plane."""
+    id: str
+    device_id: str
+    device_name: str
+    platform: str
+    agent_version: str
+    user_id: str
+    status: str
+    capabilities: list[str]
+    registered_at: datetime
+    last_seen_at: datetime | None
+    revoked_at: datetime | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class DeviceHeartbeatRequest(BaseModel):
+    """Agent heartbeat payload."""
+    device_id: str
+    agent_version: str
+    jobs_available: int = 0
+
+
+class DeviceHeartbeatResponse(BaseModel):
+    """Cloud response to agent heartbeat."""
+    status: str
+    pending_jobs: list[str] = Field(default_factory=list)
