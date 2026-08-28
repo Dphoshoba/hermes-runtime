@@ -154,14 +154,35 @@ To reconnect, re-register with a new bootstrap token.
 - When connectivity returns, heartbeat resumes automatically
 - Project registration is cached locally for offline use
 
-## Project Authorization (LA3)
+## Project Authorization (LA6)
 
-LA3 introduces explicit project authorization. The user selects ONE project folder.
+LA6 introduces human-authorized project connection. A project can only be registered after an authenticated human explicitly authorizes it.
+
+### Connecting a Project
+
+1. **Connect Computer**: Register your computer with EVOSIA (see Device Registration above)
+2. **Open Computers**: Navigate to the Computers page in EVOSIA
+3. **Select computer**: Click on the computer you want to connect a project to
+4. **Authorise project**: Click "Authorise project" button
+5. **Copy token**: Copy the one-time authorization code shown in the modal
+6. **Run command locally**: On your computer, run:
+   ```bash
+   python -m evosia_agent project add "/Users/david/Projects/BibleQuest" --authorization-token la_proj_abc123def456
+   ```
+7. **Token consumed**: The token is consumed during registration and cannot be reused
+8. **Project registered**: The project is registered with REVIEW_ONLY authority
+
+### What Authorization Does NOT Do
+
+- Authorization itself does NOT scan the project
+- Authorization does NOT read or modify project files
+- Authorization does NOT grant execution, merge, or deploy permissions
+- "Review Project" remains a separate human action
 
 ### Registering a Project
 
 ```bash
-python -m evosia_agent project add "/Users/david/Projects/BibleQuest"
+python -m evosia_agent project add "/Users/david/Projects/BibleQuest" --authorization-token <token>
 ```
 
 Output:
@@ -180,6 +201,19 @@ functionality is separately authorized.
 No files have been changed.
 
 Project registered successfully.
+```
+
+### Without Authorization Token
+
+If you run `project add` without `--authorization-token`, the agent prints instructions:
+
+```
+Project authorization required.
+
+Generate a one-time authorization code from EVOSIA Computers,
+then run this command again with that code:
+
+  python -m evosia_agent project add <path> --authorization-token <token>
 ```
 
 ### Listing Registered Projects
@@ -215,22 +249,32 @@ Project removed: BibleQuest
 Cloud registration unchanged. Use EVOSIA dashboard to revoke.
 ```
 
-### Project Security
+#### Project Security
 
 - **No automatic discovery**: User explicitly selects project root
-- **No source file reading**: LA3 does not scan or read project contents
+- **No source file reading**: LA6 does not scan or read project contents
 - **No Git commands**: No git status, branch, or log commands
 - **Path containment**: Traversal escape (`../`) is denied
 - **Symlink protection**: Symlinks escaping root are detected and denied
 - **Sensitive file policy**: `.env`, `.pem`, `.key`, SSH keys are classified
-- **Path privacy**: Raw absolute paths are not sent to cloud
+- **Path privacy**: Raw absolute paths are not sent to cloud (only SHA-256 fingerprint)
 - **Immutability**: Registration does not modify the target project
+- **Human authorization required**: Agent cannot mint its own authorization tokens
 
 ### Project Authority
 
 All registered projects start with:
 - **Authority**: REVIEW_ONLY
 - **No**: WRITE, PREPARE, EXECUTE, MERGE, DEPLOY
+
+### Project Authorization Token
+
+- **Created by**: Authenticated human via EVOSIA Computers UI
+- **Single-use**: Consumed during registration, cannot be reused
+- **Short-lived**: Expires after 10 minutes
+- **Device-bound**: Token is bound to a specific device
+- **Not persisted**: Agent does not store the token after registration
+- **Not logged**: Token is never written to logs or local files
 
 ### Project Revocation
 
@@ -327,11 +371,13 @@ To fully revoke, use the EVOSIA dashboard.
 ## Security Model
 
 - **Bootstrap tokens**: Single-use, 5-minute expiry, never stored locally
+- **Project authorization tokens**: Single-use, 10-minute expiry, created by authenticated human only
 - **Device credentials**: 30-day JWT, stored with restrictive file permissions
 - **Communication**: All outbound HTTPS, no inbound ports
 - **TLS verification**: Always enabled, never disabled
-- **No secrets in logs**: Bootstrap tokens and JWTs are never logged
+- **No secrets in logs**: Bootstrap tokens, JWTs, and project authorization tokens are never logged
 - **Scan authority**: Human-initiated only, no self-authorization
+- **Project authority**: REVIEW_ONLY — no execution, merge, or deploy
 - **Read-only enforcement**: Scanner cannot write, execute, or modify files
 
 ## Development Setup
