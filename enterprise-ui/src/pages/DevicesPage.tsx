@@ -437,6 +437,12 @@ export default function DevicesPage() {
 
   useEffect(() => { fetchDevices() }, [fetchDevices])
 
+  // Poll device list every 30s so last_seen_at / online status stays current
+  useEffect(() => {
+    const id = setInterval(fetchDevices, 30_000)
+    return () => clearInterval(id)
+  }, [fetchDevices])
+
   if (selectedDevice) {
     // Refresh device data when returning from detail
     const fresh = devices.find(d => d.id === selectedDevice.id) || selectedDevice
