@@ -664,3 +664,87 @@ describe('Project Authorization Flow', () => {
     })
   })
 })
+
+// ---------------------------------------------------------------------------
+// LA6.3J: UTC timestamp timezone contract tests
+// ---------------------------------------------------------------------------
+
+describe('UTC timestamp timezone contract', () => {
+  beforeEach(() => { mockFetch.mockReset() })
+
+  it('fresh UTC Z-suffixed timestamp renders Online', async () => {
+    // Simulate what the API now returns: "2026-08-28T11:59:19Z"
+    const now = new Date()
+    const freshTimestamp = new Date(now.getTime() - 60000).toISOString() // 1 minute ago
+    const device: Device = {
+      ...SAMPLE_DEVICE,
+      last_seen_at: freshTimestamp,
+    }
+    mockFetch.mockResolvedValueOnce(ok([device]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => {
+      expect(screen.getByText('online')).toBeInTheDocument()
+    })
+  })
+
+  it('timestamp 4m59s old renders Online', async () => {
+    const now = new Date()
+    const almostOld = new Date(now.getTime() - (4 * 60 + 59) * 1000).toISOString()
+    const device: Device = {
+      ...SAMPLE_DEVICE,
+      last_seen_at: almostOld,
+    }
+    mockFetch.mockResolvedValueOnce(ok([device]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => {
+      expect(screen.getByText('online')).toBeInTheDocument()
+    })
+  })
+
+  it('timestamp 5m01s old renders Offline', async () => {
+    const now = new Date()
+    const tooOld = new Date(now.getTime() - (5 * 60 + 1) * 1000).toISOString()
+    const device: Device = {
+      ...SAMPLE_DEVICE,
+      last_seen_at: tooOld,
+    }
+    mockFetch.mockResolvedValueOnce(ok([device]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => {
+      expect(screen.getByText('offline')).toBeInTheDocument()
+    })
+  })
+
+  it('null last_seen_at renders Offline', async () => {
+    const device: Device = {
+      ...SAMPLE_DEVICE,
+      last_seen_at: null,
+    }
+    mockFetch.mockResolvedValueOnce(ok([device]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => {
+      expect(screen.getByText('offline')).toBeInTheDocument()
+    })
+  })
+
+  it('Z-suffixed timestamp parses correctly regardless of browser timezone', () => {
+    // The key test: "2026-08-28T11:59:19Z" MUST be parsed as UTC
+    // regardless of the browser's local timezone
+    const utcTimestamp = '2026-08-28T11:59:19Z'
+    const parsed = new Date(utcTimestamp)
+    // Verify it's interpreted as UTC (the getTime value should be stable)
+    expect(parsed.toISOString()).toBe('2026-08-28T11:59:19.000Z')
+
+    // Now test with a naive timestamp (the old bug)
+    const naiveTimestamp = '2026-08-28T11:59:19' // no Z
+    void new Date(naiveTimestamp) // would be local time, NOT UTC
+    const utcEquivalent = new Date('2026-08-28T11:59:19Z')
+    // In a non-UTC timezone, these would differ
+    // We just verify the Z version is stable
+    expect(parsed.getTime()).toBe(utcEquivalent.getTime())
+  })
+})

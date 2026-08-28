@@ -2,10 +2,25 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_serializer
+
+
+def _ensure_utc_z(value: datetime | None) -> str | None:
+    """Serialize a datetime as ISO 8601 with explicit 'Z' suffix.
+
+    SQLite Column(DateTime) strips timezone info, so SQLAlchemy returns
+    naive datetimes that are actually UTC. This serializer ensures the
+    API always emits timezone-aware ISO strings so browsers parse them
+    correctly as UTC rather than local time.
+    """
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.isoformat().replace("+00:00", "Z")
 
 
 # ---------------------------------------------------------------------------
@@ -736,6 +751,10 @@ class DeviceRegisterResponse(BaseModel):
     expires_at: datetime
     device_id: str
 
+    @field_serializer("expires_at")
+    def _serialize_dt(self, value: datetime) -> str:
+        return _ensure_utc_z(value)
+
 
 class DeviceTokenExchange(BaseModel):
     """Agent request to exchange bootstrap token for device credential."""
@@ -767,6 +786,10 @@ class DeviceResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_serializer("registered_at", "last_seen_at", "revoked_at", "created_at")
+    def _serialize_dt(self, value: datetime | None) -> str | None:
+        return _ensure_utc_z(value)
 
 
 class DeviceHeartbeatRequest(BaseModel):
@@ -810,6 +833,10 @@ class DeviceProjectResponse(BaseModel):
     class Config:
         from_attributes = True
 
+    @field_serializer("registered_at", "revoked_at", "created_at")
+    def _serialize_dt(self, value: datetime | None) -> str | None:
+        return _ensure_utc_z(value)
+
 
 class ProjectAuthorizationTokenCreate(BaseModel):
     """Request to create a project authorization token."""
@@ -820,6 +847,10 @@ class ProjectAuthorizationTokenResponse(BaseModel):
     """Response containing a single-use project authorization token."""
     project_authorization_token: str
     expires_at: datetime
+
+    @field_serializer("expires_at")
+    def _serialize_dt(self, value: datetime) -> str:
+        return _ensure_utc_z(value)
 
 
 # ---------------------------------------------------------------------------
@@ -871,6 +902,10 @@ class AgentJobResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_serializer("created_at", "started_at", "completed_at", "failed_at")
+    def _serialize_dt(self, value: datetime | None) -> str | None:
+        return _ensure_utc_z(value)
 
 
 class AgentJobStartedRequest(BaseModel):

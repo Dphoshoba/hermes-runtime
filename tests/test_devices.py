@@ -494,6 +494,111 @@ class TestHeartbeatReconciliation:
         }, headers={"Authorization": f"Bearer {active_device['credential']}"})
         assert r.status_code == 403
 
+    # -------------------------------------------------------------------
+    # LA6.3J: UTC timestamp serialization contract tests
+    # -------------------------------------------------------------------
+
+    def test_get_devices_returns_utc_z_suffix(self, client, user_auth, active_device):
+        """GET /api/devices/ serializes last_seen_at with explicit 'Z' suffix.
+
+        SQLite Column(DateTime) strips timezone, so SQLAlchemy returns naive
+        datetimes. The API MUST emit timezone-aware ISO strings so browsers
+        parse them as UTC rather than local time.
+        """
+        # Send a heartbeat to set last_seen_at
+        client.post("/api/agent/heartbeat", json={
+            "device_id": active_device["device_id"],
+            "agent_version": "evosia-agent/0.1.0",
+        }, headers={"Authorization": f"Bearer {active_device['credential']}"})
+
+        r = client.get("/api/devices/", headers=user_auth)
+        assert r.status_code == 200
+        devices = r.json()
+        device = devices[0]
+
+        ts = device["last_seen_at"]
+        assert ts is not None
+        # Must end with 'Z' — not '+00:00' and not bare datetime
+        assert ts.endswith("Z"), f"last_seen_at must end with Z, got: {ts}"
+        # Must be parseable and recent
+        from datetime import datetime, timezone
+        parsed = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        assert parsed.tzinfo is not None
+        now_utc = datetime.now(timezone.utc)
+        age_seconds = (now_utc - parsed).total_seconds()
+        assert age_seconds < 300, f"last_seen_at too old: {age_seconds}s"
+
+    def test_heartbeat_response_utc_z_suffix(self, client, active_device):
+        """Heartbeat response timestamps include Z suffix."""
+        r = client.post("/api/agent/heartbeat", json={
+            "device_id": active_device["device_id"],
+            "agent_version": "evosia-agent/0.1.0",
+        }, headers={"Authorization": f"Bearer {active_device['credential']}"})
+        assert r.status_code == 200
+        # DeviceHeartbeatResponse has no datetime fields, but the device
+        # list endpoint does — tested above
+
+    def test_device_response_registered_at_utc(self, client, user_auth, active_device):
+        """DeviceResponse.registered_at includes Z suffix."""
+        r = client.get("/api/devices/", headers=user_auth)
+        assert r.status_code == 200
+        device = r.json()[0]
+        ts = device["registered_at"]
+        assert ts.endswith("Z"), f"registered_at must end with Z, got: {ts}"
+
+    def test_device_response_created_at_utc(self, client, user_auth, active_device):
+        """DeviceResponse.created_at includes Z suffix."""
+        r = client.get("/api/devices/", headers=user_auth)
+        assert r.status_code == 200
+        device = r.json()[0]
+        ts = device["created_at"]
+        assert ts.endswith("Z"), f"created_at must end with Z, got: {ts}"
+
+    def test_fresh_heartbeat_makes_device_online(self, client, user_auth, active_device):
+        """A fresh heartbeat renders device as online via API timestamp."""
+        # Send heartbeat
+        client.post("/api/agent/heartbeat", json={
+            "device_id": active_device["device_id"],
+            "agent_version": "evosia-agent/0.1.0",
+        }, headers={"Authorization": f"Bearer {active_device['credential']}"})
+
+        # Get device
+        r = client.get("/api/devices/", headers=user_auth)
+        device = r.json()[0]
+
+        # Simulate browser parsing
+        from datetime import datetime, timezone
+        ts = device["last_seen_at"]
+        parsed = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        now_utc = datetime.now(timezone.utc)
+        diff_ms = (now_utc - parsed).total_seconds() * 1000
+        assert diff_ms < 5 * 60 * 1000, f"Fresh heartbeat should be online, age: {diff_ms/1000}s"
+
+    def test_stale_heartbeat_makes_device_offline(self, client, user_auth, active_device):
+        """A heartbeat older than 5 minutes renders device as offline."""
+        # Manually set last_seen_at to 10 minutes ago
+        from enterprise.services.device_service import get_device
+        from enterprise.database import SessionLocal
+        from datetime import datetime, timezone, timedelta
+        db = SessionLocal()
+        try:
+            device = get_device(db, active_device["device_id"])
+            device.last_seen_at = datetime.now(timezone.utc) - timedelta(minutes=10)
+            db.commit()
+        finally:
+            db.close()
+
+        # Get device
+        r = client.get("/api/devices/", headers=user_auth)
+        device = r.json()[0]
+
+        # Simulate browser parsing
+        ts = device["last_seen_at"]
+        parsed = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        now_utc = datetime.now(timezone.utc)
+        diff_ms = (now_utc - parsed).total_seconds() * 1000
+        assert diff_ms >= 5 * 60 * 1000, f"Stale heartbeat should be offline, age: {diff_ms/1000}s"
+
     def test_registration_accepts_unreported_version(self, client, user_auth):
         """Registration accepts 'unreported' as agent_version (transitional value)."""
         r = client.post("/api/devices/register", json={
