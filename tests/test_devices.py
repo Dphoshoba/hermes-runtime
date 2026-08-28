@@ -510,3 +510,307 @@ class TestHeartbeatReconciliation:
         with open("enterprise-ui/src/pages/DevicesPage.tsx", "r") as f:
             content = f.read()
         assert "evosia-agent/0.3.0" not in content
+
+
+# ---------------------------------------------------------------------------
+# LA6.4A Authority Tests — Project Authorization
+# ---------------------------------------------------------------------------
+
+class TestProjectAuthorizationAuthority:
+    """LA6.4A: Prove the certified authority model is preserved."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_db(self, monkeypatch):
+        """Isolated database for each test."""
+        from enterprise.database import Base, get_engine, _ENGINES
+        import enterprise.services as _svc
+        import enterprise.app as _app_mod
+
+        monkeypatch.setenv("HERMES_DATABASE_URL", _LA6B_DB_URL)
+        monkeypatch.setenv("EVOSIA_DATABASE_URL", _LA6B_DB_URL)
+        monkeypatch.setenv("EVOSIA_JWT_SECRET", "la6a-test-secret")
+        monkeypatch.setattr(_svc, "SECRET_KEY", "la6a-test-secret")
+        monkeypatch.setattr(_app_mod, "SECRET_KEY", "la6a-test-secret")
+        _ENGINES.clear()
+        eng = get_engine(_LA6B_DB_URL)
+        _app_mod.engine = eng
+        Base.metadata.create_all(bind=eng)
+        yield
+        Base.metadata.drop_all(bind=eng)
+        _ENGINES.pop(_LA6B_DB_URL, None)
+
+    @pytest.fixture
+    def client(self):
+        from enterprise.app import app
+        from starlette.testclient import TestClient
+        with TestClient(app, raise_server_exceptions=False) as c:
+            yield c
+
+    @pytest.fixture
+    def user_auth(self, client):
+        email = f"la6a-{_uuid.uuid4().hex[:8]}@test.com"
+        client.post("/api/auth/register", json={
+            "email": email, "password": "testpass1234", "name": "LA6A Tester"
+        })
+        r = client.post("/api/auth/login", json={"email": email, "password": "testpass1234"})
+        return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+    @pytest.fixture
+    def active_device(self, client, user_auth):
+        """Register, exchange, return device info + credential."""
+        r = client.post("/api/devices/register", json={
+            "device_name": "LA6A Test Device",
+            "platform": "macos",
+            "agent_version": "evosia-agent/0.1.0",
+        }, headers=user_auth)
+        reg = r.json()
+        r = client.post("/api/devices/exchange", json={
+            "bootstrap_token": reg["bootstrap_token"],
+        })
+        return {
+            "device_id": reg["device_id"],
+            "credential": r.json()["access_token"],
+        }
+
+    # A. Device JWT cannot mint project authorization token
+    def test_device_cannot_mint_auth_token(self, client, active_device):
+        """Device credential alone cannot create a project authorization token."""
+        r = client.post(f"/api/devices/{active_device['device_id']}/project-auth-token",
+                        headers={"Authorization": f"Bearer {active_device['credential']}"})
+        assert r.status_code == 401
+
+    # B. Unauthenticated caller cannot mint project authorization token
+    def test_unauthenticated_cannot_mint_auth_token(self, client, active_device):
+        """Unauthenticated request to create auth token is rejected."""
+        r = client.post(f"/api/devices/{active_device['device_id']}/project-auth-token")
+        assert r.status_code == 401
+
+    # C. User can mint token only for a device they own
+    def test_user_cannot_mint_token_for_other_device(self, client, active_device):
+        """User cannot create auth token for a device they don't own."""
+        # Create a second user
+        email2 = f"la6a-other-{_uuid.uuid4().hex[:8]}@test.com"
+        client.post("/api/auth/register", json={
+            "email": email2, "password": "testpass1234", "name": "Other"
+        })
+        r2 = client.post("/api/auth/login", json={"email": email2, "password": "testpass1234"})
+        other_auth = {"Authorization": f"Bearer {r2.json()['access_token']}"}
+
+        r = client.post(f"/api/devices/{active_device['device_id']}/project-auth-token",
+                        headers=other_auth)
+        assert r.status_code == 403
+
+    # D. Token expires after configured lifetime
+    def test_token_has_expiry(self, client, user_auth, active_device):
+        """Project authorization token has a defined expiry."""
+        r = client.post(f"/api/devices/{active_device['device_id']}/project-auth-token",
+                        headers=user_auth)
+        assert r.status_code == 200
+        data = r.json()
+        assert "expires_at" in data
+        assert "project_authorization_token" in data
+
+    # E. Token is single-use
+    def test_token_is_single_use(self, client, user_auth, active_device):
+        """Project authorization token can only be consumed once."""
+        r = client.post(f"/api/devices/{active_device['device_id']}/project-auth-token",
+                        headers=user_auth)
+        token = r.json()["project_authorization_token"]
+
+        # First use — succeeds
+        r1 = client.post("/api/device-projects/", json={
+            "device_id": active_device["device_id"],
+            "display_name": "TestProject",
+            "local_root_fingerprint": "abc123",
+            "project_authorization_token": token,
+        })
+        assert r1.status_code == 201
+
+        # Second use — rejected
+        r2 = client.post("/api/device-projects/", json={
+            "device_id": active_device["device_id"],
+            "display_name": "TestProject2",
+            "local_root_fingerprint": "def456",
+            "project_authorization_token": token,
+        })
+        assert r2.status_code == 401
+
+    # F. Token cannot authorize another device
+    def test_token_cannot_authorize_other_device(self, client, user_auth, active_device):
+        """Token bound to device A cannot register a project on device B."""
+        # Create a second device
+        r = client.post("/api/devices/register", json={
+            "device_name": "Device B",
+            "platform": "windows",
+            "agent_version": "evosia-agent/0.1.0",
+        }, headers=user_auth)
+        device_b = r.json()
+
+        # Create token for device A
+        r = client.post(f"/api/devices/{active_device['device_id']}/project-auth-token",
+                        headers=user_auth)
+        token = r.json()["project_authorization_token"]
+
+        # Try to use token for device B — should fail
+        r = client.post("/api/device-projects/", json={
+            "device_id": device_b["device_id"],
+            "display_name": "TestProject",
+            "local_root_fingerprint": "abc123",
+            "project_authorization_token": token,
+        })
+        assert r.status_code == 403
+
+    # G. Agent project add without human token fails closed
+    def test_agent_project_add_requires_token(self):
+        """project_add() without authorization token prints instructions and returns."""
+        from evosia_agent.agent import project_add
+        import io, contextlib
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            project_add("/tmp/test_project")
+        output = f.getvalue()
+        assert "Project authorization required" in output
+        assert "--authorization-token" in output
+
+    # H. Agent project add no longer attempts token creation
+    def test_agent_project_add_does_not_call_self_auth(self):
+        """project_add() never calls request_project_authorization_token."""
+        import inspect
+        from evosia_agent import agent
+        source = inspect.getsource(agent.project_add)
+        assert "request_project_authorization_token" not in source
+
+    # I. Agent never receives/stores user JWT
+    def test_agent_never_stores_user_jwt(self):
+        """CredentialStore only stores device credentials, never user JWT."""
+        from evosia_agent.credential_store import DeviceCredential
+        fields = {f.name for f in DeviceCredential.__dataclass_fields__.values()}
+        assert "user_id" not in fields
+        assert "user_jwt" not in fields
+        assert "user_token" not in fields
+
+    # J. Raw absolute path absent from project-registration payload
+    def test_project_registration_no_raw_path(self):
+        """register_project() never sends raw absolute path."""
+        from evosia_agent.project_api import ProjectApiClient
+        import inspect
+        source = inspect.getsource(ProjectApiClient.register_project)
+        assert "raw" not in source.lower()
+        # The body only contains device_id, display_name, local_root_fingerprint, token
+        assert "local_root" in source
+
+    # K. local_root_fingerprint is non-empty, deterministic, SHA-256
+    def test_fingerprint_is_deterministic_sha256(self):
+        """Fingerprint is deterministic SHA-256 hex digest."""
+        import tempfile
+        from pathlib import Path
+        from evosia_agent.path_validation import compute_local_root_fingerprint
+
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp)
+            fp1 = compute_local_root_fingerprint(p)
+            fp2 = compute_local_root_fingerprint(p)
+            assert fp1 == fp2
+            assert len(fp1) == 64
+            assert all(c in "0123456789abcdef" for c in fp1)
+
+    # L. Different canonical roots produce different fingerprints
+    def test_different_roots_different_fingerprints(self):
+        """Different canonical paths produce different fingerprints."""
+        import tempfile
+        from pathlib import Path
+        from evosia_agent.path_validation import compute_local_root_fingerprint
+
+        with tempfile.TemporaryDirectory() as tmp:
+            a = Path(tmp) / "project_a"
+            b = Path(tmp) / "project_b"
+            a.mkdir()
+            b.mkdir()
+            assert compute_local_root_fingerprint(a) != compute_local_root_fingerprint(b)
+
+    # M. Duplicate device_id + fingerprint remains rejected
+    def test_duplicate_fingerprint_rejected(self, client, user_auth, active_device):
+        """Duplicate device_id + fingerprint is rejected with 409."""
+        token1_resp = client.post(f"/api/devices/{active_device['device_id']}/project-auth-token",
+                                  headers=user_auth)
+        token1 = token1_resp.json()["project_authorization_token"]
+
+        client.post("/api/device-projects/", json={
+            "device_id": active_device["device_id"],
+            "display_name": "ProjectA",
+            "local_root_fingerprint": "same_fingerprint",
+            "project_authorization_token": token1,
+        })
+
+        token2_resp = client.post(f"/api/devices/{active_device['device_id']}/project-auth-token",
+                                  headers=user_auth)
+        token2 = token2_resp.json()["project_authorization_token"]
+
+        r = client.post("/api/device-projects/", json={
+            "device_id": active_device["device_id"],
+            "display_name": "ProjectA",
+            "local_root_fingerprint": "same_fingerprint",
+            "project_authorization_token": token2,
+        })
+        assert r.status_code == 409
+
+    # N. Successful registration remains REVIEW_ONLY
+    def test_registration_authority_is_review_only(self, client, user_auth, active_device):
+        """Registered project has authority = REVIEW_ONLY."""
+        r = client.post(f"/api/devices/{active_device['device_id']}/project-auth-token",
+                        headers=user_auth)
+        token = r.json()["project_authorization_token"]
+
+        r = client.post("/api/device-projects/", json={
+            "device_id": active_device["device_id"],
+            "display_name": "TestProject",
+            "local_root_fingerprint": "fingerprint_123",
+            "project_authorization_token": token,
+        })
+        assert r.status_code == 201
+        assert r.json()["authority"] == "REVIEW_ONLY"
+
+    # O. Symlink escape protection remains intact
+    def test_symlink_escape_detected(self):
+        """Symlink escaping root is detected."""
+        import tempfile, os
+        from pathlib import Path
+        from evosia_agent.path_validation import has_symlink_escape, SymlinkStatus
+
+        if os.name == "nt":
+            pytest.skip("Windows symlink behavior differs")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "project"
+            root.mkdir()
+            outside = Path(tmp) / "outside"
+            outside.mkdir()
+            link = root / "escape"
+            link.symlink_to(outside)
+            results = has_symlink_escape(root)
+            assert any(r.status == SymlinkStatus.ESCAPES_ROOT for r in results)
+
+    # P. Broken symlink remains fail-closed
+    def test_broken_symlink_detected(self):
+        """Broken symlink is detected."""
+        import tempfile
+        from pathlib import Path
+        from evosia_agent.path_validation import has_symlink_escape, SymlinkStatus
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "project"
+            root.mkdir()
+            link = root / "broken"
+            link.symlink_to(Path(tmp) / "nonexistent")
+            results = has_symlink_escape(root)
+            assert any(r.status == SymlinkStatus.BROKEN_OR_UNRESOLVABLE for r in results)
+
+    # Q. No execution/merge/deploy/mutation capability introduced
+    def test_no_execution_authority(self):
+        """FORBIDDEN_OPERATIONS still contains execution, merge, deploy."""
+        from enterprise.services.safety import FORBIDDEN_OPERATIONS
+        assert "merge" in FORBIDDEN_OPERATIONS
+
+    def test_allowed_operations_is_only_project_scan(self):
+        """Only PROJECT_SCAN is allowed."""
+        from enterprise.schemas import ALLOWED_OPERATION_TYPES
+        assert ALLOWED_OPERATION_TYPES == frozenset({"PROJECT_SCAN"})

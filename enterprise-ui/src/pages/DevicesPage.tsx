@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { deviceClient } from '../lib/api'
-import type { Device, DeviceProject, AgentJob, DeviceRegisterResponse } from '../lib/types'
+import type { Device, DeviceProject, AgentJob, DeviceRegisterResponse, ProjectAuthTokenResponse } from '../lib/types'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -218,6 +218,60 @@ function BootstrapCodeModal({ data, onClose }: {
   )
 }
 
+function ProjectAuthTokenModal({ data, onClose }: {
+  data: ProjectAuthTokenResponse
+  onClose: () => void
+}) {
+  const overlayRef = useModalFocusManagement(true, onClose)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(data.project_authorization_token)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { /* ignore */ }
+  }
+
+  return (
+    <div className="modal-overlay" role="dialog" aria-label="Project authorization token" ref={overlayRef}>
+      <div className="card" style={{ maxWidth: 520, width: '100%' }}>
+        <h2 style={{ marginTop: 0 }}>Project authorization code</h2>
+        <p className="muted" style={{ marginBottom: 16 }}>
+          On the computer you want to connect, run the following command with this code:
+        </p>
+
+        <div style={{
+          background: 'var(--bg)', border: '1px solid var(--border)',
+          borderRadius: 8, padding: '16px 20px', marginBottom: 12,
+          fontFamily: 'monospace', fontSize: 14, letterSpacing: 0.5,
+          wordBreak: 'break-all', userSelect: 'all',
+        }}>
+          {data.project_authorization_token}
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <button className="btn btn-primary" onClick={handleCopy}>
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+
+        <p className="muted" style={{ fontSize: 12, marginBottom: 4 }}>
+          Expires at {new Date(data.expires_at).toLocaleTimeString()}. This code can only be used once.
+        </p>
+        <p className="muted" style={{ fontSize: 12 }}>
+          This allows this computer to connect one project for review.
+          It does not allow EVOSIA to execute, merge, deploy, or modify the project.
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+          <button className="btn btn-primary" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }) {
   const [projects, setProjects] = useState<DeviceProject[]>([])
   const [loading, setLoading] = useState(true)
@@ -227,6 +281,9 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
   const [jobsLoading, setJobsLoading] = useState(false)
   const [requestingScan, setRequestingScan] = useState(false)
   const [scanStatus, setScanStatus] = useState('')
+  const [authTokenData, setAuthTokenData] = useState<ProjectAuthTokenResponse | null>(null)
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState('')
 
   useEffect(() => {
     deviceClient.listProjects(device.device_id)
@@ -268,6 +325,17 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
     } catch (e: any) { alert(e.message || 'Revoke failed') }
   }
 
+  const handleAuthorize = async () => {
+    setAuthLoading(true)
+    setAuthError('')
+    try {
+      const data = await deviceClient.createProjectAuthToken(device.device_id)
+      setAuthTokenData(data)
+    } catch (e: any) {
+      setAuthError(e.message || 'Failed to generate authorization code')
+    } finally { setAuthLoading(false) }
+  }
+
   const st = deviceStatus(device)
 
   return (
@@ -301,7 +369,19 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h2 style={{ margin: 0, fontSize: 16 }}>Authorised projects</h2>
+          {device.status !== 'revoked' && (
+            <button
+              className="btn btn-primary"
+              style={{ fontSize: 13 }}
+              disabled={authLoading}
+              onClick={handleAuthorize}
+            >
+              {authLoading ? 'Generating...' : 'Authorise project'}
+            </button>
+          )}
         </div>
+
+        {authError && <p className="error-msg" role="alert" style={{ marginBottom: 8 }}>{authError}</p>}
 
         {loading ? <p className="muted">Loading projects...</p> : error ? (
           <p className="error-msg" role="alert">{error}</p>
@@ -411,6 +491,10 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
             </div>
           )}
         </div>
+      )}
+
+      {authTokenData && (
+        <ProjectAuthTokenModal data={authTokenData} onClose={() => setAuthTokenData(null)} />
       )}
     </div>
   )

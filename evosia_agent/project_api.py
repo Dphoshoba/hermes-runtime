@@ -30,21 +30,15 @@ class ApiError(Exception):
 class ProjectApiClient:
     """Narrow HTTPS client for LA3 project operations.
 
-    Only supports: project authorization, registration, list, revoke.
+    Only supports: project registration, list, revoke.
     No generic method for arbitrary cloud requests.
+    Project authorization tokens MUST be created by an authenticated human
+    through EVOSIA Cloud — the agent cannot mint its own authorization.
     """
 
     def __init__(self, cloud_url: str, device_credential: str) -> None:
         self._cloud_url = cloud_url.rstrip("/")
         self._credential = device_credential
-
-    def request_project_authorization_token(self, device_id: str) -> dict[str, Any]:
-        """Request a short-lived project authorization token.
-
-        POST /api/devices/{device_id}/project-auth-token
-        """
-        url = f"{self._cloud_url}/api/devices/{device_id}/project-auth-token"
-        return self._post(url, {})
 
     def register_project(
         self, device_id: str, display_name: str, local_root_fingerprint: str,

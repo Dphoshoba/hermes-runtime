@@ -289,16 +289,31 @@ def logout() -> None:
         print("Credential store cleaned up.")
 
 
-def project_add(path: str) -> None:
-    """Add an explicitly authorized project."""
+def project_add(path: str, authorization_token: str | None = None) -> None:
+    """Add an explicitly authorized project.
+
+    Requires a short-lived, single-use project authorization token generated
+    by an authenticated human through EVOSIA Cloud.
+    """
     from pathlib import Path
     from .project_registry import ProjectRegistry
     from .path_validation import (
         validate_project_root,
         has_symlink_escape,
         is_sensitive_path,
+        compute_local_root_fingerprint,
     )
     from .project_api import ProjectApiClient, ApiError
+
+    if not authorization_token:
+        print("Project authorization required.")
+        print()
+        print("Generate a one-time authorization code from EVOSIA Computers,")
+        print("then run this command again with that code:")
+        print()
+        print("  python -m evosia_agent project add <path> --authorization-token <token>")
+        print()
+        return
 
     config = AgentConfig()
     store = CredentialStore(config.data_dir)
@@ -335,6 +350,7 @@ def project_add(path: str) -> None:
         return
 
     display_name = canonical.name
+    fingerprint = compute_local_root_fingerprint(canonical)
     print()
     print("Project:")
     print(f"  {display_name}")
@@ -350,26 +366,16 @@ def project_add(path: str) -> None:
     print("No files have been changed.")
     print()
 
-    # Register with cloud
+    # Register with cloud using the human-provided authorization token
     api = ProjectApiClient(config.cloud_url, cred.credential)
     try:
-        # Step 1: Request project authorization token (using device credential)
-        auth_response = api.request_project_authorization_token(cred.device_id)
-        project_auth_token = auth_response.get("project_authorization_token")
-
-        if not project_auth_token:
-            print("Failed to get project authorization token.")
-            print("Project registered locally only.")
-            cloud_project_id = f"local_{display_name}"
-        else:
-            # Step 2: Register project with authorization token
-            response = api.register_project(
-                device_id=cred.device_id,
-                display_name=display_name,
-                local_root_fingerprint="",  # Will be computed locally
-                project_authorization_token=project_auth_token,
-            )
-            cloud_project_id = response.get("project_id", response.get("id", ""))
+        response = api.register_project(
+            device_id=cred.device_id,
+            display_name=display_name,
+            local_root_fingerprint=fingerprint,
+            project_authorization_token=authorization_token,
+        )
+        cloud_project_id = response.get("project_id", response.get("id", ""))
 
     except ApiError as exc:
         print(f"Cloud registration failed: {exc.detail}")

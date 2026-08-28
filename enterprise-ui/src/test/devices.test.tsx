@@ -524,3 +524,143 @@ describe('DevicesPage', () => {
     expect(items[0].textContent).toContain('BibleQuest')
   })
 })
+
+// ---------------------------------------------------------------------------
+// LA6.4A Project Authorization Tests
+// ---------------------------------------------------------------------------
+
+describe('Project Authorization Flow', () => {
+  it('shows Authorise project button for active devices', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_PROJECT]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('Authorise project')).toBeInTheDocument() })
+  })
+
+  it('does not show Authorise project for revoked devices', async () => {
+    const revokedDevice = { ...SAMPLE_DEVICE, status: 'revoked' as const }
+    mockFetch.mockResolvedValueOnce(ok([revokedDevice]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText(/No projects authorised/)).toBeInTheDocument() })
+    expect(screen.queryByText('Authorise project')).not.toBeInTheDocument()
+  })
+
+  it('token is not generated on page load', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('Authorise project')).toBeInTheDocument() })
+    // No token modal should be visible
+    expect(screen.queryByRole('dialog', { name: /project authorization/i })).not.toBeInTheDocument()
+  })
+
+  it('shows token modal after successful authorization request', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('Authorise project')).toBeInTheDocument() })
+
+    // Mock the auth token endpoint
+    mockFetch.mockResolvedValueOnce(ok({
+      project_authorization_token: 'la_proj_test123abc',
+      expires_at: new Date(Date.now() + 600000).toISOString(),
+    }))
+
+    await userEvent.click(screen.getByText('Authorise project'))
+    await waitFor(() => {
+      expect(screen.getByText('Project authorization code')).toBeInTheDocument()
+    })
+    expect(screen.getByText('la_proj_test123abc')).toBeInTheDocument()
+  })
+
+  it('shows expiry and single-use warning in token modal', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('Authorise project')).toBeInTheDocument() })
+
+    mockFetch.mockResolvedValueOnce(ok({
+      project_authorization_token: 'la_proj_test123abc',
+      expires_at: new Date(Date.now() + 600000).toISOString(),
+    }))
+
+    await userEvent.click(screen.getByText('Authorise project'))
+    await waitFor(() => {
+      expect(screen.getByText(/can only be used once/)).toBeInTheDocument()
+    })
+  })
+
+  it('shows authority explanation in token modal', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('Authorise project')).toBeInTheDocument() })
+
+    mockFetch.mockResolvedValueOnce(ok({
+      project_authorization_token: 'la_proj_test123abc',
+      expires_at: new Date(Date.now() + 600000).toISOString(),
+    }))
+
+    await userEvent.click(screen.getByText('Authorise project'))
+    await waitFor(() => {
+      expect(screen.getByText(/does not allow EVOSIA to execute, merge, deploy/)).toBeInTheDocument()
+    })
+  })
+
+  it('token is removed from UI state when modal closes', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('Authorise project')).toBeInTheDocument() })
+
+    mockFetch.mockResolvedValueOnce(ok({
+      project_authorization_token: 'la_proj_test123abc',
+      expires_at: new Date(Date.now() + 600000).toISOString(),
+    }))
+
+    await userEvent.click(screen.getByText('Authorise project'))
+    await waitFor(() => {
+      expect(screen.getByText('Project authorization code')).toBeInTheDocument()
+    })
+
+    // Close modal
+    await userEvent.click(screen.getByText('Done'))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /project authorization/i })).not.toBeInTheDocument()
+    })
+  })
+
+  it('API errors fail closed', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('Authorise project')).toBeInTheDocument() })
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false, status: 403, json: () => Promise.resolve({ detail: 'Access denied' }),
+      headers: new Headers(),
+    } as Response)
+
+    await userEvent.click(screen.getByText('Authorise project'))
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+  })
+})
