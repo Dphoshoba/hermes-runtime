@@ -369,3 +369,144 @@ class TestDeviceExchangeContractRegression:
         })
         body = r.json()
         assert set(body.keys()) == {"device_id", "access_token", "token_type", "expires_at"}
+
+
+# ---------------------------------------------------------------------------
+# LA6.3D Heartbeat Reconciliation Tests — Integration
+# ---------------------------------------------------------------------------
+
+class TestHeartbeatReconciliation:
+    """LA6.3D: Prove heartbeat updates last_seen_at and agent_version."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_db(self, monkeypatch):
+        """Isolated database for each test."""
+        from enterprise.database import Base, get_engine, _ENGINES
+        import enterprise.services as _svc
+        import enterprise.app as _app_mod
+
+        monkeypatch.setenv("HERMES_DATABASE_URL", _LA6B_DB_URL)
+        monkeypatch.setenv("EVOSIA_DATABASE_URL", _LA6B_DB_URL)
+        monkeypatch.setenv("EVOSIA_JWT_SECRET", "la6d-test-secret")
+        monkeypatch.setattr(_svc, "SECRET_KEY", "la6d-test-secret")
+        monkeypatch.setattr(_app_mod, "SECRET_KEY", "la6d-test-secret")
+        _ENGINES.clear()
+        eng = get_engine(_LA6B_DB_URL)
+        _app_mod.engine = eng
+        Base.metadata.create_all(bind=eng)
+        yield
+        Base.metadata.drop_all(bind=eng)
+        _ENGINES.pop(_LA6B_DB_URL, None)
+
+    @pytest.fixture
+    def client(self):
+        from enterprise.app import app
+        from starlette.testclient import TestClient
+        with TestClient(app, raise_server_exceptions=False) as c:
+            yield c
+
+    @pytest.fixture
+    def user_auth(self, client):
+        email = f"la6d-{_uuid.uuid4().hex[:8]}@test.com"
+        client.post("/api/auth/register", json={
+            "email": email, "password": "testpass1234", "name": "LA6D Tester"
+        })
+        r = client.post("/api/auth/login", json={"email": email, "password": "testpass1234"})
+        return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+    @pytest.fixture
+    def active_device(self, client, user_auth):
+        """Register, exchange, return device info + credential."""
+        r = client.post("/api/devices/register", json={
+            "device_name": "LA6D Test Device",
+            "platform": "windows",
+            "agent_version": "evosia-agent/0.1.0",
+        }, headers=user_auth)
+        reg = r.json()
+        r = client.post("/api/devices/exchange", json={
+            "bootstrap_token": reg["bootstrap_token"],
+        })
+        return {
+            "device_id": reg["device_id"],
+            "credential": r.json()["access_token"],
+        }
+
+    def test_heartbeat_updates_last_seen_at(self, client, active_device):
+        """Heartbeat updates last_seen_at timestamp."""
+        r = client.post("/api/agent/heartbeat", json={
+            "device_id": active_device["device_id"],
+            "agent_version": "evosia-agent/0.1.0",
+        }, headers={"Authorization": f"Bearer {active_device['credential']}"})
+        assert r.status_code == 200
+        assert r.json()["status"] == "ok"
+
+        # Verify last_seen_at is set
+        from enterprise.services.device_service import get_device
+        from enterprise.database import SessionLocal
+        db = SessionLocal()
+        try:
+            device = get_device(db, active_device["device_id"])
+            assert device.last_seen_at is not None
+        finally:
+            db.close()
+
+    def test_heartbeat_updates_agent_version(self, client, active_device):
+        """Heartbeat updates agent_version from the heartbeat request body."""
+        r = client.post("/api/agent/heartbeat", json={
+            "device_id": active_device["device_id"],
+            "agent_version": "evosia-agent/0.2.5",
+        }, headers={"Authorization": f"Bearer {active_device['credential']}"})
+        assert r.status_code == 200
+
+        from enterprise.services.device_service import get_device
+        from enterprise.database import SessionLocal
+        db = SessionLocal()
+        try:
+            device = get_device(db, active_device["device_id"])
+            assert device.agent_version == "evosia-agent/0.2.5"
+        finally:
+            db.close()
+
+    def test_heartbeat_rejects_mismatched_device_id(self, client, active_device):
+        """Heartbeat rejects request if JWT subject != body device_id."""
+        r = client.post("/api/agent/heartbeat", json={
+            "device_id": "dev_injected_fake_id",
+            "agent_version": "evosia-agent/0.1.0",
+        }, headers={"Authorization": f"Bearer {active_device['credential']}"})
+        assert r.status_code == 403
+
+    def test_heartbeat_rejects_revoked_device(self, client, active_device):
+        """Revoked device heartbeat is rejected."""
+        # Revoke the device
+        from enterprise.services.device_service import revoke_device
+        from enterprise.database import SessionLocal
+        db = SessionLocal()
+        try:
+            from enterprise.services.device_auth import verify_device_token
+            payload = verify_device_token(active_device["credential"])
+            revoke_device(db, active_device["device_id"], payload["user_id"])
+        finally:
+            db.close()
+
+        r = client.post("/api/agent/heartbeat", json={
+            "device_id": active_device["device_id"],
+            "agent_version": "evosia-agent/0.1.0",
+        }, headers={"Authorization": f"Bearer {active_device['credential']}"})
+        assert r.status_code == 403
+
+    def test_registration_accepts_unreported_version(self, client, user_auth):
+        """Registration accepts 'unreported' as agent_version (transitional value)."""
+        r = client.post("/api/devices/register", json={
+            "device_name": "Test Unreported",
+            "platform": "windows",
+            "agent_version": "unreported",
+        }, headers=user_auth)
+        assert r.status_code == 201
+        assert r.json()["device_id"]
+
+    def test_ui_does_not_hardcode_false_version(self):
+        """DevicesPage no longer contains hardcoded evosia-agent/0.3.0."""
+        import re
+        with open("enterprise-ui/src/pages/DevicesPage.tsx", "r") as f:
+            content = f.read()
+        assert "evosia-agent/0.3.0" not in content

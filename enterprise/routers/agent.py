@@ -77,7 +77,7 @@ def heartbeat(
     device = get_device(db, body.device_id)
 
     # Record heartbeat
-    record_heartbeat(db, device)
+    record_heartbeat(db, device, agent_version=body.agent_version)
 
     # Check for pending jobs
     pending_job = get_next_job(db, body.device_id)

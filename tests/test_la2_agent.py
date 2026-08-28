@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import threading
 import time
@@ -328,6 +329,35 @@ class TestConfig:
         config = AgentConfig(cloud_url="https://test.example.com")
         assert config.devices_endpoint == "https://test.example.com/api/devices/exchange"
         assert config.heartbeat_endpoint == "https://test.example.com/api/agent/heartbeat"
+
+    def test_default_data_dir_resolves_to_platform_default(self):
+        """AgentConfig with no explicit data_dir resolves to platform default."""
+        config = AgentConfig()
+        assert config.data_dir is not None
+        assert isinstance(config.data_dir, Path)
+        # Must NOT be Path(".") — the old broken default
+        assert str(config.data_dir) != "."
+
+    def test_explicit_data_dir_preserved(self):
+        """AgentConfig with an explicitly supplied data_dir preserves that directory."""
+        custom = Path("/tmp/custom_evosia_data")
+        config = AgentConfig(data_dir=custom)
+        assert config.data_dir == custom
+
+    def test_windows_default_data_dir(self):
+        """Windows default resolves to %LOCALAPPDATA%\\EVOSIA."""
+        import platform as _platform
+        if _platform.system() != "Windows":
+            pytest.skip("Windows-only test")
+        config = AgentConfig()
+        local_app_data = os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))
+        assert config.data_dir == Path(local_app_data) / "EVOSIA"
+
+    def test_credential_store_targets_device_json(self):
+        """CredentialStore under default config targets device.json."""
+        config = AgentConfig()
+        store = CredentialStore(config.data_dir)
+        assert store._credential_path == config.data_dir / "device.json"
 
 
 # ---------------------------------------------------------------------------

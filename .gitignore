@@ -18,6 +18,9 @@ env/
 *.sqlite
 *.sqlite3
 
+# Local Agent credentials (never commit)
+device.json
+
 # Node.js
 node_modules/
 

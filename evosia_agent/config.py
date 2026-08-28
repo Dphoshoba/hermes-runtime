@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -24,12 +24,12 @@ class AgentConfig:
     """Agent configuration. Loaded from environment and platform conventions."""
 
     cloud_url: str = ""
-    data_dir: Path = field(default_factory=Path)
+    data_dir: Path | None = None
 
     def __post_init__(self) -> None:
         if not self.cloud_url:
             self.cloud_url = os.environ.get("EVOSIA_CLOUD_URL", DEFAULT_CLOUD_URL)
-        if not self.data_dir:
+        if self.data_dir is None:
             self.data_dir = _default_data_dir()
 
     @property

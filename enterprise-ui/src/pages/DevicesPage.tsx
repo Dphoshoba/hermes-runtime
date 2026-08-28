@@ -131,7 +131,7 @@ function AddComputerModal({ onClose, onCreated }: {
     if (!name.trim()) { setError('Name is required'); return }
     setLoading(true); setError('')
     try {
-      const res = await deviceClient.register(name.trim(), platform, 'evosia-agent/0.3.0')
+      const res = await deviceClient.register(name.trim(), platform, 'unreported')
       onCreated(res)
     } catch (e: any) {
       setError(e.message || 'Failed to create registration code')

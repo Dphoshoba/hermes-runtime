@@ -139,7 +139,12 @@ def revoke_device(db: Session, device_id: str, user_id: str) -> Device:
     return device
 
 
-def record_heartbeat(db: Session, device: Device) -> None:
-    """Update the last_seen_at timestamp for a device."""
+def record_heartbeat(db: Session, device: Device, agent_version: str | None = None) -> None:
+    """Update the last_seen_at timestamp for a device.
+
+    Also updates agent_version if provided (authoritative from authenticated agent).
+    """
     device.last_seen_at = datetime.now(timezone.utc)
+    if agent_version:
+        device.agent_version = agent_version
     db.commit()
