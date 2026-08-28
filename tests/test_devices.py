@@ -245,3 +245,127 @@ class TestModelImports:
             revoke_device,
         )
         assert create_bootstrap_token is not None
+
+
+# ---------------------------------------------------------------------------
+# LA6.3B Exchange Contract Regression Tests — Integration
+# ---------------------------------------------------------------------------
+
+import os
+import uuid as _uuid
+
+# Set DB URL before any enterprise imports (same pattern as test_la4_scan_jobs).
+_LA6B_DB_URL = "sqlite:///./test_la6b_exchange.db"
+os.environ.setdefault("HERMES_DATABASE_URL", _LA6B_DB_URL)
+os.environ.setdefault("EVOSIA_DATABASE_URL", _LA6B_DB_URL)
+
+
+class TestDeviceExchangeContractRegression:
+    """LA6.3B: Prove POST /api/devices/exchange returns device_id,
+    matching the contract expected by evosia_agent/agent.py."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_db(self, monkeypatch):
+        """Isolated database for each test, mirroring LA4 fixture."""
+        from enterprise.database import Base, get_engine, _ENGINES
+        import enterprise.services as _svc
+        import enterprise.app as _app_mod
+
+        monkeypatch.setenv("HERMES_DATABASE_URL", _LA6B_DB_URL)
+        monkeypatch.setenv("EVOSIA_DATABASE_URL", _LA6B_DB_URL)
+        monkeypatch.setenv("EVOSIA_JWT_SECRET", "la6b-test-secret")
+        monkeypatch.setattr(_svc, "SECRET_KEY", "la6b-test-secret")
+        monkeypatch.setattr(_app_mod, "SECRET_KEY", "la6b-test-secret")
+        _ENGINES.clear()
+        eng = get_engine(_LA6B_DB_URL)
+        _app_mod.engine = eng
+        Base.metadata.create_all(bind=eng)
+        yield
+        Base.metadata.drop_all(bind=eng)
+        _ENGINES.pop(_LA6B_DB_URL, None)
+
+    @pytest.fixture
+    def client(self):
+        from enterprise.app import app
+        from starlette.testclient import TestClient
+        with TestClient(app, raise_server_exceptions=False) as c:
+            yield c
+
+    @pytest.fixture
+    def user_auth(self, client):
+        email = f"la6b-{_uuid.uuid4().hex[:8]}@test.com"
+        client.post("/api/auth/register", json={
+            "email": email, "password": "testpass1234", "name": "LA6B Tester"
+        })
+        r = client.post("/api/auth/login", json={"email": email, "password": "testpass1234"})
+        return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+    @pytest.fixture
+    def registration(self, client, user_auth):
+        r = client.post("/api/devices/register", json={
+            "device_name": "LA6B Test Device",
+            "platform": "macos",
+            "agent_version": "evosia-agent/0.1.0",
+        }, headers=user_auth)
+        return r.json()
+
+    def test_exchange_returns_device_id(self, client, registration):
+        """Exchange response contains device_id field (LA6.3B contract fix)."""
+        r = client.post("/api/devices/exchange", json={
+            "bootstrap_token": registration["bootstrap_token"],
+        })
+        assert r.status_code == 200
+        body = r.json()
+        assert "device_id" in body
+
+    def test_exchange_device_id_matches_registration(self, client, registration):
+        """Returned device_id equals the device_id from human-authorized registration."""
+        r = client.post("/api/devices/exchange", json={
+            "bootstrap_token": registration["bootstrap_token"],
+        })
+        body = r.json()
+        assert body["device_id"] == registration["device_id"]
+
+    def test_exchange_returns_access_token(self, client, registration):
+        """Exchange response contains access_token."""
+        r = client.post("/api/devices/exchange", json={
+            "bootstrap_token": registration["bootstrap_token"],
+        })
+        body = r.json()
+        assert "access_token" in body
+        assert len(body["access_token"]) > 0
+
+    def test_exchange_token_type_is_device(self, client, registration):
+        """token_type remains 'device' (no authority change)."""
+        r = client.post("/api/devices/exchange", json={
+            "bootstrap_token": registration["bootstrap_token"],
+        })
+        assert r.json()["token_type"] == "device"
+
+    def test_access_token_verifies_as_device_credential(self, client, registration):
+        """access_token is a valid device JWT that verifies correctly."""
+        r = client.post("/api/devices/exchange", json={
+            "bootstrap_token": registration["bootstrap_token"],
+        })
+        from enterprise.services.device_auth import verify_device_token
+        payload = verify_device_token(r.json()["access_token"])
+        assert payload["sub"] == registration["device_id"]
+        assert payload["token_type"] == "device"
+
+    def test_bootstrap_token_single_use(self, client, registration):
+        """Second exchange with same bootstrap token is rejected."""
+        client.post("/api/devices/exchange", json={
+            "bootstrap_token": registration["bootstrap_token"],
+        })
+        r = client.post("/api/devices/exchange", json={
+            "bootstrap_token": registration["bootstrap_token"],
+        })
+        assert r.status_code == 401
+
+    def test_exchange_response_contract_fields(self, client, registration):
+        """Full contract: device_id, access_token, token_type, expires_at."""
+        r = client.post("/api/devices/exchange", json={
+            "bootstrap_token": registration["bootstrap_token"],
+        })
+        body = r.json()
+        assert set(body.keys()) == {"device_id", "access_token", "token_type", "expires_at"}

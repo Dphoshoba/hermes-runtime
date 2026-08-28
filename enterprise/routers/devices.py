@@ -49,6 +49,7 @@ def exchange_token(
     payload = verify_bootstrap_token(db, body.bootstrap_token)
     device_token, expires_at = exchange_bootstrap_token(db, payload)
     return DeviceTokenResponse(
+        device_id=payload["sub"],
         access_token=device_token,
         token_type="device",
         expires_at=expires_at,

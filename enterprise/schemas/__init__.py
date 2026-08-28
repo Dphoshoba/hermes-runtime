@@ -744,6 +744,7 @@ class DeviceTokenExchange(BaseModel):
 
 class DeviceTokenResponse(BaseModel):
     """Device credential issued after bootstrap exchange."""
+    device_id: str
     access_token: str
     token_type: str = "device"
     expires_at: datetime
