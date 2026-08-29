@@ -313,6 +313,9 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState('')
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const requestingScanRef = useRef(false)
+  const revokeRef = useRef(false)
+  const authRef = useRef(false)
 
   useEffect(() => {
     deviceClient.listProjects(device.device_id)
@@ -344,7 +347,8 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
   }, [selectedProject, jobs, loadJobs])
 
   const handleRequestScan = async (project: DeviceProject) => {
-    if (requestingScan) return
+    if (requestingScanRef.current) return
+    requestingScanRef.current = true
     // Auto-select the project so Review history section renders
     setSelectedProject(project)
     setRequestingScan(true)
@@ -357,18 +361,23 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
     } catch (e: any) {
       setScanBanner('')
       setScanError(e.message || 'Failed to request review')
-    } finally { setRequestingScan(false) }
+    } finally { setRequestingScan(false); requestingScanRef.current = false }
   }
 
   const handleRevoke = async () => {
+    if (revokeRef.current) return
     if (!confirm(`Revoke ${device.device_name}? EVOSIA will no longer accept work from this computer.`)) return
+    revokeRef.current = true
     try {
       await deviceClient.revoke(device.device_id)
       onBack()
     } catch (e: any) { alert(e.message || 'Revoke failed') }
+    finally { revokeRef.current = false }
   }
 
   const handleAuthorize = async () => {
+    if (authRef.current) return
+    authRef.current = true
     setAuthLoading(true)
     setAuthError('')
     try {
@@ -376,7 +385,7 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
       setAuthTokenData(data)
     } catch (e: any) {
       setAuthError(e.message || 'Failed to generate authorization code')
-    } finally { setAuthLoading(false) }
+    } finally { setAuthLoading(false); authRef.current = false }
   }
 
   const hasActiveJob = (projectId: string) =>

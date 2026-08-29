@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthContext } from '../App'
@@ -587,6 +587,52 @@ describe('DevicesPage', () => {
     const dismissBtn = screen.getByRole('button', { name: /Dismiss/i })
     await userEvent.click(dismissBtn)
     expect(screen.queryByText(/Review queued/)).not.toBeInTheDocument()
+  })
+
+  it('double-click on Review project sends only one POST and preserves success banner', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_PROJECT]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('BibleQuest')).toBeInTheDocument() })
+
+    mockFetch.mockResolvedValueOnce(ok([]))
+    await userEvent.click(screen.getByText('BibleQuest'))
+    await waitFor(() => { expect(screen.getByText(/No reviews/)).toBeInTheDocument() })
+
+    // Use an unresolved promise so both clicks fire before the first resolves
+    let resolveScan: (v: unknown) => void = () => {}
+    const scanPromise = new Promise((resolve) => { resolveScan = resolve })
+    mockFetch.mockImplementationOnce(() => scanPromise.then(() => ok(SAMPLE_JOB)))
+
+    const reviewBtn = screen.getByText('Review project') as HTMLButtonElement
+    await act(async () => {
+      reviewBtn.click()
+      // Second same-tick click — ref guard must block it
+      reviewBtn.click()
+    })
+
+    // Only one POST was made — the second was blocked by the ref guard
+    const scanCalls = mockFetch.mock.calls.filter(
+      (c: any[]) => typeof c[0] === 'string' && c[0].includes('/scans') && c[1]?.method === 'POST'
+    )
+    expect(scanCalls).toHaveLength(1)
+
+    // Resolve the in-flight request and let loadJobs complete
+    await act(async () => {
+      resolveScan(undefined)
+    })
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_JOB]))
+    await act(async () => {})
+
+    await waitFor(() => {
+      expect(screen.getByText(/Review queued/)).toBeInTheDocument()
+    })
+
+    // No 409 error banner
+    expect(screen.queryByText(/Failed to request review/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/409/)).not.toBeInTheDocument()
   })
 })
 
