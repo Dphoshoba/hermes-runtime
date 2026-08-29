@@ -272,6 +272,33 @@ function ProjectAuthTokenModal({ data, onClose }: {
   )
 }
 
+function ReviewStatusBanner({ status, onDismiss }: { status: string; onDismiss: () => void }) {
+  if (!status) return null
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        padding: '10px 16px', borderRadius: 8, marginBottom: 16,
+        background: 'var(--accent-bg, #e8f4fd)', border: '1px solid var(--accent-border, #b3d8f0)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13,
+      }}
+    >
+      <span>{status}</span>
+      <button
+        onClick={onDismiss}
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer', fontSize: 16,
+          color: 'var(--text-muted)', padding: '0 4px', lineHeight: 1,
+        }}
+        aria-label="Dismiss"
+      >
+        &times;
+      </button>
+    </div>
+  )
+}
+
 function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }) {
   const [projects, setProjects] = useState<DeviceProject[]>([])
   const [loading, setLoading] = useState(true)
@@ -280,10 +307,12 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
   const [jobs, setJobs] = useState<AgentJob[]>([])
   const [jobsLoading, setJobsLoading] = useState(false)
   const [requestingScan, setRequestingScan] = useState(false)
-  const [scanStatus, setScanStatus] = useState('')
+  const [scanBanner, setScanBanner] = useState('')
+  const [scanError, setScanError] = useState('')
   const [authTokenData, setAuthTokenData] = useState<ProjectAuthTokenResponse | null>(null)
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState('')
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     deviceClient.listProjects(device.device_id)
@@ -304,16 +333,30 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
     if (selectedProject) loadJobs(selectedProject.id)
   }, [selectedProject, loadJobs])
 
-  const handleRequestScan = async (projectId: string) => {
+  // Poll for active jobs (PENDING/STARTED) every 10s, stop when terminal
+  useEffect(() => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+    if (!selectedProject) return
+    const hasActive = jobs.some(j => j.status === 'PENDING' || j.status === 'STARTED')
+    if (!hasActive) return
+    pollRef.current = setInterval(() => { loadJobs(selectedProject.id) }, 10_000)
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [selectedProject, jobs, loadJobs])
+
+  const handleRequestScan = async (project: DeviceProject) => {
+    if (requestingScan) return
+    // Auto-select the project so Review history section renders
+    setSelectedProject(project)
     setRequestingScan(true)
-    setScanStatus('Requesting review...')
+    setScanBanner('Requesting review...')
+    setScanError('')
     try {
-      await deviceClient.requestScan(projectId)
-      await loadJobs(projectId)
-      setScanStatus('Review requested')
+      await deviceClient.requestScan(project.id)
+      await loadJobs(project.id)
+      setScanBanner('Review queued — your computer will process it shortly.')
     } catch (e: any) {
-      setScanStatus('')
-      alert(e.message || 'Failed to request review')
+      setScanBanner('')
+      setScanError(e.message || 'Failed to request review')
     } finally { setRequestingScan(false) }
   }
 
@@ -335,6 +378,9 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
       setAuthError(e.message || 'Failed to generate authorization code')
     } finally { setAuthLoading(false) }
   }
+
+  const hasActiveJob = (projectId: string) =>
+    jobs.some(j => j.device_project_id === projectId && (j.status === 'PENDING' || j.status === 'STARTED'))
 
   const st = deviceStatus(device)
 
@@ -389,56 +435,73 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
           <p className="muted">No projects authorised on this computer yet.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }} role="list" aria-label="Authorised projects">
-            {projects.map(p => (
-              <button
-                key={p.id}
-                type="button"
-                className="card"
-                role="listitem"
-                style={{
-                  cursor: 'pointer', padding: 16, textAlign: 'left', width: '100%',
-                  border: selectedProject?.id === p.id ? '1px solid var(--accent)' : undefined,
-                  background: 'var(--card-bg, var(--bg))',
-                }}
-                onClick={() => setSelectedProject(p.id === selectedProject?.id ? null : p)}
-                aria-pressed={selectedProject?.id === p.id}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <strong>{p.display_name}</strong>
-                    <span className="muted" style={{ marginLeft: 8 }}>
-                      {p.authority === 'REVIEW_ONLY' ? 'Review only' : p.authority}
-                    </span>
+            {projects.map(p => {
+              const activeJob = hasActiveJob(p.id)
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="card"
+                  role="listitem"
+                  style={{
+                    cursor: 'pointer', padding: 16, textAlign: 'left', width: '100%',
+                    border: selectedProject?.id === p.id ? '1px solid var(--accent)' : undefined,
+                    background: 'var(--card-bg, var(--bg))',
+                  }}
+                  onClick={() => setSelectedProject(p.id === selectedProject?.id ? null : p)}
+                  aria-pressed={selectedProject?.id === p.id}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong>{p.display_name}</strong>
+                      <span className="muted" style={{ marginLeft: 8 }}>
+                        {p.authority === 'REVIEW_ONLY' ? 'Review only' : p.authority}
+                      </span>
+                      {activeJob && (
+                        <span className="badge badge-blue" style={{ marginLeft: 8, fontSize: 11 }}>
+                          Review in progress
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {p.status === 'revoked' && <span className="badge badge-red">Revoked</span>}
+                      {p.status === 'active' && (
+                        <button
+                          className="btn btn-primary"
+                          style={{ fontSize: 13 }}
+                          disabled={requestingScan || st === 'revoked' || activeJob}
+                          onClick={e => { e.stopPropagation(); handleRequestScan(p) }}
+                          aria-label={`Review ${p.display_name}`}
+                        >
+                          {requestingScan ? 'Requesting...' : activeJob ? 'Review in progress' : 'Review project'}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    {p.status === 'revoked' && <span className="badge badge-red">Revoked</span>}
-                    {p.status === 'active' && (
-                      <button
-                        className="btn btn-primary"
-                        style={{ fontSize: 13 }}
-                        disabled={requestingScan || st === 'revoked'}
-                        onClick={e => { e.stopPropagation(); handleRequestScan(p.id) }}
-                        aria-label={`Review ${p.display_name}`}
-                      >
-                        {requestingScan ? 'Requesting...' : 'Review project'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
-                  EVOSIA may inspect this project when you request a review.
-                  It cannot edit, execute, merge or deploy it.
-                </p>
-              </button>
-            ))}
+                  <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
+                    EVOSIA may inspect this project when you request a review.
+                    It cannot edit, execute, merge or deploy it.
+                  </p>
+                </button>
+              )
+            })}
           </div>
         )}
       </div>
 
-      {/* Live region for async scan status */}
-      <div aria-live="polite" aria-atomic="true" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>
-        {scanStatus}
-      </div>
+      {scanBanner && <ReviewStatusBanner status={scanBanner} onDismiss={() => setScanBanner('')} />}
+      {scanError && (
+        <div
+          role="alert"
+          style={{
+            padding: '10px 16px', borderRadius: 8, marginBottom: 16,
+            background: 'var(--red-bg, #fef2f2)', border: '1px solid var(--red-border, #fecaca)',
+            fontSize: 13, color: 'var(--red)',
+          }}
+        >
+          {scanError}
+        </div>
+      )}
 
       {selectedProject && (
         <div className="card">
@@ -447,7 +510,7 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
             {selectedProject.display_name}
           </p>
 
-          {jobsLoading ? <p className="muted">Loading reviews...</p> : jobs.length === 0 ? (
+          {jobsLoading && jobs.length === 0 ? <p className="muted">Loading reviews...</p> : jobs.length === 0 ? (
             <p className="muted">No reviews have been requested for this project yet.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -462,11 +525,18 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
                         {j.created_at ? new Date(j.created_at).toLocaleString() : ''}
                       </span>
                     </div>
-                    {j.status === 'COMPLETED' && (
-                      <span style={{ color: 'var(--green)', fontSize: 13, fontWeight: 500 }}>
-                        &#10003; Project unchanged
-                      </span>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {j.completed_at && (
+                        <span className="muted" style={{ fontSize: 12 }}>
+                          completed {new Date(j.completed_at).toLocaleString()}
+                        </span>
+                      )}
+                      {j.status === 'COMPLETED' && (
+                        <span style={{ color: 'var(--green)', fontSize: 13, fontWeight: 500 }}>
+                          &#10003; Project unchanged
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {j.status === 'FAILED' && j.failure_reason && (
                     <p className="error-msg" style={{ marginTop: 4, fontSize: 12 }}>{j.failure_reason}</p>

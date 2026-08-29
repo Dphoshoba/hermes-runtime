@@ -84,6 +84,18 @@ def create_scan_job(
             detail=f"Project authority does not permit scanning: {project.authority}",
         )
 
+    # Active-job guard: at most one PENDING/STARTED PROJECT_SCAN per DeviceProject
+    active_job = db.query(AgentJob).filter(
+        AgentJob.device_project_id == device_project_id,
+        AgentJob.operation_type.in_(ALLOWED_OPERATION_TYPES),
+        AgentJob.status.in_([JOB_STATUS_PENDING, JOB_STATUS_STARTED]),
+    ).first()
+    if active_job:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A review is already in progress for this project",
+        )
+
     # Create the job
     job = AgentJob(
         user_id=user_id,

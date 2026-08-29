@@ -523,6 +523,71 @@ describe('DevicesPage', () => {
     expect(items.length).toBe(1)
     expect(items[0].textContent).toContain('BibleQuest')
   })
+
+  it('review button is disabled while a job is in progress', async () => {
+    const activeJob = { ...SAMPLE_JOB, status: 'PENDING', started_at: null, completed_at: null }
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_PROJECT]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('BibleQuest')).toBeInTheDocument() })
+
+    // Open project -> list jobs returns active job
+    mockFetch.mockResolvedValueOnce(ok([activeJob]))
+    await userEvent.click(screen.getByText('BibleQuest'))
+    await waitFor(() => {
+      expect(screen.getAllByText('Review in progress').length).toBeGreaterThanOrEqual(1)
+    })
+
+    // Review button should be disabled
+    const reviewBtn = screen.getByRole('button', { name: /Review BibleQuest/i })
+    expect(reviewBtn).toBeDisabled()
+  })
+
+  it('clicking project auto-selects it and shows review history', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_PROJECT]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('BibleQuest')).toBeInTheDocument() })
+
+    // Mock jobs for after click
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_JOB]))
+    // Click the strong element (project name) inside the button card
+    await userEvent.click(screen.getByText('BibleQuest'))
+    await waitFor(() => {
+      expect(screen.getByText('Review history')).toBeInTheDocument()
+      expect(screen.getByText(/Project unchanged/)).toBeInTheDocument()
+    })
+  })
+
+  it('review status banner is visible and dismissible', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_PROJECT]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('BibleQuest')).toBeInTheDocument() })
+
+    mockFetch.mockResolvedValueOnce(ok([])) // initial jobs
+    await userEvent.click(screen.getByText('BibleQuest'))
+    await waitFor(() => { expect(screen.getByText(/No reviews/)).toBeInTheDocument() })
+
+    // Request scan
+    mockFetch.mockResolvedValueOnce(ok(SAMPLE_JOB))
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_JOB]))
+    await userEvent.click(screen.getByText('Review project'))
+    await waitFor(() => {
+      expect(screen.getByText(/Review queued/)).toBeInTheDocument()
+    })
+
+    // Dismiss banner
+    const dismissBtn = screen.getByRole('button', { name: /Dismiss/i })
+    await userEvent.click(dismissBtn)
+    expect(screen.queryByText(/Review queued/)).not.toBeInTheDocument()
+  })
 })
 
 // ---------------------------------------------------------------------------

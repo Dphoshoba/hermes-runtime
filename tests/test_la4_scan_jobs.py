@@ -219,6 +219,185 @@ class TestOnlyProjectScanAllowed:
 
 
 # ===========================================================================
+# 4b. Active-Job Guard — Rejects Duplicate PENDING/STARTED Jobs
+# ===========================================================================
+
+class TestActiveJobGuard:
+    def test_duplicate_pending_job_rejected(self, la4_client, la4_auth, la4_project):
+        """Creating a second PENDING/STARTED job for same project returns 409."""
+        project_id = la4_project["project_id"]
+        # First job — should succeed
+        r1 = la4_client.post(
+            f"/api/device-projects/{project_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert r1.status_code == 201
+
+        # Second job while first is PENDING — must be 409
+        r2 = la4_client.post(
+            f"/api/device-projects/{project_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert r2.status_code == 409
+        assert "already in progress" in r2.json()["detail"]
+
+    def test_duplicate_started_job_rejected(self, la4_client, la4_auth, la4_project):
+        """Creating a job when another is STARTED returns 409."""
+        project_id = la4_project["project_id"]
+        # Create + start first job
+        r1 = la4_client.post(
+            f"/api/device-projects/{project_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        job_id = r1.json()["id"]
+        # Mark started via device credential
+        la4_client.post(
+            f"/api/agent/jobs/{job_id}/started",
+            headers={"Authorization": f"Bearer {la4_project['device_credential']}"},
+        )
+
+        # Second job while first is STARTED — must be 409
+        r2 = la4_client.post(
+            f"/api/device-projects/{project_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert r2.status_code == 409
+
+    def test_new_job_allowed_after_completion(self, la4_client, la4_auth, la4_project):
+        """New job succeeds once previous job reaches terminal state."""
+        project_id = la4_project["project_id"]
+        # Create + start + complete first job
+        r1 = la4_client.post(
+            f"/api/device-projects/{project_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert r1.status_code == 201, f"create failed: {r1.status_code} {r1.text}"
+        job_id = r1.json()["id"]
+        r_started = la4_client.post(
+            f"/api/agent/jobs/{job_id}/started",
+            json={"agent_version": "evosia-agent/0.3.0"},
+            headers={"Authorization": f"Bearer {la4_project['device_credential']}"},
+        )
+        assert r_started.status_code == 200, f"started failed: {r_started.status_code} {r_started.text}"
+        evidence = {
+            "file_count": 1,
+            "languages": ["Python"],
+            "project_structure_summary": {},
+            "findings": [],
+            "truncated": False,
+            "limits": {},
+            "provenance": "LIVE_EVOSIA_EVIDENCE",
+            "evidence_source": "device_local_scan",
+            "device_id": la4_project["device_id"],
+            "job_id": job_id,
+        }
+        r_results = la4_client.post(
+            f"/api/agent/jobs/{job_id}/results",
+            json={"evidence": evidence, "duration_seconds": 1.0},
+            headers={"Authorization": f"Bearer {la4_project['device_credential']}"},
+        )
+        assert r_results.status_code == 200, f"results failed: {r_results.status_code} {r_results.text}"
+
+        # New job should now succeed
+        r2 = la4_client.post(
+            f"/api/device-projects/{project_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert r2.status_code == 201, f"second create failed: {r2.status_code} {r2.text}"
+
+    def test_new_job_allowed_after_failure(self, la4_client, la4_auth, la4_project):
+        """New job succeeds once previous job has FAILED (terminal)."""
+        project_id = la4_project["project_id"]
+        r1 = la4_client.post(
+            f"/api/device-projects/{project_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert r1.status_code == 201
+        job_id = r1.json()["id"]
+
+        # Mark job as failed
+        la4_client.post(
+            f"/api/agent/jobs/{job_id}/failed",
+            json={"failure_reason": "scanner error"},
+            headers={"Authorization": f"Bearer {la4_project['device_credential']}"},
+        )
+
+        # New job should succeed — FAILED is terminal
+        r2 = la4_client.post(
+            f"/api/device-projects/{project_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert r2.status_code == 201
+
+    def test_guard_scoped_to_device_project(self, la4_client, la4_auth):
+        """Guard is per-DeviceProject: another project on same device can request independently."""
+        # Register device
+        r_dev = la4_client.post("/api/devices/register", json={
+            "device_name": "GuardTest", "platform": "linux",
+            "agent_version": "evosia-agent/0.3.0",
+        }, headers=la4_auth)
+        bootstrap_token = r_dev.json()["bootstrap_token"]
+        did = r_dev.json()["device_id"]
+
+        # Exchange bootstrap token to get device credential
+        r_ex = la4_client.post("/api/devices/exchange", json={
+            "bootstrap_token": bootstrap_token,
+        })
+        dcred = r_ex.json()["access_token"]
+
+        # Create two projects on same device
+        r_t1 = la4_client.post(f"/api/devices/{did}/project-auth-token", headers=la4_auth)
+        tok1 = r_t1.json()["project_authorization_token"]
+        r_p1 = la4_client.post("/api/device-projects/", json={
+            "device_id": did, "display_name": "ProjectA",
+            "local_root_fingerprint": "fp_a",
+            "project_authorization_token": tok1,
+        })
+        p1_id = r_p1.json()["id"]
+
+        r_t2 = la4_client.post(f"/api/devices/{did}/project-auth-token", headers=la4_auth)
+        tok2 = r_t2.json()["project_authorization_token"]
+        r_p2 = la4_client.post("/api/device-projects/", json={
+            "device_id": did, "display_name": "ProjectB",
+            "local_root_fingerprint": "fp_b",
+            "project_authorization_token": tok2,
+        })
+        p2_id = r_p2.json()["id"]
+
+        # Create job on ProjectA — succeeds
+        r1 = la4_client.post(
+            f"/api/device-projects/{p1_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert r1.status_code == 201
+
+        # Duplicate on ProjectA — blocked (409)
+        r_dup = la4_client.post(
+            f"/api/device-projects/{p1_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert r_dup.status_code == 409
+
+        # ProjectB can still request independently
+        r2 = la4_client.post(
+            f"/api/device-projects/{p2_id}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert r2.status_code == 201
+
+
+# ===========================================================================
 # 5. Device Polls Assigned Job
 # ===========================================================================
 
