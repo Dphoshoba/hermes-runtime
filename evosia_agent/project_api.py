@@ -46,9 +46,9 @@ class ProjectApiClient:
     ) -> dict[str, Any]:
         """Register a project with EVOSIA Cloud.
 
-        POST /api/device-projects
+        POST /api/device-projects/
         """
-        url = f"{self._cloud_url}/api/device-projects"
+        url = f"{self._cloud_url}/api/device-projects/"
         body = {
             "device_id": device_id,
             "display_name": display_name,

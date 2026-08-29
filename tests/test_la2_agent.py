@@ -437,3 +437,175 @@ class TestAuthorityBoundaries:
         """Version is properly defined."""
         assert __version__
         assert "evosia-agent" in AGENT_VERSION
+
+
+# ---------------------------------------------------------------------------
+# Project API Client Tests
+# ---------------------------------------------------------------------------
+
+class TestProjectApiClient:
+    """Verify project API client URL construction."""
+
+    def test_register_project_url_has_trailing_slash(self):
+        """register_project uses trailing slash to avoid SPA catch-all."""
+        from evosia_agent.project_api import ProjectApiClient
+
+        client = ProjectApiClient("https://cloud.example.com", "test_token")
+        # Mock urllib to capture the URL
+        with patch("evosia_agent.project_api.urllib.request.urlopen") as mock_urlopen:
+            mock_response = MagicMock()
+            mock_response.read.return_value = json.dumps({"id": "proj_123"}).encode()
+            mock_response.__enter__ = lambda s: s
+            mock_response.__exit__ = MagicMock(return_value=False)
+            mock_urlopen.return_value = mock_response
+
+            client.register_project(
+                device_id="dev_test",
+                display_name="Test",
+                local_root_fingerprint="abc123",
+                project_authorization_token="la_proj_test",
+            )
+
+            # Verify the URL has trailing slash
+            call_args = mock_urlopen.call_args
+            request = call_args[0][0]
+            assert request.full_url == "https://cloud.example.com/api/device-projects/"
+
+    def test_register_project_sends_device_jwt(self):
+        """register_project sends device JWT in Authorization header."""
+        from evosia_agent.project_api import ProjectApiClient
+
+        client = ProjectApiClient("https://cloud.example.com", "my_device_jwt")
+        with patch("evosia_agent.project_api.urllib.request.urlopen") as mock_urlopen:
+            mock_response = MagicMock()
+            mock_response.read.return_value = json.dumps({"id": "proj_123"}).encode()
+            mock_response.__enter__ = lambda s: s
+            mock_response.__exit__ = MagicMock(return_value=False)
+            mock_urlopen.return_value = mock_response
+
+            client.register_project(
+                device_id="dev_test",
+                display_name="Test",
+                local_root_fingerprint="abc123",
+                project_authorization_token="la_proj_test",
+            )
+
+            call_args = mock_urlopen.call_args
+            request = call_args[0][0]
+            assert request.get_header("Authorization") == "Bearer my_device_jwt"
+
+    def test_register_project_sends_project_auth_token_in_body(self):
+        """register_project sends project auth token in request body."""
+        from evosia_agent.project_api import ProjectApiClient
+
+        client = ProjectApiClient("https://cloud.example.com", "test_jwt")
+        with patch("evosia_agent.project_api.urllib.request.urlopen") as mock_urlopen:
+            mock_response = MagicMock()
+            mock_response.read.return_value = json.dumps({"id": "proj_123"}).encode()
+            mock_response.__enter__ = lambda s: s
+            mock_response.__exit__ = MagicMock(return_value=False)
+            mock_urlopen.return_value = mock_response
+
+            client.register_project(
+                device_id="dev_test",
+                display_name="Test",
+                local_root_fingerprint="abc123",
+                project_authorization_token="la_proj_secret_token",
+            )
+
+            call_args = mock_urlopen.call_args
+            request = call_args[0][0]
+            body = json.loads(request.data.decode())
+            assert body["project_authorization_token"] == "la_proj_secret_token"
+
+
+# ---------------------------------------------------------------------------
+# Project Add Agent Tests
+# ---------------------------------------------------------------------------
+
+class TestProjectAdd:
+    """Verify project_add behavior on cloud failure."""
+
+    def test_cloud_failure_does_not_print_success(self, tmp_path: Path, capsys):
+        """Cloud registration failure does not print 'Project registered successfully'."""
+        from evosia_agent.agent import project_add
+        from evosia_agent.credential_store import CredentialStore, DeviceCredential
+        from evosia_agent.project_api import ApiError
+
+        # Setup credential store
+        store = CredentialStore(tmp_path)
+        cred = DeviceCredential(
+            device_id="dev_test123",
+            device_name="Test Device",
+            credential="test_jwt",
+            cloud_url="https://test.example.com",
+        )
+        store.save(cred)
+
+        # Create a temporary project directory
+        project_dir = tmp_path / "test_project"
+        project_dir.mkdir()
+
+        # Mock ProjectApiClient.register_project to raise ApiError
+        with patch("evosia_agent.project_api.ProjectApiClient") as MockApiClient, \
+             patch("evosia_agent.agent.AgentConfig") as MockConfig:
+            MockConfig.return_value.data_dir = tmp_path
+            MockConfig.return_value.cloud_url = "https://test.example.com"
+            mock_instance = MockApiClient.return_value
+            mock_instance.register_project.side_effect = ApiError(
+                status_code=401,
+                detail="Invalid project authorization token"
+            )
+
+            # Run project_add
+            project_add(str(project_dir), authorization_token="la_proj_fake")
+
+            # Capture output
+            captured = capsys.readouterr()
+
+            # Should NOT contain "Project registered successfully"
+            assert "Project registered successfully" not in captured.out
+
+            # Should contain failure message
+            assert "Cloud registration failed" in captured.out
+
+            # Should contain local-only message
+            assert "Project registered locally" in captured.out
+
+    def test_cloud_success_prints_success(self, tmp_path: Path, capsys):
+        """Cloud registration success prints 'Project registered successfully'."""
+        from evosia_agent.agent import project_add
+
+        # Setup credential store
+        store = CredentialStore(tmp_path)
+        cred = DeviceCredential(
+            device_id="dev_test123",
+            device_name="Test Device",
+            credential="test_jwt",
+            cloud_url="https://test.example.com",
+        )
+        store.save(cred)
+
+        # Create a temporary project directory
+        project_dir = tmp_path / "test_project"
+        project_dir.mkdir()
+
+        # Mock ProjectApiClient.register_project to succeed
+        with patch("evosia_agent.project_api.ProjectApiClient") as MockApiClient, \
+             patch("evosia_agent.agent.AgentConfig") as MockConfig:
+            MockConfig.return_value.data_dir = tmp_path
+            MockConfig.return_value.cloud_url = "https://test.example.com"
+            mock_instance = MockApiClient.return_value
+            mock_instance.register_project.return_value = {"id": "proj_123"}
+
+            # Run project_add
+            project_add(str(project_dir), authorization_token="la_proj_valid")
+
+            # Capture output
+            captured = capsys.readouterr()
+
+            # Should contain success message
+            assert "Project registered successfully" in captured.out
+
+            # Should NOT contain failure message
+            assert "Cloud registration failed" not in captured.out

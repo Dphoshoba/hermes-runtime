@@ -379,8 +379,19 @@ def project_add(path: str, authorization_token: str | None = None) -> None:
 
     except ApiError as exc:
         print(f"Cloud registration failed: {exc.detail}")
-        print("Project registered locally only.")
         cloud_project_id = f"local_{display_name}"
+
+        # Store locally
+        registry = ProjectRegistry(config.data_dir)
+        registry.add(
+            cloud_project_id=cloud_project_id,
+            canonical_local_root=canonical,
+            display_name=display_name,
+        )
+
+        print("Project registered locally. Cloud sync will retry on next scan.")
+        print()
+        return
 
     # Store locally
     registry = ProjectRegistry(config.data_dir)
