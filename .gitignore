@@ -59,3 +59,7 @@ certs/
 
 # Preparation workspaces (runtime artifacts)
 .prep_workspaces/
+
+# Connector packaging artifacts
+dist/connector/
+build/connector/
