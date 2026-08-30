@@ -1,7 +1,7 @@
 # EVOSIA Programme Status Reconciliation
 
-**Date:** 2026-08-26
-**Certified HEAD:** `ac7100e9c149b144ac77c2811447042bf03a3cb1`
+**Date:** 2026-08-30
+**Certified HEAD:** `9e1cee00d54d81972b1597a5c7c29cd7412aa4ef`
 **Purpose:** Reconcile overlapping milestone systems, clarify contradictions, and establish current programme state.
 
 ---
@@ -104,7 +104,27 @@ All phases are completed. No active evidence cycles remain.
 
 ---
 
-## 5. Participant Evidence
+## 5. Track D — Local Agent Programme (LA0–LA6)
+
+| Milestone | Status | Classification | Notes |
+|-----------|--------|---------------|-------|
+| LA0 Architecture / trust boundaries | PASS | COMPLETE | Outbound HTTPS, no inbound ports, control/work plane separation |
+| LA1 Device trust domain | PASS | COMPLETE | Device identity, bootstrap, credential, revocation, heartbeat |
+| LA2 Local Agent runtime | PASS | COMPLETE | evosia_agent runtime, local credential storage, retry/backoff |
+| LA3 Explicit project authorization | PASS | COMPLETE | Human authorization, REVIEW_ONLY, symlink escape protection |
+| LA4 Governed read-only PROJECT_SCAN | PASS | COMPLETE | Bounded scanner, shell=False, LIVE_EVOSIA_EVIDENCE provenance |
+| LA5 Computers / Project Review UX | PASS | COMPLETE | Computers page, review history, accessibility, no execution controls |
+| LA6 Real second-computer validation | PASS | COMPLETE | Acer 1 (Windows), evosia-local-agent, full lifecycle verified |
+
+**Programme disposition:** COMPLETE — All milestones LA0–LA6 technically complete and production-validated.
+
+**Certification document:** `validation/LOCAL_AGENT_PRODUCTION_CERTIFICATION.md`
+
+**Do not conflate Local Agent programme completion with human beta milestones (M8/M9/M13).**
+
+---
+
+## 6. Participant Evidence (M8/M9)
 
 | Participant | Status | Evidence |
 |-------------|--------|----------|
@@ -115,7 +135,7 @@ All phases are completed. No active evidence cycles remain.
 
 ---
 
-## 6. Documentation Contradictions Resolved
+## 7. Documentation Contradictions Resolved
 
 ### A. M8 Participant Count
 
@@ -143,7 +163,7 @@ All phases are completed. No active evidence cycles remain.
 
 ---
 
-## 7. Current Programme State
+## 8. Current Programme State
 
 ### Engineering Programme: COMPLETE
 
@@ -156,6 +176,10 @@ Production deployment verified. Migration adoption verified. Build provenance ve
 ### Technical Acceptance: COMPLETE
 
 All relevant tests pass. Authority boundaries verified. Safety invariants held.
+
+### Local Agent Programme LA0–LA6: COMPLETE
+
+All Local Agent milestones technically complete and production-validated. Second-computer governed PROJECT_SCAN lifecycle verified on Acer 1 (Windows). See `validation/LOCAL_AGENT_PRODUCTION_CERTIFICATION.md`.
 
 ### Participant 1: ACCEPTED WITH REMEDIATION
 
@@ -179,7 +203,7 @@ No execution authority has been introduced. All invariants hold.
 
 ---
 
-## 8. Known Limitations
+## 9. Known Limitations
 
 1. M8 human-usability evidence is limited to 1 participant (target: 5–8)
 2. M9 authority comprehension not independently verified with multiple participants
@@ -190,7 +214,7 @@ No execution authority has been introduced. All invariants hold.
 
 ---
 
-## 9. Source Documents
+## 10. Source Documents
 
 | Document | Path |
 |----------|------|
@@ -205,6 +229,7 @@ No execution authority has been introduced. All invariants hold.
 | Controlled Beta Phase Reports | `CONTROLLED_BETA_PHASE_*_REPORT.md` |
 | C3 Production Verification Record | `validation/C3_PRODUCTION_VERIFICATION.md` |
 | Final Engineering Certification | `validation/FINAL_ENGINEERING_CERTIFICATION.md` |
+| Local Agent Production Certification | `validation/LOCAL_AGENT_PRODUCTION_CERTIFICATION.md` |
 
 ---
 
