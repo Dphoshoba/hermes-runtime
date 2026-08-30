@@ -854,6 +854,58 @@ class ProjectAuthorizationTokenResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Browser-Assisted Pairing (P3c)
+# ---------------------------------------------------------------------------
+
+class PairingRequestCreate(BaseModel):
+    """Connector creates a pairing request (no auth required)."""
+    device_name: str = Field(min_length=1, max_length=255)
+    platform: str = Field(min_length=1, max_length=50)
+    agent_version: str = Field(min_length=1, max_length=50)
+
+
+class PairingRequestResponse(BaseModel):
+    """Response containing pairing request identifier for browser URL."""
+    pairing_id: str
+    pairing_url: str
+    expires_at: datetime
+
+    @field_serializer("expires_at")
+    def _serialize_dt(self, value: datetime) -> str:
+        return _ensure_utc_z(value)
+
+
+class PairingStatusResponse(BaseModel):
+    """Connector polls pairing status."""
+    pairing_id: str
+    status: str  # PENDING, APPROVED, CONSUMED, EXPIRED, DENIED
+    device_credential: str | None = None
+    device_id: str | None = None
+    expires_at: datetime
+
+    @field_serializer("expires_at")
+    def _serialize_dt(self, value: datetime) -> str:
+        return _ensure_utc_z(value)
+
+
+class PairingApprovalRequest(BaseModel):
+    """User approves a pairing request in browser."""
+    pairing_id: str
+
+
+class PairingDenialRequest(BaseModel):
+    """User denies a pairing request in browser."""
+    pairing_id: str
+
+
+class PairingApprovalResponse(BaseModel):
+    """Response after approving/denying a pairing request."""
+    pairing_id: str
+    status: str
+    device_name: str | None = None
+
+
+# ---------------------------------------------------------------------------
 # Local Agent — Governed Scan Jobs (LA4) — Control Plane
 # ---------------------------------------------------------------------------
 

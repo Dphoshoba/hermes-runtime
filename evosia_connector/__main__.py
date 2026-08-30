@@ -10,6 +10,7 @@ def main() -> None:
 
     Commands:
         evosia-connector              — Start agent
+        evosia-connector connect      — Connect via browser-assisted pairing
         evosia-connector status       — Show status
         evosia-connector version      — Show version
         evosia-connector logout       — Remove credential
@@ -23,6 +24,8 @@ def main() -> None:
 
     if not args:
         _run_connector()
+    elif args[0] == "connect":
+        _run_connect()
     elif args[0] == "status":
         cli_status()
     elif args[0] == "version":
@@ -46,12 +49,57 @@ def main() -> None:
         print()
         print("Usage:")
         print("  evosia-connector                                          Start agent")
+        print("  evosia-connector connect                                  Connect via browser")
         print("  evosia-connector status                                   Show status")
         print("  evosia-connector version                                  Show version")
         print("  evosia-connector logout                                   Remove credential")
         print("  evosia-connector project add <path> --authorization-token <token>")
         print("  evosia-connector projects                                 List projects")
         print("  evosia-connector project remove <id>                      Remove project")
+        sys.exit(1)
+
+
+def _run_connect() -> None:
+    """Run browser-assisted pairing flow."""
+    from .config import ConnectorConfig
+    from .pairing import run_pairing_flow
+    from evosia_agent.device_identity import DeviceIdentity
+    from evosia_agent.version import AGENT_VERSION
+
+    config = ConnectorConfig()
+
+    # Collect device identity
+    identity = DeviceIdentity.collect()
+
+    print("EVOSIA Connector — Connect to EVOSIA")
+    print()
+
+    result = run_pairing_flow(
+        config=config,
+        device_name=identity.get("hostname", "Unknown"),
+        platform=identity.get("platform", "unknown"),
+        agent_version=AGENT_VERSION,
+    )
+
+    if result:
+        device_id, device_token = result
+        # Store the credential
+        from evosia_agent.credential_store import CredentialStore, DeviceCredential
+
+        store = CredentialStore(config.data_dir)
+        credential = DeviceCredential(
+            device_id=device_id,
+            device_name=identity.get("hostname", "Unknown"),
+            credential=device_token,
+            cloud_url=config.cloud_url,
+        )
+        store.save(credential)
+        print()
+        print(f"Device registered: {device_id}")
+        print("You can now start the connector with: evosia-connector")
+    else:
+        print()
+        print("Connection failed. Please try again.")
         sys.exit(1)
 
 

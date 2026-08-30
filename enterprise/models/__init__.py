@@ -574,6 +574,29 @@ class DeviceProject(Base):
     user = relationship("User")
 
 
+class PairingRequest(Base):
+    """Server-side record of browser-assisted pairing requests.
+
+    High-entropy opaque identifier, short-lived, single-use.
+    Created by Connector, approved by authenticated user in browser.
+    Consumed to issue device credential.
+    """
+    __tablename__ = "pairing_requests"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    pairing_id = Column(String(64), unique=True, nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=True, index=True)
+    device_name = Column(String(255), nullable=False)
+    platform = Column(String(50), nullable=False)
+    agent_version = Column(String(50), nullable=False)
+    status = Column(String(20), nullable=False, default="PENDING", index=True)
+    # PENDING, APPROVED, CONSUMED, EXPIRED, DENIED
+    approved_at = Column(DateTime, nullable=True)
+    consumed_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=_utcnow)
+
+
 class ProjectAuthorizationToken(Base):
     """Server-side record of issued project authorization tokens (hashed).
 

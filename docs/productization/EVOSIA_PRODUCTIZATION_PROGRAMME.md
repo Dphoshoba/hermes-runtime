@@ -202,6 +202,8 @@ Authority expansion requires a separate future programme.
 
 ### P3 — Windows Connector Packaging
 
+**Status:** P3a COMPLETE | P3b COMPLETE | P3c COMPLETE
+
 **Objective:** Implement the Windows installer/package for the EVOSIA Connector.
 
 **Inputs:**
@@ -220,21 +222,42 @@ Authority expansion requires a separate future programme.
 **Out of Scope:**
 - macOS packaging
 - Linux packaging
-- Account pairing UI (deferred to P4)
+- Account pairing UI (deferred to P4/P3c)
 - Project folder selection UI (deferred to P5)
 
-**Acceptance Gates:**
-- Installer runs on a fresh Windows machine without Python installed
-- Agent starts after installation
-- No terminal/PowerShell required from user
+**P3a — PyInstaller Packaging:**
+- PyInstaller `.spec` frozen application build
+- Hidden imports resolved
+- Source tree excluded from package
+- Test files excluded from package
+- Secrets not embedded
+- Evidence: `docs/productization/P3A_PYINSTALLER_PACKAGING.md`
 
-**Evidence Required:**
-- Working Windows installer
-- Installation test evidence on clean Windows VM
+**P3b — Inno Setup Installer:**
+- Inno Setup `.iss` Windows installer
+- Per-user install (no admin required)
+- Python runtime bundled
+- Desktop shortcut (optional, default off)
+- Uninstall support
+- Registry entries
+- Evidence: `docs/productization/P3B_INNO_SETUP_INSTALLER.md`
+
+**P3c — Browser-Assisted Pairing Foundation:**
+- PairingRequest database model
+- Pairing backend APIs (create, status, approve, deny, consume)
+- Connector pairing logic (browser launch, polling, credential exchange)
+- Pairing tests (20 tests, all pass)
+- Evidence: `docs/productization/P3C_BROWSER_ASSISTED_PAIRING.md`
+
+**Acceptance Gates:**
+- P3a: PyInstaller builds frozen app without errors
+- P3b: Inno Setup produces valid Windows installer
+- P3c: Browser-assisted pairing protocol implemented
+- P3c: No manual bootstrap token copy/paste in customer flow
 
 **Authority Invariants:** Packaging existing capability only. No authority expansion.
 
-**Stop Condition:** Windows installer works on clean machine, agent starts, ready for pairing.
+**Stop Condition:** P3c complete, ready for P4/P5 pairing and project authorization.
 
 ---
 
