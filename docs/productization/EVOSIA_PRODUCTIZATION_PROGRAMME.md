@@ -4,6 +4,7 @@
 **Certified Baseline:** `313aaed12985a23aca494ecd41093c1e52b36612`
 **P0 Status:** COMPLETE / CERTIFIED / PUBLISHED (`39e015937c8ec5f78114bcbd00a6198bb52876e4`)
 **P1 Status:** COMPLETE
+**P2 Status:** COMPLETE
 **Certified Dependency:** Local Agent Programme LA0–LA6 COMPLETE
 **Purpose:** Transform the technically certified EVOSIA platform into a product a non-technical person can install, connect, understand, and use on their own computer without developer assistance.
 
@@ -155,6 +156,9 @@ Authority expansion requires a separate future programme.
 ---
 
 ### P2 — EVOSIA Connector Product Specification
+
+**Status:** COMPLETE
+**Evidence:** `docs/productization/P2_CONNECTOR_PRODUCT_SPECIFICATION.md`
 
 **Objective:** Define the complete product specification for the "EVOSIA Connector" — the packaged local agent that a non-technical user can install.
 
