@@ -21,8 +21,8 @@ from pathlib import Path
 
 block_cipher = None
 
-# Project root
-ROOT = os.path.dirname(os.path.abspath(SPEC))
+# Project root (one level up from packaging/)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(SPEC)))
 
 # Collect all data files from evosia_agent (py.typed, etc.)
 evosia_agent_datas = []

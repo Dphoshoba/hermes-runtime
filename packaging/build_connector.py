@@ -58,8 +58,6 @@ def run_pyinstaller() -> None:
             str(DIST_BASE),
             "--workpath",
             str(ROOT / "build" / "connector"),
-            "--specpath",
-            str(ROOT / "packaging"),
             str(SPEC_FILE),
         ],
         cwd=str(ROOT),
@@ -98,6 +96,14 @@ def stamp_build_metadata() -> None:
 
 def verify_artifact() -> None:
     """Verify the built artifact exists and is runnable."""
+    # PyInstaller outputs to DIST_BASE/<COLLECT-name> (evosia-connector)
+    # The spec file uses COLLECT name "evosia-connector"
+    pyinstaller_output = DIST_BASE / "evosia-connector"
+    
+    # Rename to versioned name if needed
+    if pyinstaller_output.exists() and not ARTIFACT_DIR.exists():
+        pyinstaller_output.rename(ARTIFACT_DIR)
+    
     exe_path = ARTIFACT_DIR / "evosia-connector.exe"
     if not exe_path.exists():
         # On non-Windows, check for the directory bundle
@@ -124,8 +130,8 @@ def main() -> None:
 
     clean_prior_builds()
     run_pyinstaller()
-    stamp_build_metadata()
     verify_artifact()
+    stamp_build_metadata()
 
     print()
     print(f"=== Build Complete ===")
