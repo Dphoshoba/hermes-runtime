@@ -202,7 +202,7 @@ Authority expansion requires a separate future programme.
 
 ### P3 — Windows Connector Packaging
 
-**Status:** P3a COMPLETE | P3b COMPLETE | P3c COMPLETE | P3d COMPLETE | P3e COMPLETE
+**Status:** P3a COMPLETE/CERTIFIED | P3b COMPLETE/CERTIFIED | P3c COMPLETE/CERTIFIED | P3d COMPLETE/CERTIFIED | P3e COMPLETE/CERTIFIED/PUBLISHED
 
 **Objective:** Implement the Windows installer/package for the EVOSIA Connector.
 
@@ -283,11 +283,17 @@ Authority expansion requires a separate future programme.
 
 **Authority Invariants:** Packaging existing capability only. No authority expansion.
 
-**Stop Condition:** P3e complete, ready for P5/P6 project authorization and end-to-end workflow.
+**Stop Condition:** P3e complete. See `POST_P3E_PROGRAMME_RECONCILIATION.md` for roadmap reconciliation.
+
+**Reconciliation (2026-08-30):** P3c satisfies canonical P4. P3d satisfies canonical P5. P3e substantially satisfies canonical P6. P3f is NOT REQUIRED. See WV1 for next milestone.
 
 ---
 
 ### P4 — Secure User-Friendly Computer Pairing
+
+**Status:** SATISFIED (through P3c/P3e)
+
+**Reconciliation:** P4 requirements satisfied by P3c browser-assisted pairing and P3e desktop/tray integration. See `POST_P3E_PROGRAMME_RECONCILIATION.md`.
 
 **Objective:** Replace the current terminal-based bootstrap token exchange with a user-friendly pairing flow.
 
@@ -326,6 +332,10 @@ Authority expansion requires a separate future programme.
 
 ### P5 — Native Project-Folder Authorization
 
+**Status:** SATISFIED (through P3d/P3e)
+
+**Reconciliation:** P5 requirements satisfied by P3d native project authorization and P3e desktop/tray integration. See `POST_P3E_PROGRAMME_RECONCILIATION.md`.
+
 **Objective:** Replace the command-line project registration with a native folder picker and authorization flow.
 
 **Inputs:**
@@ -362,6 +372,10 @@ Authority expansion requires a separate future programme.
 ---
 
 ### P6 — End-to-End Product Workflow
+
+**Status:** SUBSTANTIALLY SATISFIED (through P3e)
+
+**Reconciliation:** P6 requirements substantially satisfied by P3e desktop/tray workflow. Real Windows validation pending. See `POST_P3E_PROGRAMME_RECONCILIATION.md`.
 
 **Objective:** Connect all productized components into a complete, non-technical user journey from installation through first review.
 
@@ -404,6 +418,10 @@ Authority expansion requires a separate future programme.
 
 ### P7 — Fresh-PC Non-Technical Usability Validation
 
+**Status:** NOT STARTED
+
+**Prerequisite:** WV1 Windows Validation must complete first.
+
 **Objective:** Validate that a non-technical person can use EVOSIA on a fresh computer without assistance.
 
 **Inputs:**
@@ -442,6 +460,10 @@ Authority expansion requires a separate future programme.
 
 ### P8 — Product Certification
 
+**Status:** NOT STARTED
+
+**Prerequisites:** WV1, P7, all authority invariants preserved, production baseline recorded.
+
 **Objective:** Formally certify EVOSIA as a product ready for non-technical use.
 
 **Inputs:**
@@ -474,6 +496,71 @@ Authority expansion requires a separate future programme.
 **Authority Invariants:** Final verification of all authority boundaries.
 
 **Stop Condition:** Product certification issued.
+
+---
+
+### WV1 — Windows Validation & Beta Readiness
+
+**Status:** DEFINED / NOT STARTED
+
+**Classification:** VALIDATION / REMEDIATION
+
+**Mission:** Validate the certified EVOSIA Connector product workflow on a real Windows environment, remediate only evidence-backed failures, and establish readiness for P7 non-technical usability validation.
+
+**Starting Baseline:** `d1ab8e1a33daf4ee490f9d4df0c57ceb8591131c`
+
+**Scope:**
+- Windows PyInstaller build
+- Inno Setup installer build
+- Clean installation
+- Start Menu launch
+- Console-free launch
+- Tray icon/runtime
+- tkinter folder picker on Windows
+- Browser-assisted pairing on Windows
+- Browser project authorization on Windows
+- Project persistence
+- Explicit Review Project
+- PROJECT_SCAN lifecycle
+- Review polling
+- Offline/recovery behavior
+- Uninstall
+- Reinstall
+- Junction/reparse containment
+- Windows Defender / SmartScreen behavior
+
+**Non-Goals:**
+- New features
+- Backend changes
+- Frontend redesign
+- Production deployment
+- Human validation
+
+**Dependencies:** Windows machine (physical or clean VM)
+
+**Code Changes Expected:** MAYBE (remediation findings only)
+
+**Production Deployment Allowed:** NO
+
+**Exit Criteria:**
+- Core flow validated on Windows
+- All release-blocking findings resolved
+- Ready for P7
+
+**Reconciled Roadmap Position:**
+```
+P3e (CERTIFIED)
+    ↓
+WV1 (DEFINED / NOT STARTED)
+    ↓
+P7 (NOT STARTED)
+    ↓
+Controlled Beta
+    ↓
+P8 (NOT STARTED)
+```
+
+**Evidence Required:** `docs/productization/WV1_WINDOWS_VALIDATION.md`
 
 ---
 
