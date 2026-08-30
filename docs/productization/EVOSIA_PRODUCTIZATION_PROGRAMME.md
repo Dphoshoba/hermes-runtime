@@ -202,7 +202,7 @@ Authority expansion requires a separate future programme.
 
 ### P3 — Windows Connector Packaging
 
-**Status:** P3a COMPLETE | P3b COMPLETE | P3c COMPLETE
+**Status:** P3a COMPLETE | P3b COMPLETE | P3c COMPLETE | P3d COMPLETE
 
 **Objective:** Implement the Windows installer/package for the EVOSIA Connector.
 
@@ -249,15 +249,26 @@ Authority expansion requires a separate future programme.
 - Pairing tests (20 tests, all pass)
 - Evidence: `docs/productization/P3C_BROWSER_ASSISTED_PAIRING.md`
 
+**P3d — Native Project Selection & Authorization:**
+- ProjectAuthorizationRequest database model
+- Project authorization backend APIs (create, status, approve, deny, consume)
+- Connector project authorization logic (folder validation, browser launch, polling)
+- Native folder picker integration (tkinter)
+- Browser approval page for project authorization
+- Project authorization tests (19 tests, all pass)
+- Evidence: `docs/productization/P3D_NATIVE_PROJECT_AUTHORIZATION.md`
+
 **Acceptance Gates:**
 - P3a: PyInstaller builds frozen app without errors
 - P3b: Inno Setup produces valid Windows installer
 - P3c: Browser-assisted pairing protocol implemented
 - P3c: No manual bootstrap token copy/paste in customer flow
+- P3d: Native project folder selection implemented
+- P3d: Manual project auth token copy/paste removed from customer flow
 
 **Authority Invariants:** Packaging existing capability only. No authority expansion.
 
-**Stop Condition:** P3c complete, ready for P4/P5 pairing and project authorization.
+**Stop Condition:** P3d complete, ready for P5/P6 project authorization and end-to-end workflow.
 
 ---
 

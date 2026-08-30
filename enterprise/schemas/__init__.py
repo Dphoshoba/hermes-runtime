@@ -998,3 +998,45 @@ class ScanEvidence(BaseModel):
     limits: dict[str, Any]
     provenance: str = "LIVE_EVOSIA_EVIDENCE"
     evidence_source: str = "device_local_scan"
+
+
+# ---------------------------------------------------------------------------
+# Browser-Assisted Project Authorization (P3d)
+# ---------------------------------------------------------------------------
+
+class ProjectAuthorizationRequestCreate(BaseModel):
+    """Connector creates a project authorization request (requires device JWT)."""
+    display_name: str = Field(min_length=1, max_length=255)
+    local_root_fingerprint: str = Field(min_length=1, max_length=128)
+    platform: str = Field(min_length=1, max_length=50)
+    agent_version: str = Field(min_length=1, max_length=50)
+
+
+class ProjectAuthorizationRequestResponse(BaseModel):
+    """Response containing project authorization request identifier for browser URL."""
+    request_id: str
+    authorization_url: str
+    expires_at: datetime
+
+    @field_serializer("expires_at")
+    def _serialize_dt(self, value: datetime) -> str:
+        return _ensure_utc_z(value)
+
+
+class ProjectAuthorizationStatusResponse(BaseModel):
+    """Response for project authorization status polling."""
+    request_id: str
+    status: str
+    device_project_id: str | None = None
+    expires_at: datetime
+
+    @field_serializer("expires_at")
+    def _serialize_dt(self, value: datetime) -> str:
+        return _ensure_utc_z(value)
+
+
+class ProjectAuthorizationApprovalResponse(BaseModel):
+    """Response for project authorization approval/denial."""
+    request_id: str
+    status: str
+    display_name: str

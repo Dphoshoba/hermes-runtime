@@ -614,6 +614,31 @@ class ProjectAuthorizationToken(Base):
     created_at = Column(DateTime, default=_utcnow)
 
 
+class ProjectAuthorizationRequest(Base):
+    """Server-side record of browser-assisted project authorization requests.
+
+    High-entropy opaque identifier, short-lived, single-use.
+    Created by Connector with paired device identity, approved by authenticated user in browser.
+    Consumed to create DeviceProject with REVIEW_ONLY authority.
+    """
+    __tablename__ = "project_authorization_requests"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    request_id = Column(String(64), unique=True, nullable=False, index=True)
+    device_id = Column(String(128), ForeignKey("devices.device_id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=True, index=True)
+    display_name = Column(String(255), nullable=False)
+    local_root_fingerprint = Column(String(128), nullable=False)
+    platform = Column(String(50), nullable=False)
+    agent_version = Column(String(50), nullable=False)
+    status = Column(String(20), nullable=False, default="PENDING", index=True)
+    # PENDING, APPROVED, CONSUMED, EXPIRED, DENIED
+    approved_at = Column(DateTime, nullable=True)
+    consumed_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=_utcnow)
+
+
 # ---------------------------------------------------------------------------
 # Local Agent — Governed Scan Jobs (LA4)
 # ---------------------------------------------------------------------------

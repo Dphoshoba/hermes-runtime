@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from .database import engine, sessionmaker
 from .routers import auth, repositories, dashboard, journal, findings, missions, reports, scans
 from .routers import trial, feedback, friction, operations, proposals, scheduling, review, guided
-from .routers import devices, agent, device_projects, pairing
+from .routers import devices, agent, device_projects, pairing, project_authorization
 from .services import SECRET_KEY
 
 
@@ -95,6 +95,17 @@ app.include_router(devices.router, prefix="/api/devices", tags=["Devices"])
 app.include_router(agent.router, prefix="/api/agent", tags=["Agent"])
 app.include_router(device_projects.router, prefix="/api/device-projects", tags=["Device Projects"])
 app.include_router(pairing.router, prefix="/api/pairing", tags=["Pairing"])
+app.include_router(project_authorization.router, prefix="/api/project-authorization", tags=["Project Authorization"])
+
+
+@app.get("/authorize-project")
+def authorize_project_page() -> FileResponse:
+    """Serve the project authorization approval page."""
+    static_dir = Path(__file__).parent / "static"
+    page = static_dir / "authorize-project.html"
+    if not page.exists():
+        raise HTTPException(status_code=404, detail="Page not found")
+    return FileResponse(str(page))
 
 
 @app.get("/api/health")
