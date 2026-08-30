@@ -9,7 +9,8 @@ def main() -> None:
     """CLI entry point for EVOSIA Connector.
 
     Commands:
-        evosia-connector              — Start agent
+        evosia-connector              — Start desktop/tray application
+        evosia-connector agent        — Start agent (headless)
         evosia-connector connect      — Connect via browser-assisted pairing
         evosia-connector status       — Show status
         evosia-connector version      — Show version
@@ -18,17 +19,23 @@ def main() -> None:
         evosia-connector projects     — List projects
         evosia-connector project remove <id>  — Remove project
     """
-    from .launcher import main as _run_connector, cli_status, cli_version
-
     args = sys.argv[1:]
 
     if not args:
+        # Default: start desktop/tray application
+        _run_desktop_tray()
+    elif args[0] == "desktop":
+        _run_desktop_tray()
+    elif args[0] == "agent":
+        from .launcher import main as _run_connector
         _run_connector()
     elif args[0] == "connect":
         _run_connect()
     elif args[0] == "status":
+        from .launcher import cli_status
         cli_status()
     elif args[0] == "version":
+        from .launcher import cli_version
         cli_version()
     elif args[0] == "logout":
         from evosia_agent.agent import logout
@@ -48,7 +55,9 @@ def main() -> None:
         print(f"Unknown command: {' '.join(args)}")
         print()
         print("Usage:")
-        print("  evosia-connector                                          Start agent")
+        print("  evosia-connector                                          Start desktop/tray app")
+        print("  evosia-connector desktop                                  Start desktop/tray app")
+        print("  evosia-connector agent                                    Start agent (headless)")
         print("  evosia-connector connect                                  Connect via browser")
         print("  evosia-connector status                                   Show status")
         print("  evosia-connector version                                  Show version")
@@ -57,6 +66,12 @@ def main() -> None:
         print("  evosia-connector projects                                 List projects")
         print("  evosia-connector project remove <id>                      Remove project")
         sys.exit(1)
+
+
+def _run_desktop_tray() -> None:
+    """Run desktop tray application."""
+    from .desktop_tray import main as _run_tray
+    _run_tray()
 
 
 def _run_connect() -> None:

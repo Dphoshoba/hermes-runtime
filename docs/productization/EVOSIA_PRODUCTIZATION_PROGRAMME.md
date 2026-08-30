@@ -202,7 +202,7 @@ Authority expansion requires a separate future programme.
 
 ### P3 — Windows Connector Packaging
 
-**Status:** P3a COMPLETE | P3b COMPLETE | P3c COMPLETE | P3d COMPLETE
+**Status:** P3a COMPLETE | P3b COMPLETE | P3c COMPLETE | P3d COMPLETE | P3e COMPLETE
 
 **Objective:** Implement the Windows installer/package for the EVOSIA Connector.
 
@@ -258,6 +258,17 @@ Authority expansion requires a separate future programme.
 - Project authorization tests (19 tests, all pass)
 - Evidence: `docs/productization/P3D_NATIVE_PROJECT_AUTHORIZATION.md`
 
+**P3e — Desktop/Tray Product Workflow:**
+- Connector state machine (12 states)
+- Desktop/tray application (tkinter + pystray)
+- P3c pairing integration via tray
+- P3d project authorization integration via tray
+- Review Project action (PROJECT_SCAN creation + polling)
+- Diagnostics window
+- Security boundary (no arbitrary shell, no credential exposure)
+- P3e tests (39 tests, all pass)
+- Evidence: `docs/productization/P3E_DESKTOP_TRAY_WORKFLOW.md`
+
 **Acceptance Gates:**
 - P3a: PyInstaller builds frozen app without errors
 - P3b: Inno Setup produces valid Windows installer
@@ -265,10 +276,14 @@ Authority expansion requires a separate future programme.
 - P3c: No manual bootstrap token copy/paste in customer flow
 - P3d: Native project folder selection implemented
 - P3d: Manual project auth token copy/paste removed from customer flow
+- P3e: Desktop/tray shell for Windows customer workflow implemented
+- P3e: Connector state machine covers all lifecycle states
+- P3e: No authority expansion (REVIEW_ONLY preserved)
+- P3e: Security boundary verified (no arbitrary shell, no credential exposure)
 
 **Authority Invariants:** Packaging existing capability only. No authority expansion.
 
-**Stop Condition:** P3d complete, ready for P5/P6 project authorization and end-to-end workflow.
+**Stop Condition:** P3e complete, ready for P5/P6 project authorization and end-to-end workflow.
 
 ---
 
