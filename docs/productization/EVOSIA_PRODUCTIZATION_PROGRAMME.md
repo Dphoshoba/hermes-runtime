@@ -6,6 +6,7 @@
 **P1 Status:** COMPLETE
 **P2 Status:** COMPLETE
 **P3a Status:** COMPLETE
+**P3b Status:** COMPLETE
 **Certified Dependency:** Local Agent Programme LA0–LA6 COMPLETE
 **Purpose:** Transform the technically certified EVOSIA platform into a product a non-technical person can install, connect, understand, and use on their own computer without developer assistance.
 
