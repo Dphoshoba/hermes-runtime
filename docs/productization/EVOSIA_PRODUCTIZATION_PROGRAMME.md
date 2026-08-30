@@ -2,6 +2,8 @@
 
 **Date:** 2026-08-30
 **Certified Baseline:** `313aaed12985a23aca494ecd41093c1e52b36612`
+**P0 Status:** COMPLETE / CERTIFIED / PUBLISHED (`39e015937c8ec5f78114bcbd00a6198bb52876e4`)
+**P1 Status:** COMPLETE
 **Certified Dependency:** Local Agent Programme LA0–LA6 COMPLETE
 **Purpose:** Transform the technically certified EVOSIA platform into a product a non-technical person can install, connect, understand, and use on their own computer without developer assistance.
 
@@ -73,6 +75,9 @@ Authority expansion requires a separate future programme.
 
 ### P0 — Canonical Baseline & Product Surface Inventory
 
+**Status:** COMPLETE / CERTIFIED / PUBLISHED
+**Certification Commit:** `39e015937c8ec5f78114bcbd00a6198bb52876e4`
+
 **Objective:** Answer "What exactly do we have today, what does a user currently experience, and what must be productized?"
 
 **Inputs:** LA0–LA6 certified implementation, all existing source, documentation, and production evidence.
@@ -113,6 +118,9 @@ Authority expansion requires a separate future programme.
 
 ### P1 — Google AI Studio / Production UX Convergence
 
+**Status:** COMPLETE
+**Evidence:** `docs/productization/P1_UX_CONVERGENCE.md`
+
 **Objective:** Visually compare the Google AI Studio generated application against the current production UI and the prompt specification. Identify convergence and divergence points.
 
 **Inputs:**
@@ -138,7 +146,7 @@ Authority expansion requires a separate future programme.
 - No backend authority changes
 
 **Evidence Required:**
-- `docs/productization/P1_UX_CONVERGENCE_REPORT.md`
+- `docs/productization/P1_UX_CONVERGENCE.md`
 
 **Authority Invariants:** No authority expansion. Visual/design analysis only.
 
