@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import NoReturn
 
 from pydantic import EmailStr, TypeAdapter, ValidationError
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -114,6 +114,84 @@ def _reset_owner_password(db: Session, email: str) -> None:
         )
 
 
+def _bootstrap_first_owner(email: str) -> None:
+    normalized_email = email.strip().lower()
+    if normalized_email == "m8-participant@example.com":
+        raise RecoveryError("The fixture participant email cannot be bootstrapped.")
+
+    print("Create one active global administrator. Existing accounts will not change.")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", getpass.GetPassWarning)
+        password = getpass.getpass("New password: ")
+        repeated = getpass.getpass("Repeat new password: ")
+    if password != repeated:
+        raise RecoveryError("Passwords do not match; bootstrap refused.")
+    try:
+        UserCreate(email=normalized_email, name="EVOSIA Owner", password=password)
+    except ValidationError:
+        raise RecoveryError(
+            "Password does not meet the registration policy (8-128 characters)."
+        ) from None
+    if len(password.encode("utf-8")) > 72:
+        raise RecoveryError("Password exceeds bcrypt's 72-byte UTF-8 limit.")
+    if input("Type BOOTSTRAP to create the first owner: ") != "BOOTSTRAP":
+        raise RecoveryError("Confirmation declined; bootstrap refused.")
+    replacement = hash_password(password)
+
+    with SessionLocal() as db, db.begin():
+        dialect = db.get_bind().dialect.name
+        if dialect == "postgresql":
+            # A fresh snapshot after waiting is essential, even if the engine's
+            # default isolation is repeatable-read. Block all users-table writers,
+            # not just cooperating bootstrap commands; ordinary SELECTs can run.
+            db.execute(text("SET TRANSACTION ISOLATION LEVEL READ COMMITTED"))
+            db.execute(text("SET LOCAL lock_timeout = '5s'"))
+            db.execute(text("LOCK TABLE users IN EXCLUSIVE MODE"))
+        elif dialect == "sqlite":
+            # A row lock cannot protect an empty admin set. Reserve the database
+            # writer before reading it, including on separate processes.
+            db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+        else:
+            raise RecoveryError(
+                "Bootstrap requires PostgreSQL or SQLite locking support."
+            )
+
+        if normalized_email == "m8-participant@example.com":
+            raise RecoveryError("The fixture participant email cannot be bootstrapped.")
+        if (
+            db.scalar(select(User.id).where(User.is_admin.is_(True)).limit(1))
+            is not None
+        ):
+            raise RecoveryError(
+                "A global administrator already exists; bootstrap refused."
+            )
+        email_match = func.lower(func.trim(User.email)) == normalized_email
+        if db.scalar(select(User.id).where(email_match).limit(1)) is not None:
+            raise RecoveryError("Requested email already exists; bootstrap refused.")
+
+        user = User(
+            email=normalized_email,
+            name="EVOSIA Owner",
+            hashed_password=replacement,
+            is_active=True,
+            is_admin=True,
+        )
+        db.add(user)
+        db.flush()
+        payload = {"user_id": user.id, "method": "admin_cli"}
+        db.add(
+            JournalEvent(
+                event_id=f"evt-{uuid.uuid4().hex}",
+                timestamp=datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
+                event_type="security.first_owner_bootstrapped",
+                stage="security",
+                actor="admin_cli",
+                payload=payload,
+                payload_sha256=_canonical_payload_sha256(payload),
+            )
+        )
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _Parser(description="Interactive Enterprise administrator maintenance.")
     commands = parser.add_subparsers(
@@ -125,6 +203,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     reset.add_argument(
         "--email", required=True, help="Existing owner/admin email (never a password)"
     )
+    bootstrap = commands.add_parser(
+        "bootstrap-first-owner",
+        help="Create the first owner only when no global admin exists",
+    )
+    bootstrap.add_argument(
+        "--email", required=True, help="New owner email (never a password)"
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -134,8 +219,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     try:
-        with SessionLocal() as db:
-            _reset_owner_password(db, email)
+        if args.command == "bootstrap-first-owner":
+            _bootstrap_first_owner(email)
+        else:
+            with SessionLocal() as db:
+                _reset_owner_password(db, email)
     except RecoveryError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
@@ -155,9 +243,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("ERROR: Password hashing failed; no password changed.", file=sys.stderr)
         return 1
 
-    print(
-        "Password reset committed with a security journal event. Existing JWTs remain valid."
-    )
+    if args.command == "bootstrap-first-owner":
+        print("First owner created with a security journal event. No JWT issued.")
+    else:
+        print(
+            "Password reset committed with a security journal event. Existing JWTs remain valid."
+        )
     return 0
 
 
