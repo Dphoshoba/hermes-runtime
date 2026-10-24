@@ -121,3 +121,56 @@ separate processes because existing suites modify shared database environment
 settings during collection. The VS Code test/syntax tools could not discover this
 sibling repository; terminal pytest, Ruff, Mypy, and package build supplied the
 validation evidence instead.
+
+## Integration onto current remote main
+
+The original certified commit could not be fast-forwarded to remote main: after
+fetch, remote main was `020c1750963f4263d13751129dd604b604a45195`, with 13
+remote-only commits. The original local main and its certified commit were
+preserved. Recovery was cherry-picked without conflicts onto
+`recovery-owner-integration`, based on that refreshed remote main.
+
+The command implementation remains byte-for-byte identical to the original
+certification. The preservation fixtures now also populate `PairingRequest` and
+`ProjectAuthorizationRequest`, introduced by the newer base, so full-database
+comparisons directly cover those records on success and rollback.
+
+Revalidation ran each suite in its own process with synthetic configuration:
+
+| Suite | Passed | Failed | Skipped |
+| --- | ---: | ---: | ---: |
+| Recovery contract, including populated pairing/request records | 31 | 0 | 0 |
+| Enterprise authentication/backend | 77 | 0 | 0 |
+| Device trust | 51 | 1 | 1 |
+| Local agent CLI | 33 | 1 | 0 |
+| Project authorization | 22 | 2 | 1 |
+| Governed agent jobs | 63 | 0 | 1 |
+| Authority boundary | 10 | 0 | 0 |
+| Security hardening | 10 | 0 | 0 |
+| Database health | 11 | 0 | 0 |
+| Disposable fixture/preparation | 8 | 7 | 0 |
+| Safety | 10 | 0 | 0 |
+| P3a authority | 14 | 0 | 0 |
+| P3a smoke | 23 | 0 | 0 |
+| P3b installer | 20 | 0 | 8 |
+| P3c pairing | 20 | 0 | 0 |
+| P3d browser-assisted project authorization | 19 | 0 | 0 |
+| P3e desktop/tray | 39 | 0 | 0 |
+| Total | 561 | 11 | 11 |
+
+The same 11 previously baseline-reproduced Windows/fixture failures remain.
+Ruff lint/format and targeted Mypy checks pass. Wheel and source package builds
+pass; the wheel contains the exact command source. Python 3.10 syntax is checked.
+The recovery integration changes no schema, migrations, authentication helpers,
+HTTP routes, or deployment configuration relative to current remote main.
+No migrations were executed.
+
+A new independent read-only security review found no vulnerabilities or
+integration incompatibilities. Its noted populated-record coverage limitation
+was subsequently addressed by the additional synthetic preservation fixtures;
+all 31 recovery tests pass with these fixtures.
+
+No push, deployment, real recovery, Production database access, variable changes,
+or secret inspection was performed. Railway browser authentication remains a
+separate prerequisite, and the new integration SHA requires human approval before
+any push.
