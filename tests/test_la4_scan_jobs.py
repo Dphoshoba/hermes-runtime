@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import subprocess
 import tempfile
 import time
 import uuid
@@ -15,6 +16,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 
 # Unique file-backed DB for LA4 tests — set before any enterprise imports.
 LA4_DB_URL = "sqlite:///./test_la4.db"
@@ -24,7 +26,8 @@ os.environ["EVOSIA_DATABASE_URL"] = LA4_DB_URL
 from enterprise.app import app
 from enterprise.database import Base, get_engine, SessionLocal, _ENGINES
 from enterprise.models import (
-    AgentJob, Device, DeviceProject, User, BootstrapToken, Finding, Report, ScanJob,
+    AgentJob, AgentJobIdempotencyKey, Device, DeviceProject, User, BootstrapToken,
+    Finding, Report, Repository, ScanJob,
 )
 from enterprise.services.agent_job_service import (
     create_scan_job, get_next_job, get_job,
@@ -342,6 +345,80 @@ class TestActiveJobGuard:
             assert db.query(AgentJob).filter(
                 AgentJob.device_project_id == project_id,
             ).count() == 1
+
+    def test_active_request_key_alias_replays_after_review_completion(
+        self, la4_client, la4_auth, la4_project,
+    ):
+        project_id = la4_project["project_id"]
+        endpoint = f"/api/device-projects/{project_id}/scans"
+        first = la4_client.post(
+            endpoint,
+            json={"operation_type": "PROJECT_SCAN", "idempotency_key": "first-tab"},
+            headers=la4_auth,
+        )
+        alias = la4_client.post(
+            endpoint,
+            json={"operation_type": "PROJECT_SCAN", "idempotency_key": "second-tab"},
+            headers=la4_auth,
+        )
+        job_id = first.json()["id"]
+        assert first.status_code == 201
+        assert alias.status_code == 200
+        assert alias.json()["id"] == job_id
+
+        device_headers = {"Authorization": "Bearer " + la4_project["device_credential"]}
+        la4_client.post(
+            f"/api/agent/jobs/{job_id}/started",
+            json={"agent_version": "evosia-agent/0.3.0"},
+            headers=device_headers,
+        )
+        completed = la4_client.post(
+            f"/api/agent/jobs/{job_id}/results",
+            json={
+                "evidence": _valid_review_evidence(job_id, la4_project),
+                "duration_seconds": 1.0,
+            },
+            headers=device_headers,
+        )
+        assert completed.status_code == 200
+
+        replay = la4_client.post(
+            endpoint,
+            json={"operation_type": "PROJECT_SCAN", "idempotency_key": "second-tab"},
+            headers=la4_auth,
+        )
+        assert replay.status_code == 200
+        assert replay.json()["id"] == job_id
+        with SessionLocal() as db:
+            assert db.query(AgentJob).filter(
+                AgentJob.device_project_id == project_id,
+            ).count() == 1
+            assert db.query(AgentJobIdempotencyKey).filter(
+                AgentJobIdempotencyKey.agent_job_id == job_id,
+            ).count() == 2
+
+    def test_active_review_uniqueness_is_enforced_by_database(
+        self, la4_client, la4_auth, la4_project,
+    ):
+        response = la4_client.post(
+            f"/api/device-projects/{la4_project['project_id']}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        assert response.status_code == 201
+
+        with SessionLocal() as db:
+            duplicate = AgentJob(
+                user_id=response.json()["user_id"],
+                device_id=la4_project["device_id"],
+                device_project_id=la4_project["project_id"],
+                operation_type="PROJECT_SCAN",
+                status="PENDING",
+            )
+            db.add(duplicate)
+            with pytest.raises(IntegrityError):
+                db.commit()
+            db.rollback()
 
     def test_new_job_allowed_after_completion(self, la4_client, la4_auth, la4_project):
         """New job succeeds once previous job reaches terminal state."""
@@ -835,7 +912,7 @@ class TestReviewEvidencePersistence:
         assert cancelled.json()["cancelled_at"] is not None
 
     def test_computer_review_evidence_is_private_to_owner(
-        self, la4_client, la4_auth, la4_project,
+        self, la4_client, la4_auth, la4_credentials, la4_project,
     ):
         created = la4_client.post(
             f"/api/device-projects/{la4_project['project_id']}/scans",
@@ -869,6 +946,18 @@ class TestReviewEvidencePersistence:
         )
         assert completed.status_code == 200
 
+        owner_login = la4_client.post("/api/auth/login", json=la4_credentials)
+        assert owner_login.status_code == 200
+        reauthenticated = {
+            "Authorization": "Bearer " + owner_login.json()["access_token"],
+        }
+        persisted_history = la4_client.get(
+            f"/api/device-projects/{la4_project['project_id']}/jobs",
+            headers=reauthenticated,
+        )
+        assert persisted_history.status_code == 200
+        assert any(item["id"] == job_id for item in persisted_history.json())
+
         second_credentials = {
             "email": f"la4-other-{uuid.uuid4().hex[:8]}@test.com",
             "password": "testpass1234",
@@ -897,6 +986,164 @@ class TestReviewEvidencePersistence:
         assert la4_client.get(f"/api/scans/{scan['id']}", headers=other_auth).status_code == 404
         assert la4_client.get(f"/api/findings/{finding['id']}", headers=other_auth).status_code == 404
         assert la4_client.get(f"/api/reports/{report['id']}", headers=other_auth).status_code == 404
+        assert la4_client.get(
+            f"/api/device-projects/{la4_project['project_id']}/jobs",
+            headers=other_auth,
+        ).status_code == 403
+        assert la4_client.post(
+            f"/api/device-projects/{la4_project['project_id']}/jobs/{job_id}/cancel",
+            headers=other_auth,
+        ).status_code == 403
+
+        review_queue = la4_client.get("/api/review/findings", headers=other_auth).json()
+        assert all(item["db_id"] != finding["id"] for item in review_queue["items"])
+        assert la4_client.get(
+            f"/api/review/findings/{finding['id']}",
+            headers=other_auth,
+        ).status_code == 404
+        assert la4_client.post(
+            f"/api/review/findings/{finding['id']}/adjudications",
+            json={"classification": "USEFUL", "operator": "other-user"},
+            headers=other_auth,
+        ).status_code == 404
+        assert la4_client.post(
+            f"/api/review/findings/{finding['id']}/suppressions",
+            json={"rule_id": "test-rule", "reason": "test"},
+            headers=other_auth,
+        ).status_code == 404
+
+    def test_repository_scans_findings_and_reports_are_owner_scoped(
+        self, la4_client, la4_auth,
+    ):
+        repo_response = la4_client.post(
+            "/api/repositories",
+            json={"name": "Private repo", "url": "https://example.test/private"},
+            headers=la4_auth,
+        )
+        assert repo_response.status_code == 201
+        repository_id = repo_response.json()["id"]
+
+        with SessionLocal() as db:
+            pending_scan = ScanJob(
+                repository_id=repository_id,
+                status="pending",
+                scan_type="full",
+                requested_by="la4-test@example.test",
+            )
+            failed_scan = ScanJob(
+                repository_id=repository_id,
+                status="failed",
+                scan_type="full",
+            )
+            finding = Finding(
+                repository_id=repository_id,
+                finding_type="TEST",
+                severity="low",
+                category="test",
+                title="Private finding",
+                description="Private",
+            )
+            report = Report(
+                repository_id=repository_id,
+                title="Private report",
+                status="COMPLETED",
+                report_data={"provenance": "LIVE_EVOSIA_EVIDENCE"},
+            )
+            unowned_repository = Repository(
+                name="Legacy unowned",
+                url="https://example.test/legacy",
+            )
+            db.add_all([pending_scan, failed_scan, finding, report, unowned_repository])
+            db.flush()
+            unowned_scan = ScanJob(
+                repository_id=unowned_repository.id,
+                status="pending",
+                scan_type="full",
+            )
+            unowned_finding = Finding(
+                repository_id=unowned_repository.id,
+                finding_type="LEGACY",
+                severity="low",
+                category="legacy",
+                title="Unowned legacy finding",
+            )
+            unowned_report = Report(
+                repository_id=unowned_repository.id,
+                title="Unowned legacy report",
+                status="COMPLETED",
+                report_data={},
+            )
+            db.add_all([unowned_scan, unowned_finding, unowned_report])
+            db.commit()
+            owned_ids = {
+                "scan": pending_scan.id,
+                "failed_scan": failed_scan.id,
+                "finding": finding.id,
+                "report": report.id,
+                "unowned_scan": unowned_scan.id,
+                "unowned_finding": unowned_finding.id,
+                "unowned_report": unowned_report.id,
+            }
+
+        credentials = {
+            "email": f"la4-tenant-{uuid.uuid4().hex[:8]}@test.com",
+            "password": "testpass1234",
+        }
+        assert la4_client.post(
+            "/api/auth/register",
+            json={**credentials, "name": "Other Tenant"},
+        ).status_code == 201
+        login = la4_client.post("/api/auth/login", json=credentials)
+        other_auth = {"Authorization": "Bearer " + login.json()["access_token"]}
+
+        for path, record_id in (
+            ("/api/scans", owned_ids["scan"]),
+            ("/api/findings", owned_ids["finding"]),
+            ("/api/reports", owned_ids["report"]),
+        ):
+            assert all(
+                record["id"] != record_id
+                for record in la4_client.get(path, headers=other_auth).json()
+            )
+
+        assert la4_client.get(
+            f"/api/scans/{owned_ids['scan']}",
+            headers=other_auth,
+        ).status_code == 404
+        assert la4_client.get(
+            f"/api/scans/{owned_ids['scan']}/history",
+            headers=other_auth,
+        ).status_code == 404
+        assert la4_client.post(
+            f"/api/scans/{owned_ids['scan']}/start",
+            headers=other_auth,
+        ).status_code == 404
+        assert la4_client.post(
+            f"/api/scans/{owned_ids['scan']}/cancel",
+            headers=other_auth,
+        ).status_code == 404
+        assert la4_client.post(
+            f"/api/scans/{owned_ids['failed_scan']}/retry",
+            headers=other_auth,
+        ).status_code == 404
+        assert la4_client.get(
+            f"/api/findings/{owned_ids['finding']}",
+            headers=other_auth,
+        ).status_code == 404
+        assert la4_client.get(
+            f"/api/reports/{owned_ids['report']}",
+            headers=other_auth,
+        ).status_code == 404
+
+        for path, record_id in (
+            ("/api/scans", owned_ids["unowned_scan"]),
+            ("/api/findings", owned_ids["unowned_finding"]),
+            ("/api/reports", owned_ids["unowned_report"]),
+        ):
+            assert all(
+                record["id"] != record_id
+                for record in la4_client.get(path, headers=la4_auth).json()
+            )
 
 
 # ===========================================================================
@@ -1032,7 +1279,6 @@ class TestScannerContainment:
         result = scan_project(root)
         assert any(f["path"] == "cert.pem" for f in result.findings)
 
-    @pytest.mark.skipif(os.name == "nt", reason="Windows symlink differs")
     def test_symlink_escape_rejected(self, tmp_path: Path):
         """Escaping symlink is detected and not followed."""
         root = tmp_path / "project"
@@ -1040,10 +1286,19 @@ class TestScannerContainment:
         outside = tmp_path / "outside"
         outside.mkdir()
         (outside / "secret.txt").write_text("secret")
-        (root / "escape").symlink_to(outside)
+        try:
+            (root / "escape").symlink_to(outside, target_is_directory=True)
+            (root / "escape.py").symlink_to(outside / "secret.txt")
+        except OSError as exc:
+            if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+                pytest.skip("Creating symlinks requires Windows Developer Mode or privilege")
+            raise
 
         result = scan_project(root)
         assert any(f["type"] == "SYMLINK_ESCAPE" for f in result.findings)
+        assert result.files_discovered == 1
+        assert result.files_skipped == 1
+        assert result.skip_reasons == {"symlink_escape": 1}
 
     def test_traversal_attack_rejected(self, tmp_path: Path):
         """../ traversal is blocked by containment."""
@@ -1388,6 +1643,38 @@ class TestProjectImmutability:
         before = hash_tree(root)
         scan_project(root)
         after = hash_tree(root)
+        assert before == after
+
+    def test_git_metadata_does_not_modify_repository_index(self, tmp_path: Path):
+        root = tmp_path / "project"
+        root.mkdir()
+        source = root / "main.py"
+        source.write_text("print('unchanged')\n")
+        try:
+            subprocess.run(["git", "--version"], check=True, capture_output=True)
+        except FileNotFoundError:
+            pytest.skip("Git is not installed")
+
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "-c", "user.name=Review Test", "-c",
+             "user.email=review@example.invalid", "add", "main.py"],
+            cwd=root,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "-c", "user.name=Review Test", "-c",
+             "user.email=review@example.invalid", "commit", "-qm", "initial"],
+            cwd=root,
+            check=True,
+        )
+
+        old_mtime = source.stat().st_mtime
+        os.utime(source, (old_mtime + 5, old_mtime + 5))
+        index_path = root / ".git" / "index"
+        before = hashlib.sha256(index_path.read_bytes()).digest()
+        scan_project(root)
+        after = hashlib.sha256(index_path.read_bytes()).digest()
         assert before == after
 
 

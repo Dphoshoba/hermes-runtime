@@ -113,6 +113,7 @@ class TestCredentialStore:
         with pytest.raises(FileNotFoundError):
             store.load()
 
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits are not enforced on Windows")
     def test_credential_file_permissions(self, tmp_path: Path):
         """Credential file has restrictive permissions (Unix only)."""
         store = CredentialStore(tmp_path)
@@ -124,15 +125,8 @@ class TestCredentialStore:
         )
         store.save(cred)
         cred_file = tmp_path / "device.json"
-        # Check permissions if on Unix
-        try:
-            import os
-            mode = os.stat(cred_file).st_mode
-            # Owner read/write only (0o600)
-            assert (mode & 0o777) == 0o600
-        except (OSError, AttributeError):
-            # Windows or unsupported — skip
-            pass
+        mode = os.stat(cred_file).st_mode
+        assert (mode & 0o777) == 0o600
 
     def test_bootstrap_token_not_persisted(self, tmp_path: Path):
         """Bootstrap token is never written to credential store."""

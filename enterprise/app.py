@@ -7,6 +7,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
+from sqlalchemy import inspect
+from sqlalchemy.engine import Engine
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -35,12 +37,56 @@ def validate_security_config() -> None:
             )
 
 
+def validate_review_schema(database_engine: Engine) -> None:
+    """Refuse to serve traffic when the computer-review schema is incomplete."""
+    inspector = inspect(database_engine)
+    required_columns = {
+        "agent_jobs": {"idempotency_key", "cancelled_at", "evidence", "coverage"},
+        "scan_jobs": {"review_id"},
+        "findings": {"review_id", "scan_job_id"},
+        "reports": {"review_id"},
+        "repositories": {"owner_user_id"},
+    }
+    missing = []
+    actual_tables = set(inspector.get_table_names())
+    for table_name, expected_columns in required_columns.items():
+        if table_name not in actual_tables:
+            missing.append(f"{table_name} table")
+            continue
+        actual_columns = {column["name"] for column in inspector.get_columns(table_name)}
+        absent = expected_columns - actual_columns
+        if absent:
+            missing.append(f"{table_name}: {', '.join(sorted(absent))}")
+
+    if "agent_job_idempotency_keys" not in actual_tables:
+        missing.append("agent_job_idempotency_keys table")
+
+    active_index = None
+    if "agent_jobs" in actual_tables:
+        active_index = next(
+            (
+                index for index in inspector.get_indexes("agent_jobs")
+                if index["name"] == "uq_agent_jobs_one_active_per_project"
+            ),
+            None,
+        )
+    if not active_index or not active_index.get("unique"):
+        missing.append("unique active-review index")
+
+    if missing:
+        raise RuntimeError(
+            "Database schema is missing required Computer Review migrations "
+            f"(009/010): {'; '.join(missing)}. Apply `alembic upgrade head` before startup."
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan — validate security config and create tables on startup."""
     validate_security_config()
     from .database import Base
     Base.metadata.create_all(bind=engine)
+    validate_review_schema(engine)
     yield
 
 

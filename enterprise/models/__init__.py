@@ -6,8 +6,8 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    Column, String, Text, Boolean, Integer, Float, DateTime, JSON, ForeignKey,
-    UniqueConstraint,
+    Column, Index, String, Text, Boolean, Integer, Float, DateTime, JSON, ForeignKey,
+    UniqueConstraint, text,
 )
 from sqlalchemy.orm import relationship
 
@@ -47,6 +47,12 @@ class Repository(Base):
     __tablename__ = "repositories"
 
     id = Column(String(36), primary_key=True, default=_uuid)
+    owner_user_id = Column(
+        String(36),
+        ForeignKey("users.id", name="fk_repositories_owner_user_id_users"),
+        nullable=True,
+        index=True,
+    )
     name = Column(String(255), nullable=False)
     url = Column(String(1024), nullable=False)
     default_branch = Column(String(255), default="main")
@@ -69,6 +75,7 @@ class Repository(Base):
     missions = relationship("Mission", back_populates="repository_rel")
     reports = relationship("Report", back_populates="repository_rel")
     scan_jobs = relationship("ScanJob", back_populates="repository_rel")
+    owner = relationship("User")
 
 
 # ---------------------------------------------------------------------------
@@ -662,6 +669,13 @@ class AgentJob(Base):
     """
     __tablename__ = "agent_jobs"
     __table_args__ = (
+        Index(
+            "uq_agent_jobs_one_active_per_project",
+            "device_project_id",
+            unique=True,
+            postgresql_where=text("status IN ('PENDING', 'STARTED', 'QUEUED', 'RUNNING')"),
+            sqlite_where=text("status IN ('PENDING', 'STARTED', 'QUEUED', 'RUNNING')"),
+        ),
         UniqueConstraint(
             "user_id", "device_project_id", "idempotency_key",
             name="uq_agent_jobs_idempotency_key",
@@ -677,7 +691,7 @@ class AgentJob(Base):
     operation_type = Column(String(50), nullable=False, default="PROJECT_SCAN")
 
     # Lifecycle status
-    status = Column(String(30), nullable=False, default="QUEUED", server_default="QUEUED", index=True)
+    status = Column(String(30), nullable=False, default="QUEUED", server_default="PENDING", index=True)
     # QUEUED → RUNNING → COMPLETED | PARTIAL | FAILED | CANCELLED
 
     # Timestamps
@@ -696,3 +710,20 @@ class AgentJob(Base):
     user = relationship("User")
     device = relationship("Device")
     device_project = relationship("DeviceProject")
+
+
+class AgentJobIdempotencyKey(Base):
+    """Durable request-key aliases for review jobs returned from active deduplication."""
+    __tablename__ = "agent_job_idempotency_keys"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "device_project_id", "idempotency_key",
+            name="uq_agent_job_idempotency_request",
+        ),
+    )
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    device_project_id = Column(String(36), ForeignKey("device_projects.id"), nullable=False, index=True)
+    idempotency_key = Column(String(128), nullable=False)
+    agent_job_id = Column(String(36), ForeignKey("agent_jobs.id"), nullable=False, index=True)

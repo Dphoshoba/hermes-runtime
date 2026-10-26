@@ -147,6 +147,13 @@ def _get_git_metadata(project_root: Path) -> dict | None:
     for cmd_str in _GIT_ALLOWLIST:
         cmd = ["git"] + cmd_str.split()
         try:
+            git_env = os.environ.copy()
+            git_env["GIT_OPTIONAL_LOCKS"] = "0"
+            for variable in (
+                "GIT_AUTHOR_EMAIL", "GIT_AUTHOR_NAME",
+                "GIT_COMMITTER_EMAIL", "GIT_COMMITTER_NAME",
+            ):
+                git_env.pop(variable, None)
             result = subprocess.run(
                 cmd,
                 cwd=str(project_root),
@@ -154,10 +161,7 @@ def _get_git_metadata(project_root: Path) -> dict | None:
                 text=True,
                 timeout=5,
                 shell=False,
-                env={k: v for k, v in os.environ.items() if k not in (
-                    "GIT_AUTHOR_EMAIL", "GIT_AUTHOR_NAME",
-                    "GIT_COMMITTER_EMAIL", "GIT_COMMITTER_NAME",
-                )},
+                env=git_env,
             )
             if result.returncode == 0:
                 key = cmd_str.replace(" ", "_").replace("-", "")
@@ -233,12 +237,18 @@ def scan_project(
             followlinks=False,
             onerror=raise_walk_error,
         ):
+            file_names = set(filenames)
             for name in (*dirnames, *filenames):
                 item = Path(current_root) / name
+                is_file_entry = name in file_names
                 # Handle symlinks
                 if item.is_symlink():
                     symlink_result = check_symlink(item, root_resolved)
                     if symlink_result.status == SymlinkStatus.ESCAPES_ROOT:
+                        if is_file_entry:
+                            file_count += 1
+                            result.files_discovered += 1
+                            record_skip("symlink_escape")
                         result.findings.append({
                             "type": "SYMLINK_ESCAPE",
                             "path": str(item.relative_to(project_root)),
@@ -246,6 +256,10 @@ def scan_project(
                         })
                         continue
                     elif symlink_result.status == SymlinkStatus.BROKEN_OR_UNRESOLVABLE:
+                        if is_file_entry:
+                            file_count += 1
+                            result.files_discovered += 1
+                            record_skip("broken_symlink")
                         result.findings.append({
                             "type": "BROKEN_SYMLINK",
                             "path": str(item.relative_to(project_root)),

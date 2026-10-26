@@ -76,6 +76,7 @@ def auth_headers(token) -> dict:
 @pytest.fixture
 def repo(db, user) -> Repository:
     r = Repository(
+        owner_user_id=user.id,
         name="test-repo",
         url="https://github.com/test/repo",
         default_branch="main",

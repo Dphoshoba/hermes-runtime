@@ -14,10 +14,10 @@ from pathlib import PurePosixPath
 from typing import Any
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 
 from ..models import (
-    Finding, Repository, FindingAdjudication, MissionFindingLink,
+    AgentJob, Finding, Repository, FindingAdjudication, MissionFindingLink,
     Mission, JournalEvent, ScanJob,
 )
 
@@ -163,6 +163,24 @@ def infer_actionability_status(
 # Review queue construction
 # ---------------------------------------------------------------------------
 
+def _visible_findings_query(db: Session, owner_user_id: str | None = None):
+    query = db.query(Finding)
+    if owner_user_id is None:
+        return query
+    owned_reviews = db.query(AgentJob.id).filter(AgentJob.user_id == owner_user_id)
+    owned_repositories = db.query(Repository.id).filter(
+        Repository.owner_user_id == owner_user_id,
+    )
+    return query.filter(
+        or_(
+            and_(Finding.review_id.is_not(None), Finding.review_id.in_(owned_reviews)),
+            and_(
+                Finding.review_id.is_(None),
+                Finding.repository_id.in_(owned_repositories),
+            ),
+        )
+    )
+
 def _extract_line_count(finding: Finding) -> int | None:
     meta = finding.metadata_json or {}
     evidence = meta.get("evidence_references", [])
@@ -182,8 +200,9 @@ def build_review_queue(
     reviewed: bool | None = None,
     limit: int = 50,
     offset: int = 0,
+    owner_user_id: str | None = None,
 ) -> list[dict[str, Any]]:
-    q = db.query(Finding)
+    q = _visible_findings_query(db, owner_user_id)
     if repository_id:
         q = q.filter(Finding.repository_id == repository_id)
     if severity:
@@ -203,17 +222,24 @@ def build_review_queue(
             if repo:
                 repo_cache[f.repository_id] = repo
 
-        if f.repository_id not in scan_cache:
-            scan_cache[f.repository_id] = (
-                db.query(ScanJob)
-                .filter(
-                    ScanJob.repository_id == f.repository_id,
-                    ScanJob.status == "completed",
+        if f.review_id:
+            scan_cache[f.review_id] = db.query(ScanJob).filter(
+                ScanJob.id == f.scan_job_id,
+                ScanJob.review_id == f.review_id,
+            ).first()
+            scan = scan_cache[f.review_id]
+        else:
+            if f.repository_id not in scan_cache:
+                scan_cache[f.repository_id] = (
+                    db.query(ScanJob)
+                    .filter(
+                        ScanJob.repository_id == f.repository_id,
+                        ScanJob.status == "completed",
+                    )
+                    .order_by(ScanJob.completed_at.desc())
+                    .first()
                 )
-                .order_by(ScanJob.completed_at.desc())
-                .first()
-            )
-        scan = scan_cache[f.repository_id]
+            scan = scan_cache[f.repository_id]
 
         file_context = classify_file_context(f.module or "")
         line_count = _extract_line_count(f)
@@ -350,10 +376,20 @@ def get_adjudications_for_finding(db: Session, finding_id: str) -> list[FindingA
 # Review summary
 # ---------------------------------------------------------------------------
 
-def get_review_summary(db: Session, trial_id: str | None = None) -> dict[str, Any]:
+def get_review_summary(
+    db: Session,
+    trial_id: str | None = None,
+    owner_user_id: str | None = None,
+) -> dict[str, Any]:
     q = db.query(FindingAdjudication)
     if trial_id:
         q = q.filter(FindingAdjudication.trial_id == trial_id)
+    if owner_user_id is not None:
+        q = q.filter(
+            FindingAdjudication.finding_id.in_(
+                _visible_findings_query(db, owner_user_id).with_entities(Finding.id)
+            )
+        )
 
     adjudications = q.all()
     total = len(adjudications)
@@ -386,13 +422,15 @@ def get_review_summary(db: Session, trial_id: str | None = None) -> dict[str, An
     }
 
 
-def get_pending_count(db: Session) -> int:
+def get_pending_count(db: Session, owner_user_id: str | None = None) -> int:
     reviewed_ids = (
         db.query(FindingAdjudication.finding_id)
         .distinct()
         .subquery()
     )
-    return db.query(Finding).filter(~Finding.id.in_(reviewed_ids)).count()
+    return _visible_findings_query(db, owner_user_id).filter(
+        ~Finding.id.in_(reviewed_ids)
+    ).count()
 
 
 # ---------------------------------------------------------------------------
@@ -444,12 +482,19 @@ def apply_deterministic_suppression(
 def list_suppressions(
     db: Session,
     repository_id: str | None = None,
+    owner_user_id: str | None = None,
 ) -> list[dict[str, Any]]:
     q = db.query(FindingAdjudication).filter(
         FindingAdjudication.policy_suppressed.is_(True)
     )
     if repository_id:
         q = q.filter(FindingAdjudication.repository_id == repository_id)
+    if owner_user_id is not None:
+        q = q.filter(
+            FindingAdjudication.finding_id.in_(
+                _visible_findings_query(db, owner_user_id).with_entities(Finding.id)
+            )
+        )
     rows = q.order_by(FindingAdjudication.reviewed_at.desc()).all()
     return [
         {

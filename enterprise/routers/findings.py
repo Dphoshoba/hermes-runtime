@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import AgentJob, Finding, User
+from ..models import AgentJob, Finding, Repository, User
 from ..schemas import FindingResponse
 from ..services import get_current_user
 
@@ -25,9 +25,17 @@ def list_findings(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[Finding]:
-    q = db.query(Finding)
-    owned_review_ids = db.query(AgentJob.id).filter(AgentJob.user_id == user.id)
-    q = q.filter(or_(Finding.review_id.is_(None), Finding.review_id.in_(owned_review_ids)))
+    q = (
+        db.query(Finding)
+        .outerjoin(AgentJob, Finding.review_id == AgentJob.id)
+        .outerjoin(Repository, Finding.repository_id == Repository.id)
+        .filter(
+            or_(
+                and_(Finding.review_id.is_not(None), AgentJob.user_id == user.id),
+                and_(Finding.review_id.is_(None), Repository.owner_user_id == user.id),
+            )
+        )
+    )
     if repository_id:
         q = q.filter(Finding.repository_id == repository_id)
     if severity:
@@ -47,13 +55,20 @@ def get_finding(
 ) -> dict:
     from ..models import FindingAdjudication
 
-    finding = db.query(Finding).filter(Finding.id == finding_id).first()
+    finding = (
+        db.query(Finding)
+        .outerjoin(AgentJob, Finding.review_id == AgentJob.id)
+        .outerjoin(Repository, Finding.repository_id == Repository.id)
+        .filter(
+            Finding.id == finding_id,
+            or_(
+                and_(Finding.review_id.is_not(None), AgentJob.user_id == user.id),
+                and_(Finding.review_id.is_(None), Repository.owner_user_id == user.id),
+            ),
+        )
+        .first()
+    )
     if not finding:
-        raise HTTPException(status_code=404, detail="Finding not found")
-    if finding.review_id and not db.query(AgentJob.id).filter(
-        AgentJob.id == finding.review_id,
-        AgentJob.user_id == user.id,
-    ).first():
         raise HTTPException(status_code=404, detail="Finding not found")
 
     # Evidence & Risk Gate authority enrichment (Post Cycle 8).

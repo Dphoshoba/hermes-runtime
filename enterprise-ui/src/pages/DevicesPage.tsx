@@ -35,7 +35,9 @@ const STATUS_BADGE: Record<string, string> = {
 
 const JOB_STATUS_LABEL: Record<string, string> = {
   QUEUED: 'Waiting for your computer',
+  PENDING: 'Waiting for your computer',
   RUNNING: 'Reviewing project',
+  STARTED: 'Reviewing project',
   COMPLETED: 'Review complete',
   PARTIAL: 'Completed with limits',
   FAILED: 'Review could not be completed',
@@ -44,9 +46,23 @@ const JOB_STATUS_LABEL: Record<string, string> = {
 }
 
 const JOB_STATUS_BADGE: Record<string, string> = {
-  QUEUED: 'badge-gray', RUNNING: 'badge-blue',
+  QUEUED: 'badge-gray', PENDING: 'badge-gray',
+  RUNNING: 'badge-blue', STARTED: 'badge-blue',
   COMPLETED: 'badge-green', PARTIAL: 'badge-yellow',
   FAILED: 'badge-red', CANCELLED: 'badge-yellow', EXPIRED: 'badge-yellow',
+}
+
+function reviewRequestStorageKey(projectId: string): string {
+  return `evosia:computer-review:${projectId}:idempotency`
+}
+
+function getReviewRequestIdempotencyKey(projectId: string): string {
+  const storageKey = reviewRequestStorageKey(projectId)
+  const existingKey = window.sessionStorage.getItem(storageKey)
+  if (existingKey) return existingKey
+  const newKey = crypto.randomUUID()
+  window.sessionStorage.setItem(storageKey, newKey)
+  return newKey
 }
 
 // ---------------------------------------------------------------------------
@@ -370,7 +386,9 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
   useEffect(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
     if (!selectedProject) return
-    const hasActive = jobs.some(j => j.status === 'QUEUED' || j.status === 'RUNNING')
+    const hasActive = jobs.some(j =>
+      ['QUEUED', 'RUNNING', 'PENDING', 'STARTED'].includes(j.status),
+    )
     if (!hasActive) return
     pollRef.current = setInterval(() => { loadJobs(selectedProject.id) }, 10_000)
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
@@ -394,7 +412,9 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
     setScanBanner('Requesting review...')
     setScanError('')
     try {
-      const job = await deviceClient.requestScan(project.id)
+      const idempotencyKey = getReviewRequestIdempotencyKey(project.id)
+      const job = await deviceClient.requestScan(project.id, idempotencyKey)
+      window.sessionStorage.removeItem(reviewRequestStorageKey(project.id))
       setJobs(previous => [job, ...previous.filter(existing => existing.id !== job.id)])
       await loadJobs(project.id)
       setScanBanner('Review queued — your computer will process it shortly.')
@@ -442,7 +462,10 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
   }
 
   const hasActiveJob = (projectId: string) =>
-    jobs.some(j => j.device_project_id === projectId && (j.status === 'QUEUED' || j.status === 'RUNNING'))
+    jobs.some(j =>
+      j.device_project_id === projectId
+      && ['QUEUED', 'RUNNING', 'PENDING', 'STARTED'].includes(j.status),
+    )
 
   const st = deviceStatus(device)
 

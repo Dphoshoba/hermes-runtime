@@ -71,16 +71,18 @@ schema changes must be applied as an explicit deployment step.
 | 006_local_agent_projects | device_projects, project_authorization_tokens |
 | 007_local_agent_scan_jobs | agent_jobs |
 | 008_agent_job_truncation | agent_jobs.truncated |
-| 009_computer_review_evidence | review identity, lifecycle, coverage, and linked evidence |
+| 009_computer_review_evidence | review identity, lifecycle, coverage, linked evidence, and database-enforced idempotency |
+| 010_repository_ownership | repository tenant ownership |
 
 The ORM also defines tables outside this migration chain; those continue to
 be created by `create_all()` at startup.
 
 ### Fresh Database Procedure
 
-1. Start the application — `create_all()` creates all 19 tables
-2. Run `alembic stamp head` to mark migrations as applied
-3. Future migrations can then be run with `alembic upgrade head`
+Run `alembic -c enterprise/alembic.ini upgrade head` before the first
+application start. The application then creates ORM tables not yet represented
+in the migration chain. Startup verifies that the Computer Review and
+repository-ownership schema is present and refuses to serve if it is missing.
 
 ### Existing Database Adoption (Production)
 
@@ -88,28 +90,46 @@ For databases created by `create_all()` before Alembic was integrated, do not
 blindly stamp the current head. First inspect the schema and recorded Alembic
 revision. Stamping does not apply missing schema changes.
 
-For a database verified to match the complete ORM schema at the current
-release, stamping the current head is appropriate. For a database already at
-`008_agent_job_truncation`, apply the Computer Review migration with
-`alembic upgrade head`. If a legacy database is recorded at an earlier
-revision but contains tables created by `create_all()`, an operator must
-verify each intervening migration's effects before adopting it at revision
-008; otherwise migrations that create existing tables may fail.
+For a database already at `008_agent_job_truncation`, apply the Computer Review
+and ownership migrations with `alembic upgrade head`. For an older or
+unversioned database created by `create_all()`, first verify the existing
+schema and every migration effect. Only then may an operator stamp the verified
+revision (normally `008_agent_job_truncation`) before upgrading. The new
+application intentionally fails startup when the required columns or unique
+active-review index are absent.
+
+Migration 009 refuses to create its active-review unique index if a project
+already has multiple queued/running reviews. Resolve those rows deliberately
+before retrying the migration; the migration will not cancel or discard work.
+Migration 010 leaves existing repository rows unowned because the previous
+schema contains no reliable owner attribution. Such rows remain hidden from
+tenant-facing repository, Scans, Findings, Reports, and human-review endpoints
+until a separately authorized attribution process assigns an owner.
 
 ```bash
 # Only after verifying the database already has the complete current schema
 alembic -c enterprise/alembic.ini stamp head
 ```
 
-### Explicit Migration Step (Recommended)
+### Railway Release Sequence
 
-For databases already tracked at revision 008, run the additive review
-evidence migration explicitly before starting the new application version:
+`railway.toml` configures Railway's pre-deploy command to run after the image
+build and before the new application starts:
 
-```bash
-# During deployment, after backup and revision/schema verification
-alembic -c enterprise/alembic.ini upgrade head
+```toml
+[deploy]
+preDeployCommand = ["alembic -c enterprise/alembic.ini upgrade head"]
 ```
+
+The command requires `EVOSIA_DATABASE_URL` (or `HERMES_DATABASE_URL`) to point
+to the intended database. Railway's default `DATABASE_URL` must be mapped to
+`EVOSIA_DATABASE_URL` as described above. A nonzero migration exit blocks the
+new deployment. After success, the container starts with the existing Docker
+command: `uvicorn enterprise.app:app --host 0.0.0.0 --port ${PORT:-8000}`.
+
+Before enabling this release sequence for an existing database, back it up,
+verify its Alembic revision and schema, and resolve any duplicate active
+reviews. Do not stamp or upgrade an unverified legacy schema automatically.
 
 ## Health and Readiness Endpoints
 

@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -29,6 +29,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from enterprise.database import Base, get_engine
 from enterprise.models import User, Repository, Finding  # noqa: F401
+from enterprise.app import validate_review_schema
 
 _EXPECTED_TABLES = {
     "users",
@@ -40,6 +41,9 @@ _EXPECTED_TABLES = {
     "scan_jobs",
     "scan_history",
     "finding_adjudications",
+    "agent_jobs",
+    "agent_job_idempotency_keys",
+    "device_projects",
 }
 
 
@@ -119,6 +123,160 @@ class TestFreshDatabaseMigration:
         tables = _get_table_names(db_url)
         assert _EXPECTED_TABLES.issubset(tables), f"Missing tables: {_EXPECTED_TABLES - tables}"
         assert _has_alembic_version(db_url), "alembic_version table not created"
+        with create_engine(db_url).connect() as conn:
+            repository_columns = {
+                column["name"] for column in inspect(conn).get_columns("repositories")
+            }
+            assert "owner_user_id" in repository_columns
+            active_index = next(
+                index for index in inspect(conn).get_indexes("agent_jobs")
+                if index["name"] == "uq_agent_jobs_one_active_per_project"
+            )
+            assert active_index["unique"]
+
+
+class TestComputerReviewMigrationCompatibility:
+    def test_existing_pending_status_remains_compatible_with_old_agent(
+        self, tmp_path: Path,
+    ) -> None:
+        db_url = f"sqlite:///{tmp_path / 'legacy_pending.db'}"
+        result = _run_alembic(db_url, "upgrade", "008_agent_job_truncation")
+        assert result.returncode == 0, result.stderr
+        engine = create_engine(db_url)
+        with engine.begin() as conn:
+            conn.execute(text(
+                "INSERT INTO users (id, email, name, hashed_password) "
+                "VALUES ('user-1', 'legacy@example.test', 'Legacy', 'hash')"
+            ))
+            conn.execute(text(
+                "INSERT INTO devices "
+                "(id, device_id, device_name, platform, agent_version, user_id, status) "
+                "VALUES ('device-1', 'device-1', 'Legacy', 'windows', '0.1', "
+                "'user-1', 'active')"
+            ))
+            conn.execute(text(
+                "INSERT INTO device_projects "
+                "(id, device_id, user_id, display_name, status, authority) "
+                "VALUES ('project-1', 'device-1', 'user-1', 'Legacy', 'active', "
+                "'REVIEW_ONLY')"
+            ))
+            conn.execute(text(
+                "INSERT INTO agent_jobs "
+                "(id, user_id, device_id, device_project_id, operation_type, status, truncated) "
+                "VALUES ('job-1', 'user-1', 'device-1', 'project-1', "
+                "'PROJECT_SCAN', 'PENDING', 0)"
+            ))
+        engine.dispose()
+
+        _run_upgrade(db_url)
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            status_value = conn.execute(
+                text("SELECT status FROM agent_jobs WHERE id = 'job-1'")
+            ).scalar_one()
+            assert status_value == "PENDING"
+        engine.dispose()
+
+    def test_duplicate_active_reviews_fail_before_schema_changes(
+        self, tmp_path: Path,
+    ) -> None:
+        db_url = f"sqlite:///{tmp_path / 'active_duplicates.db'}"
+        result = _run_alembic(db_url, "upgrade", "008_agent_job_truncation")
+        assert result.returncode == 0, result.stderr
+
+        engine = create_engine(db_url)
+        with engine.begin() as conn:
+            conn.execute(text(
+                "INSERT INTO users (id, email, name, hashed_password) "
+                "VALUES ('user-1', 'duplicates@example.test', 'Duplicates', 'hash')"
+            ))
+            conn.execute(text(
+                "INSERT INTO devices "
+                "(id, device_id, device_name, platform, agent_version, user_id) "
+                "VALUES ('device-1', 'device-1', 'Legacy', 'windows', '0.1', 'user-1')"
+            ))
+            conn.execute(text(
+                "INSERT INTO device_projects "
+                "(id, device_id, user_id, display_name) "
+                "VALUES ('project-1', 'device-1', 'user-1', 'Legacy')"
+            ))
+            conn.execute(text(
+                "INSERT INTO agent_jobs "
+                "(id, user_id, device_id, device_project_id, operation_type, status) "
+                "VALUES ('job-1', 'user-1', 'device-1', 'project-1', "
+                "'PROJECT_SCAN', 'PENDING'), "
+                "('job-2', 'user-1', 'device-1', 'project-1', "
+                "'PROJECT_SCAN', 'STARTED')"
+            ))
+        engine.dispose()
+
+        result = _run_alembic(db_url, "upgrade", "head")
+        assert result.returncode != 0
+        assert "Cannot enforce one active review per project" in result.stderr
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            assert conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar_one() == "008_agent_job_truncation"
+            columns = {column["name"] for column in inspect(conn).get_columns("agent_jobs")}
+            assert "idempotency_key" not in columns
+            assert "agent_job_idempotency_keys" not in inspect(conn).get_table_names()
+        engine.dispose()
+
+    def test_old_database_without_new_columns_fails_startup_guard(
+        self, tmp_path: Path,
+    ) -> None:
+        engine = create_engine(f"sqlite:///{tmp_path / 'old_schema.db'}")
+        with engine.begin() as conn:
+            conn.execute(text("CREATE TABLE agent_jobs (id VARCHAR(36) PRIMARY KEY)"))
+        with pytest.raises(RuntimeError, match="required Computer Review migrations"):
+            validate_review_schema(engine)
+        engine.dispose()
+
+    def test_downgrade_refuses_to_drop_persisted_review_evidence(
+        self, tmp_path: Path,
+    ) -> None:
+        db_url = f"sqlite:///{tmp_path / 'downgrade_guard.db'}"
+        _run_upgrade(db_url)
+        engine = create_engine(db_url)
+        with engine.begin() as conn:
+            conn.execute(text(
+                "INSERT INTO users (id, email, name, hashed_password) "
+                "VALUES ('user-1', 'evidence@example.test', 'Evidence', 'hash')"
+            ))
+            conn.execute(text(
+                "INSERT INTO devices "
+                "(id, device_id, device_name, platform, agent_version, user_id, status) "
+                "VALUES ('device-1', 'device-1', 'Evidence', 'windows', '0.1', "
+                "'user-1', 'active')"
+            ))
+            conn.execute(text(
+                "INSERT INTO device_projects "
+                "(id, device_id, user_id, display_name, status, authority) "
+                "VALUES ('project-1', 'device-1', 'user-1', 'Evidence', 'active', "
+                "'REVIEW_ONLY')"
+            ))
+            conn.execute(text(
+                "INSERT INTO agent_jobs "
+                "(id, user_id, device_id, device_project_id, operation_type, status, "
+                "truncated, evidence, coverage) "
+                "VALUES ('job-1', 'user-1', 'device-1', 'project-1', "
+                "'PROJECT_SCAN', 'COMPLETED', 0, '{}', '{}')"
+            ))
+        engine.dispose()
+
+        result = _run_alembic(db_url, "downgrade", "008_agent_job_truncation")
+        assert result.returncode != 0
+        assert "Cannot downgrade Computer Review evidence" in result.stderr
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            assert conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar_one() == "010_repository_ownership"
+            assert "owner_user_id" in {
+                column["name"] for column in inspect(conn).get_columns("repositories")
+            }
+        engine.dispose()
 
 
 class TestMigrationIdempotence:

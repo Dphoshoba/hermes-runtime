@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import AgentJob, Report, User
+from ..models import AgentJob, Repository, Report, User
 from ..schemas import ReportResponse
 from ..services import get_current_user
 
@@ -23,9 +23,17 @@ def list_reports(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[Report]:
-    q = db.query(Report)
-    owned_review_ids = db.query(AgentJob.id).filter(AgentJob.user_id == user.id)
-    q = q.filter(or_(Report.review_id.is_(None), Report.review_id.in_(owned_review_ids)))
+    q = (
+        db.query(Report)
+        .outerjoin(AgentJob, Report.review_id == AgentJob.id)
+        .outerjoin(Repository, Report.repository_id == Repository.id)
+        .filter(
+            or_(
+                and_(Report.review_id.is_not(None), AgentJob.user_id == user.id),
+                and_(Report.review_id.is_(None), Repository.owner_user_id == user.id),
+            )
+        )
+    )
     if repository_id:
         q = q.filter(Report.repository_id == repository_id)
     if status:
@@ -39,12 +47,19 @@ def get_report(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Report:
-    report = db.query(Report).filter(Report.id == report_id).first()
+    report = (
+        db.query(Report)
+        .outerjoin(AgentJob, Report.review_id == AgentJob.id)
+        .outerjoin(Repository, Report.repository_id == Repository.id)
+        .filter(
+            Report.id == report_id,
+            or_(
+                and_(Report.review_id.is_not(None), AgentJob.user_id == user.id),
+                and_(Report.review_id.is_(None), Repository.owner_user_id == user.id),
+            ),
+        )
+        .first()
+    )
     if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
-    if report.review_id and not db.query(AgentJob.id).filter(
-        AgentJob.id == report.review_id,
-        AgentJob.user_id == user.id,
-    ).first():
         raise HTTPException(status_code=404, detail="Report not found")
     return report

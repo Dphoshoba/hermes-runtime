@@ -8,9 +8,21 @@ from fastapi import HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from ..models import AgentJob, Device, DeviceProject, Finding, Report, ScanJob
+from ..models import (
+    AgentJob,
+    AgentJobIdempotencyKey,
+    Device,
+    DeviceProject,
+    Finding,
+    Report,
+    ScanJob,
+)
 from ..schemas import (
     ALLOWED_OPERATION_TYPES,
+    JOB_ACTIVE_STATUSES,
+    JOB_STATUS_QUEUED,
+    JOB_STATUS_LEGACY_PENDING,
+    JOB_STATUS_LEGACY_STARTED,
     JOB_STATUS_PENDING,
     JOB_STATUS_STARTED,
     JOB_STATUS_COMPLETED,
@@ -96,23 +108,45 @@ def create_scan_job(
         )
 
     if idempotency_key:
-        previous_request = db.query(AgentJob).filter(
+        previous_key = db.query(AgentJobIdempotencyKey).filter(
+            AgentJobIdempotencyKey.user_id == user_id,
+            AgentJobIdempotencyKey.device_project_id == device_project_id,
+            AgentJobIdempotencyKey.idempotency_key == idempotency_key,
+        ).first()
+        if previous_key:
+            db.commit()
+            return db.get(AgentJob, previous_key.agent_job_id), False
+
+        legacy_request = db.query(AgentJob).filter(
             AgentJob.user_id == user_id,
             AgentJob.device_project_id == device_project_id,
             AgentJob.idempotency_key == idempotency_key,
         ).first()
-        if previous_request:
+        if legacy_request:
+            db.add(AgentJobIdempotencyKey(
+                user_id=user_id,
+                device_project_id=device_project_id,
+                idempotency_key=idempotency_key,
+                agent_job_id=legacy_request.id,
+            ))
             db.commit()
-            return previous_request, False
+            return legacy_request, False
 
     # Return the active review for retries/double-clicks rather than creating
     # a second review or turning a successful repeated request into an error.
     active_job = db.query(AgentJob).filter(
         AgentJob.device_project_id == device_project_id,
         AgentJob.operation_type.in_(ALLOWED_OPERATION_TYPES),
-        AgentJob.status.in_([JOB_STATUS_PENDING, JOB_STATUS_STARTED]),
-    ).first()
+        AgentJob.status.in_(JOB_ACTIVE_STATUSES),
+    ).order_by(AgentJob.created_at.asc()).first()
     if active_job:
+        if idempotency_key:
+            db.add(AgentJobIdempotencyKey(
+                user_id=user_id,
+                device_project_id=device_project_id,
+                idempotency_key=idempotency_key,
+                agent_job_id=active_job.id,
+            ))
         db.commit()
         return active_job, False
 
@@ -121,10 +155,18 @@ def create_scan_job(
         device_id=device_id,
         device_project_id=device_project_id,
         operation_type=operation_type,
-        status=JOB_STATUS_PENDING,
+        status=JOB_STATUS_QUEUED,
         idempotency_key=idempotency_key,
     )
     db.add(job)
+    db.flush()
+    if idempotency_key:
+        db.add(AgentJobIdempotencyKey(
+            user_id=user_id,
+            device_project_id=device_project_id,
+            idempotency_key=idempotency_key,
+            agent_job_id=job.id,
+        ))
     db.commit()
     db.refresh(job)
     return job, True
@@ -159,7 +201,7 @@ def get_next_job(db: Session, device_id: str) -> AgentJob | None:
 
     job = db.query(AgentJob).filter(
         AgentJob.device_id == device_id,
-        AgentJob.status == JOB_STATUS_PENDING,
+        AgentJob.status.in_((JOB_STATUS_QUEUED, JOB_STATUS_LEGACY_PENDING)),
         AgentJob.operation_type.in_(ALLOWED_OPERATION_TYPES),
     ).order_by(AgentJob.created_at.asc()).first()
 
@@ -190,7 +232,7 @@ def mark_job_started(db: Session, job: AgentJob) -> AgentJob:
 
     Only allowed for PENDING jobs.
     """
-    if job.status != JOB_STATUS_PENDING:
+    if job.status not in (JOB_STATUS_PENDING, JOB_STATUS_LEGACY_PENDING):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Job is already {job.status}",
@@ -216,7 +258,7 @@ def complete_job(
             status_code=status.HTTP_409_CONFLICT,
             detail="Review results were already submitted with different evidence",
         )
-    if job.status != JOB_STATUS_STARTED:
+    if job.status not in (JOB_STATUS_STARTED, JOB_STATUS_LEGACY_STARTED):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Job is {job.status}, expected RUNNING",
@@ -331,7 +373,12 @@ def fail_job(db: Session, job: AgentJob, reason: str) -> AgentJob:
 
     Only allowed for PENDING or STARTED jobs.
     """
-    if job.status not in (JOB_STATUS_PENDING, JOB_STATUS_STARTED):
+    if job.status not in (
+        JOB_STATUS_PENDING,
+        JOB_STATUS_STARTED,
+        JOB_STATUS_LEGACY_PENDING,
+        JOB_STATUS_LEGACY_STARTED,
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Job is {job.status}, cannot mark as failed",
@@ -348,7 +395,12 @@ def cancel_job(db: Session, job: AgentJob) -> AgentJob:
     """Persist cancellation of queued/running work."""
     if job.status in (JOB_STATUS_COMPLETED, JOB_STATUS_PARTIAL, JOB_STATUS_FAILED, JOB_STATUS_CANCELLED):
         return job
-    if job.status not in (JOB_STATUS_PENDING, JOB_STATUS_STARTED):
+    if job.status not in (
+        JOB_STATUS_PENDING,
+        JOB_STATUS_STARTED,
+        JOB_STATUS_LEGACY_PENDING,
+        JOB_STATUS_LEGACY_STARTED,
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Job is {job.status}, cannot cancel",

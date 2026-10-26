@@ -55,7 +55,10 @@ const SAMPLE_JOB: AgentJob = {
 // Tests
 // ---------------------------------------------------------------------------
 
-beforeEach(() => { vi.clearAllMocks() })
+beforeEach(() => {
+  vi.clearAllMocks()
+  window.sessionStorage.clear()
+})
 afterEach(() => { vi.restoreAllMocks() })
 
 describe('DevicesPage', () => {
@@ -185,6 +188,48 @@ describe('DevicesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Review complete')).toBeInTheDocument()
     })
+  })
+
+  it('reuses the same review idempotency key after a request failure', async () => {
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_PROJECT]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('BibleQuest')).toBeInTheDocument() })
+
+    mockFetch.mockResolvedValueOnce(ok([]))
+    await userEvent.click(screen.getByText('BibleQuest'))
+    await waitFor(() => { expect(screen.getByText(/No reviews have been requested/)).toBeInTheDocument() })
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      statusText: 'Unavailable',
+      json: () => Promise.resolve({ detail: 'Temporary failure' }),
+    } as Response)
+    await userEvent.click(screen.getByText('Review project'))
+    await waitFor(() => { expect(screen.getByText('Temporary failure')).toBeInTheDocument() })
+
+    const storageKey = 'evosia:computer-review:p1:idempotency'
+    const firstKey = window.sessionStorage.getItem(storageKey)
+    expect(firstKey).toBeTruthy()
+
+    mockFetch.mockResolvedValueOnce(ok(SAMPLE_JOB))
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_JOB]))
+    await userEvent.click(screen.getByText('Review project'))
+    await waitFor(() => { expect(screen.getByText('Review complete')).toBeInTheDocument() })
+
+    const reviewRequests = mockFetch.mock.calls.filter(([url]) =>
+      String(url).endsWith('/device-projects/p1/scans'),
+    )
+    expect(reviewRequests).toHaveLength(2)
+    const requestBodies = reviewRequests.map(([, init]) =>
+      JSON.parse(String((init as RequestInit).body)),
+    )
+    expect(requestBodies[0].idempotency_key).toBe(firstKey)
+    expect(requestBodies[1].idempotency_key).toBe(firstKey)
+    expect(window.sessionStorage.getItem(storageKey)).toBeNull()
   })
 
   it('completed review shows project unchanged', async () => {

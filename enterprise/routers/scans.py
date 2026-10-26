@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import AgentJob, ScanJob, ScanHistory, User
+from ..models import AgentJob, Repository, ScanJob, ScanHistory, User
 from ..schemas import ScanJobCreate, ScanJobResponse, ScanJobQuery, ScanHistoryResponse
 from ..services import get_current_user
 from ..services.scanner import (
@@ -15,6 +15,22 @@ from ..services.scanner import (
 )
 
 router = APIRouter()
+
+
+def _get_owned_scan(db: Session, scan_id: str, user: User) -> ScanJob | None:
+    return (
+        db.query(ScanJob)
+        .outerjoin(AgentJob, ScanJob.review_id == AgentJob.id)
+        .outerjoin(Repository, ScanJob.repository_id == Repository.id)
+        .filter(
+            ScanJob.id == scan_id,
+            or_(
+                and_(ScanJob.review_id.is_not(None), AgentJob.user_id == user.id),
+                and_(ScanJob.review_id.is_(None), Repository.owner_user_id == user.id),
+            ),
+        )
+        .first()
+    )
 
 
 @router.get("", response_model=list[ScanJobResponse])
@@ -27,9 +43,17 @@ def list_jobs(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[ScanJob]:
-    q = db.query(ScanJob)
-    owned_review_ids = db.query(AgentJob.id).filter(AgentJob.user_id == user.id)
-    q = q.filter(or_(ScanJob.review_id.is_(None), ScanJob.review_id.in_(owned_review_ids)))
+    q = (
+        db.query(ScanJob)
+        .outerjoin(AgentJob, ScanJob.review_id == AgentJob.id)
+        .outerjoin(Repository, ScanJob.repository_id == Repository.id)
+        .filter(
+            or_(
+                and_(ScanJob.review_id.is_not(None), AgentJob.user_id == user.id),
+                and_(ScanJob.review_id.is_(None), Repository.owner_user_id == user.id),
+            )
+        )
+    )
     if repository_id:
         q = q.filter(ScanJob.repository_id == repository_id)
     if status:
@@ -45,6 +69,12 @@ def create_job(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ScanJob:
+    repository = db.query(Repository).filter(
+        Repository.id == body.repository_id,
+        Repository.owner_user_id == user.id,
+    ).first()
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
     try:
         job = create_scan_job(db, body.repository_id, body.scan_type, body.branch, requested_by=user.email)
     except ValueError as e:
@@ -56,8 +86,16 @@ def create_job(
 def start_job(
     job_id: str,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> ScanJob:
+    scan = _get_owned_scan(db, job_id, user)
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan job not found")
+    if scan.review_id:
+        raise HTTPException(
+            status_code=409,
+            detail="Computer reviews cannot be started as repository scans",
+        )
     try:
         job = start_scan(db, job_id)
     except ValueError as e:
@@ -71,8 +109,10 @@ def cancel_job(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ScanJob:
-    job = db.query(ScanJob).filter(ScanJob.id == job_id).first()
-    if job and job.review_id:
+    job = _get_owned_scan(db, job_id, user)
+    if not job:
+        raise HTTPException(status_code=404, detail="Scan job not found")
+    if job.review_id:
         raise HTTPException(
             status_code=409,
             detail="Computer reviews must be cancelled from the Computers page",
@@ -90,8 +130,10 @@ def retry_job(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ScanJob:
-    job = db.query(ScanJob).filter(ScanJob.id == job_id).first()
-    if job and job.review_id:
+    job = _get_owned_scan(db, job_id, user)
+    if not job:
+        raise HTTPException(status_code=404, detail="Scan job not found")
+    if job.review_id:
         raise HTTPException(
             status_code=409,
             detail="Computer reviews cannot be retried as repository scans",
@@ -109,13 +151,7 @@ def get_job(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ScanJob:
-    job = db.query(ScanJob).outerjoin(
-        AgentJob,
-        ScanJob.review_id == AgentJob.id,
-    ).filter(
-        ScanJob.id == job_id,
-        or_(ScanJob.review_id.is_(None), AgentJob.user_id == user.id),
-    ).first()
+    job = _get_owned_scan(db, job_id, user)
     if not job:
         raise HTTPException(status_code=404, detail="Scan job not found")
     return job
@@ -127,13 +163,7 @@ def get_job_history(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[ScanHistory]:
-    job = db.query(ScanJob).outerjoin(
-        AgentJob,
-        ScanJob.review_id == AgentJob.id,
-    ).filter(
-        ScanJob.id == job_id,
-        or_(ScanJob.review_id.is_(None), AgentJob.user_id == user.id),
-    ).first()
+    job = _get_owned_scan(db, job_id, user)
     if not job:
         raise HTTPException(status_code=404, detail="Scan job not found")
     return (

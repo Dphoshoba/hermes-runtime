@@ -7,10 +7,11 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import FindingAdjudication, User
+from ..models import AgentJob, Finding, FindingAdjudication, Repository, ScanJob, User
 from ..schemas import FindingResponse
 from ..services import get_current_user
 from ..services.review_service import (
@@ -26,6 +27,22 @@ from ..services.review_service import (
 )
 
 router = APIRouter()
+
+
+def _get_accessible_finding(db: Session, finding_id: str, user: User) -> Finding | None:
+    return (
+        db.query(Finding)
+        .outerjoin(AgentJob, Finding.review_id == AgentJob.id)
+        .outerjoin(Repository, Finding.repository_id == Repository.id)
+        .filter(
+            Finding.id == finding_id,
+            or_(
+                and_(Finding.review_id.is_not(None), AgentJob.user_id == user.id),
+                and_(Finding.review_id.is_(None), Repository.owner_user_id == user.id),
+            ),
+        )
+        .first()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +154,7 @@ def list_review_findings(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     result = build_review_queue(
         db,
@@ -147,8 +164,9 @@ def list_review_findings(
         reviewed=reviewed,
         limit=limit,
         offset=offset,
+        owner_user_id=user.id,
     )
-    result["pending_review"] = get_pending_count(db)
+    result["pending_review"] = get_pending_count(db, owner_user_id=user.id)
     return result
 
 
@@ -156,10 +174,9 @@ def list_review_findings(
 def get_review_finding(
     finding_id: str,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
-    from ..models import Finding, Repository
-    finding = db.query(Finding).filter(Finding.id == finding_id).first()
+    finding = _get_accessible_finding(db, finding_id, user)
     if not finding:
         raise HTTPException(status_code=404, detail="Finding not found")
 
@@ -174,16 +191,21 @@ def get_review_finding(
     line_count = _extract_line_count(finding)
     exceedance = compute_exceedance_ratio(line_count, 300) if line_count else None
 
-    from ..models import ScanJob
-    scan = (
-        db.query(ScanJob)
-        .filter(
-            ScanJob.repository_id == finding.repository_id,
-            ScanJob.status == "completed",
+    if finding.review_id:
+        scan = db.query(ScanJob).filter(
+            ScanJob.id == finding.scan_job_id,
+            ScanJob.review_id == finding.review_id,
+        ).first()
+    else:
+        scan = (
+            db.query(ScanJob)
+            .filter(
+                ScanJob.repository_id == finding.repository_id,
+                ScanJob.status == "completed",
+            )
+            .order_by(ScanJob.completed_at.desc())
+            .first()
         )
-        .order_by(ScanJob.completed_at.desc())
-        .first()
-    )
 
     supp = next((a for a in adjudications if getattr(a, "policy_suppressed", False)), None)
     return {
@@ -239,10 +261,9 @@ def create_finding_adjudication(
     finding_id: str,
     body: AdjudicationCreate,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> FindingAdjudication:
-    from ..models import Finding
-    finding = db.query(Finding).filter(Finding.id == finding_id).first()
+    finding = _get_accessible_finding(db, finding_id, user)
     if not finding:
         raise HTTPException(status_code=404, detail="Finding not found")
 
@@ -288,15 +309,14 @@ def suppress_finding(
     finding_id: str,
     body: SuppressionCreate,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> FindingAdjudication:
     """Deterministic policy suppression — distinct from human NOT_ACTIONABLE.
 
     Machine-authoritative but never pretends a human decided actionability.
     Auditable and recoverable for review.
     """
-    from ..models import Finding
-    finding = db.query(Finding).filter(Finding.id == finding_id).first()
+    finding = _get_accessible_finding(db, finding_id, user)
     if not finding:
         raise HTTPException(status_code=404, detail="Finding not found")
     return apply_deterministic_suppression(
@@ -313,19 +333,23 @@ def suppress_finding(
 def list_finding_suppressions(
     repository_id: str | None = None,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
-    return list_suppressions(db, repository_id=repository_id)
+    return list_suppressions(
+        db,
+        repository_id=repository_id,
+        owner_user_id=user.id,
+    )
 
 
 @router.get("/summary", response_model=ReviewSummaryResponse)
 def review_summary(
     trial_id: str | None = None,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
-    summary = get_review_summary(db, trial_id=trial_id)
-    summary["pending_review"] = get_pending_count(db)
+    summary = get_review_summary(db, trial_id=trial_id, owner_user_id=user.id)
+    summary["pending_review"] = get_pending_count(db, owner_user_id=user.id)
     return summary
 
 
@@ -333,10 +357,14 @@ def review_summary(
 def export_review_data(
     trial_id: str | None = None,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
-    queue = build_review_queue(db, limit=1000)
-    summary = get_review_summary(db, trial_id=trial_id)
+    queue = build_review_queue(db, limit=1000, owner_user_id=user.id)
+    summary = get_review_summary(
+        db,
+        trial_id=trial_id,
+        owner_user_id=user.id,
+    )
     return {
         "summary": summary,
         "queue": queue,

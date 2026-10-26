@@ -21,9 +21,10 @@ def list_repositories(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> list[Repository]:
     q = db.query(Repository)
+    q = q.filter(Repository.owner_user_id == user.id)
     if status:
         q = q.filter(Repository.status == status)
     if provider:
@@ -35,7 +36,7 @@ def list_repositories(
 def create_repository(
     body: RepositoryCreate,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> Repository:
     provider = body.provider
     identifier = body.identifier
@@ -44,6 +45,7 @@ def create_repository(
 
     repo = Repository(
         name=body.name,
+        owner_user_id=user.id,
         url=body.url,
         default_branch=body.default_branch,
         language=body.language,
@@ -60,9 +62,12 @@ def create_repository(
 def get_repository(
     repo_id: str,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> Repository:
-    repo = db.query(Repository).filter(Repository.id == repo_id).first()
+    repo = db.query(Repository).filter(
+        Repository.id == repo_id,
+        Repository.owner_user_id == user.id,
+    ).first()
     if not repo:
         raise HTTPException(status_code=404, detail="Repository not found")
     return repo
@@ -73,9 +78,12 @@ def update_repository(
     repo_id: str,
     body: RepositoryUpdate,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> Repository:
-    repo = db.query(Repository).filter(Repository.id == repo_id).first()
+    repo = db.query(Repository).filter(
+        Repository.id == repo_id,
+        Repository.owner_user_id == user.id,
+    ).first()
     if not repo:
         raise HTTPException(status_code=404, detail="Repository not found")
     for field, value in body.model_dump(exclude_unset=True).items():
@@ -89,9 +97,12 @@ def update_repository(
 def delete_repository(
     repo_id: str,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> None:
-    repo = db.query(Repository).filter(Repository.id == repo_id).first()
+    repo = db.query(Repository).filter(
+        Repository.id == repo_id,
+        Repository.owner_user_id == user.id,
+    ).first()
     if not repo:
         raise HTTPException(status_code=404, detail="Repository not found")
     db.delete(repo)
@@ -103,9 +114,12 @@ def sync_repository(
     repo_id: str,
     ref: str | None = None,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> Repository:
-    repo = db.query(Repository).filter(Repository.id == repo_id).first()
+    repo = db.query(Repository).filter(
+        Repository.id == repo_id,
+        Repository.owner_user_id == user.id,
+    ).first()
     if not repo:
         raise HTTPException(status_code=404, detail="Repository not found")
     if repo.provider != "github":
