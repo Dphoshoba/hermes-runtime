@@ -55,9 +55,13 @@ from the repository alone.
 
 ### Current State
 
-The application uses `Base.metadata.create_all()` at startup to ensure
-tables exist. Alembic migrations are not automatically run at startup;
-schema changes must be applied as an explicit deployment step.
+The container entrypoint verifies the configured SQLite backup, then runs
+`python -m alembic -c enterprise/alembic.ini upgrade head`, and only starts
+Uvicorn if both steps succeed. Railway attaches the service volume before
+starting the container, so the migration targets the mounted database rather
+than an ephemeral pre-deploy filesystem. The application then uses
+`Base.metadata.create_all()` for tables outside the migration chain and
+validates that the Computer Review schema is present.
 
 ### Migration Chain
 
@@ -79,10 +83,23 @@ be created by `create_all()` at startup.
 
 ### Fresh Database Procedure
 
-Run `alembic -c enterprise/alembic.ini upgrade head` before the first
-application start. The application then creates ORM tables not yet represented
-in the migration chain. Startup verifies that the Computer Review and
-repository-ownership schema is present and refuses to serve if it is missing.
+The container startup entrypoint applies `alembic upgrade head` to the
+configured database before launching Uvicorn. For production, set
+`EVOSIA_SQLITE_BACKUP_PATH` to a separate SQLite backup file on the mounted
+volume. Startup requires a file-backed SQLite database URL and a separate
+mounted backup file, then runs SQLite integrity verification on the backup
+before attempting a migration. A missing, invalid, or corrupt backup prevents
+migration and application startup. Migration errors likewise prevent Uvicorn
+from starting.
+The integrity check confirms that SQLite can read the backup; it does not
+establish that the backup is recent, complete, or recoverable as a pre-migration
+snapshot. The operator must create and independently verify a current backup
+before deploying a migration.
+
+Alembic `upgrade head` is safe to repeat for a database already at head. The
+entrypoint never stamps an unversioned database; an existing database created
+by `create_all()` without a verified Alembic revision will fail closed rather
+than be stamped or migrated over automatically.
 
 ### Existing Database Adoption (Production)
 
@@ -90,13 +107,11 @@ For databases created by `create_all()` before Alembic was integrated, do not
 blindly stamp the current head. First inspect the schema and recorded Alembic
 revision. Stamping does not apply missing schema changes.
 
-For a database already at `008_agent_job_truncation`, apply the Computer Review
-and ownership migrations with `alembic upgrade head`. For an older or
-unversioned database created by `create_all()`, first verify the existing
-schema and every migration effect. Only then may an operator stamp the verified
-revision (normally `008_agent_job_truncation`) before upgrading. The new
-application intentionally fails startup when the required columns or unique
-active-review index are absent.
+For a database already at `008_agent_job_truncation`, the container startup
+entrypoint applies the Computer Review and ownership migrations with
+`alembic upgrade head`. For an older or unversioned database created by
+`create_all()`, verify the existing schema and every migration effect
+separately. Startup intentionally does not stamp or guess a revision.
 
 Migration 009 refuses to create its active-review unique index if a project
 already has multiple queued/running reviews. Resolve those rows deliberately
@@ -113,23 +128,25 @@ alembic -c enterprise/alembic.ini stamp head
 
 ### Railway Release Sequence
 
-`railway.toml` configures Railway's pre-deploy command to run after the image
-build and before the new application starts:
+Do not run SQLite operations from Railway's `preDeployCommand`: Railway does
+not mount service volumes during pre-deploy commands. `railway.toml` therefore
+has no pre-deploy migration command. After Railway attaches the service volume
+and starts the new container, the Docker entrypoint verifies the mounted
+backup, runs `python -m alembic -c enterprise/alembic.ini upgrade head`, and
+executes `uvicorn enterprise.app:app --host 0.0.0.0 --port "${PORT:-8000}"`.
+The entrypoint uses process replacement for Uvicorn, preserves the existing
+host and port behavior, and stops before application startup on backup or
+migration failure.
 
-```toml
-[deploy]
-preDeployCommand = ["alembic -c enterprise/alembic.ini upgrade head"]
-```
+Set `EVOSIA_DATABASE_URL` to the mounted SQLite database URL and
+`EVOSIA_SQLITE_BACKUP_PATH` to a separate, verified backup file on the volume.
+The legacy `railway.toml` Config-as-Code format is deprecated; migrating this
+configuration to Railway Infrastructure-as-Code is a separate follow-up and
+is intentionally not part of this startup correction.
 
-The command requires `EVOSIA_DATABASE_URL` (or `HERMES_DATABASE_URL`) to point
-to the intended database. Railway's default `DATABASE_URL` must be mapped to
-`EVOSIA_DATABASE_URL` as described above. A nonzero migration exit blocks the
-new deployment. After success, the container starts with the existing Docker
-command: `uvicorn enterprise.app:app --host 0.0.0.0 --port ${PORT:-8000}`.
-
-Before enabling this release sequence for an existing database, back it up,
-verify its Alembic revision and schema, and resolve any duplicate active
-reviews. Do not stamp or upgrade an unverified legacy schema automatically.
+Before enabling this release sequence for an existing database, verify the
+backup, Alembic revision, and schema, and resolve any duplicate active reviews.
+Do not stamp or upgrade an unverified legacy schema automatically.
 
 ## Health and Readiness Endpoints
 

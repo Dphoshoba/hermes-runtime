@@ -13,6 +13,7 @@ ARG GIT_SHA=unknown
 ENV EVOSIA_BUILD_SHA=${GIT_SHA}
 COPY scripts/git-sha.sh /tmp/git-sha.sh
 RUN chmod +x /tmp/git-sha.sh
+COPY scripts/container_entrypoint.py scripts/verify_sqlite_backup.py /app/scripts/
 
 # Install Python dependencies
 # Source must be present before pip install (setuptools needs pyproject +
@@ -64,4 +65,4 @@ EXPOSE ${PORT:-8000}
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-8000}/api/health')" || exit 1
 
-CMD uvicorn enterprise.app:app --host 0.0.0.0 --port ${PORT:-8000}
+ENTRYPOINT ["python", "/app/scripts/container_entrypoint.py"]
