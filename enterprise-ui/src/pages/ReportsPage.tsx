@@ -16,12 +16,13 @@ export default function ReportsPage() {
     const m: Record<string, string> = { COMPLETED: 'badge-green', FAILED: 'badge-red', PARTIAL: 'badge-yellow' };
     return m[s] || 'badge-gray';
   };
+  const statusLabel = (s: string) => s === 'PARTIAL' ? 'Completed with limits' : s;
 
   return (
     <div>
       <div className="page-header">
         <h1>Reports</h1>
-        <p>Mission execution reports</p>
+        <p>Live reports for repository and computer reviews</p>
       </div>
 
       {loading ? <div className="empty-state">Loading...</div> : reports.length === 0 ? (
@@ -43,6 +44,7 @@ export default function ReportsPage() {
             <thead>
               <tr>
                 <th>Title</th>
+                <th>Review ID</th>
                 <th>Status</th>
                 <th>Duration</th>
                 <th>Tasks</th>
@@ -55,7 +57,8 @@ export default function ReportsPage() {
               {reports.map(r => (
                 <tr key={r.id}>
                   <td><strong>{r.title}</strong></td>
-                  <td><span className={`badge ${statusBadge(r.status)}`}>{r.status}</span></td>
+                  <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{r.review_id ?? '—'}</td>
+                  <td><span className={`badge ${statusBadge(r.status)}`}>{statusLabel(r.status)}</span></td>
                   <td>{r.duration_seconds !== null ? `${r.duration_seconds.toFixed(1)}s` : '—'}</td>
                   <td>{r.tasks_planned ?? '—'}</td>
                   <td>{r.tasks_completed ?? '—'}</td>

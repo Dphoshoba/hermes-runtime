@@ -47,8 +47,8 @@ const SAMPLE_JOB: AgentJob = {
   id: 'j1', user_id: 'u1', device_id: 'dev_abc123', device_project_id: 'p1',
   operation_type: 'PROJECT_SCAN', status: 'COMPLETED',
   created_at: '2026-01-02T10:00:00Z', started_at: '2026-01-02T10:00:01Z',
-  completed_at: '2026-01-02T10:00:05Z', failed_at: null, failure_reason: null,
-  truncated: false,
+  completed_at: '2026-01-02T10:00:05Z', failed_at: null, cancelled_at: null,
+  failure_reason: null, truncated: false, coverage: null,
 }
 
 // ---------------------------------------------------------------------------
@@ -205,7 +205,7 @@ describe('DevicesPage', () => {
   })
 
   it('pending review shows waiting status', async () => {
-    const pendingJob = { ...SAMPLE_JOB, status: 'PENDING', started_at: null, completed_at: null }
+    const pendingJob = { ...SAMPLE_JOB, status: 'QUEUED', started_at: null, completed_at: null }
     mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
     mockFetch.mockResolvedValueOnce(ok([SAMPLE_PROJECT]))
     renderDevices()
@@ -312,9 +312,41 @@ describe('DevicesPage', () => {
     mockFetch.mockResolvedValueOnce(ok([truncatedJob]))
     await userEvent.click(screen.getByText('BibleQuest'))
     await waitFor(() => {
-      expect(screen.getByText('Review completed with limits.')).toBeInTheDocument()
+      expect(screen.getByText('Completed with limits.')).toBeInTheDocument()
     })
-    expect(screen.getByText(/some files may not have been examined/)).toBeInTheDocument()
+    expect(screen.getByText(/some files may not have been examined/i)).toBeInTheDocument()
+  })
+
+  it('partial review is labelled Completed with limits and shows stored coverage', async () => {
+    const partialJob: AgentJob = {
+      ...SAMPLE_JOB,
+      status: 'PARTIAL',
+      truncated: true,
+      coverage: {
+        files_discovered: 3,
+        files_examined: 1,
+        files_skipped: 2,
+        skip_reasons: { max_file_count: 2 },
+        limits_reached: ['max_file_count'],
+        limits: { max_file_count: 1 },
+        started_at: '2026-01-02T10:00:01Z',
+        finished_at: '2026-01-02T10:00:05Z',
+      },
+    }
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
+    mockFetch.mockResolvedValueOnce(ok([SAMPLE_PROJECT]))
+    renderDevices()
+    await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
+    await userEvent.click(screen.getByText("David's MacBook"))
+    await waitFor(() => { expect(screen.getByText('BibleQuest')).toBeInTheDocument() })
+
+    mockFetch.mockResolvedValueOnce(ok([partialJob]))
+    await userEvent.click(screen.getByText('BibleQuest'))
+    await waitFor(() => {
+      expect(screen.getByText('Completed with limits')).toBeInTheDocument()
+      expect(screen.getByText(/Examined 1 of 3 discovered files/)).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Review complete')).not.toBeInTheDocument()
   })
 
   it('complete scan does NOT show limits disclosure', async () => {
@@ -330,7 +362,7 @@ describe('DevicesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Review complete')).toBeInTheDocument()
     })
-    expect(screen.queryByText('Review completed with limits.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Completed with limits.')).not.toBeInTheDocument()
   })
 
   it('truncated field comes from backend not frontend', async () => {
@@ -345,7 +377,7 @@ describe('DevicesPage', () => {
     mockFetch.mockResolvedValueOnce(ok([truncatedJob]))
     await userEvent.click(screen.getByText('BibleQuest'))
     await waitFor(() => {
-      expect(screen.getByText('Review completed with limits.')).toBeInTheDocument()
+      expect(screen.getByText('Completed with limits.')).toBeInTheDocument()
     })
   })
 
@@ -362,9 +394,9 @@ describe('DevicesPage', () => {
     await userEvent.click(screen.getByText("David's MacBook"))
     await waitFor(() => { expect(screen.getByText('BibleQuest')).toBeInTheDocument() })
 
-    const list = screen.getByRole('list', { name: /Authorised projects/ })
-    const projectButton = list.querySelector('[role="listitem"]') as HTMLElement
-    fireEvent.click(projectButton)
+    const projectButton = screen.getByRole('button', { name: 'Show review history for BibleQuest' })
+    projectButton.focus()
+    await userEvent.keyboard('{Enter}')
     await waitFor(() => {
       expect(screen.getByText('Review history')).toBeInTheDocument()
     })
@@ -379,9 +411,9 @@ describe('DevicesPage', () => {
     await userEvent.click(screen.getByText("David's MacBook"))
     await waitFor(() => { expect(screen.getByText('BibleQuest')).toBeInTheDocument() })
 
-    const list = screen.getByRole('list', { name: /Authorised projects/ })
-    const projectButton = list.querySelector('[role="listitem"]') as HTMLElement
-    fireEvent.click(projectButton)
+    const projectButton = screen.getByRole('button', { name: 'Show review history for BibleQuest' })
+    projectButton.focus()
+    await userEvent.keyboard(' ')
     await waitFor(() => {
       expect(screen.getByText('Review history')).toBeInTheDocument()
     })
@@ -390,13 +422,13 @@ describe('DevicesPage', () => {
   it('project cards are keyboard-focusable buttons', async () => {
     mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
     mockFetch.mockResolvedValueOnce(ok([SAMPLE_PROJECT]))
+    mockFetch.mockResolvedValueOnce(ok([]))
     renderDevices()
     await waitFor(() => { expect(screen.getByText("David's MacBook")).toBeInTheDocument() })
     await userEvent.click(screen.getByText("David's MacBook"))
     await waitFor(() => { expect(screen.getByText('BibleQuest')).toBeInTheDocument() })
 
-    const list = screen.getByRole('list', { name: /Authorised projects/ })
-    const projectButton = list.querySelector('[role="listitem"]') as HTMLElement
+    const projectButton = screen.getByRole('button', { name: 'Show review history for BibleQuest' })
     expect(projectButton.tagName).toBe('BUTTON')
     expect(projectButton.getAttribute('type')).toBe('button')
   })
@@ -525,7 +557,7 @@ describe('DevicesPage', () => {
   })
 
   it('review button is disabled while a job is in progress', async () => {
-    const activeJob = { ...SAMPLE_JOB, status: 'PENDING', started_at: null, completed_at: null }
+    const activeJob = { ...SAMPLE_JOB, status: 'QUEUED', started_at: null, completed_at: null }
     mockFetch.mockResolvedValueOnce(ok([SAMPLE_DEVICE]))
     mockFetch.mockResolvedValueOnce(ok([SAMPLE_PROJECT]))
     renderDevices()
@@ -533,15 +565,17 @@ describe('DevicesPage', () => {
     await userEvent.click(screen.getByText("David's MacBook"))
     await waitFor(() => { expect(screen.getByText('BibleQuest')).toBeInTheDocument() })
 
+    const reviewBtn = screen.getByRole('button', { name: /Review BibleQuest/i })
+    expect(reviewBtn).toBeDisabled()
+
     // Open project -> list jobs returns active job
     mockFetch.mockResolvedValueOnce(ok([activeJob]))
     await userEvent.click(screen.getByText('BibleQuest'))
     await waitFor(() => {
       expect(screen.getAllByText('Review in progress').length).toBeGreaterThanOrEqual(1)
     })
-
     // Review button should be disabled
-    const reviewBtn = screen.getByRole('button', { name: /Review BibleQuest/i })
+    // Review button should be disabled
     expect(reviewBtn).toBeDisabled()
   })
 

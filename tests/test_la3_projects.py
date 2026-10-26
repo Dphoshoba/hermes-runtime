@@ -108,7 +108,12 @@ class TestSymlinkEscape:
             target = root / "target"
             target.mkdir()
             link = root / "link"
-            link.symlink_to(target)
+            try:
+                link.symlink_to(target, target_is_directory=True)
+            except OSError as exc:
+                if getattr(exc, "winerror", None) == 1314:
+                    pytest.skip("Creating symlinks requires Windows Developer Mode or elevation")
+                raise
             from evosia_agent.path_validation import SymlinkStatus
             results = has_symlink_escape(root)
             # Safe internal symlinks are still included in results

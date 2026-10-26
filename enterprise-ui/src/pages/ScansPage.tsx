@@ -5,6 +5,7 @@ import type { ScanJob } from '../lib/types'
 const STATUS_COLORS: Record<string, string> = {
   pending: 'badge-gray', queued: 'badge-gray', running: 'badge-blue',
   completed: 'badge-green', failed: 'badge-red', cancelled: 'badge-yellow',
+  partial: 'badge-yellow',
 };
 
 export default function ScansPage() {
@@ -57,6 +58,7 @@ export default function ScansPage() {
           <option value="pending">Pending</option>
           <option value="running">Running</option>
           <option value="completed">Completed</option>
+          <option value="partial">Completed with limits</option>
           <option value="failed">Failed</option>
           <option value="cancelled">Cancelled</option>
         </select>
@@ -69,7 +71,8 @@ export default function ScansPage() {
           <table>
             <thead>
               <tr>
-                <th>Scan ID</th>
+                <th>Scan / review ID</th>
+                <th>Type</th>
                 <th>Status</th>
                 <th>Stage</th>
                 <th>Attempt</th>
@@ -82,8 +85,11 @@ export default function ScansPage() {
             <tbody>
               {scans.map(s => (
                 <tr key={s.id}>
-                  <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{s.id.slice(0, 8)}</td>
-                  <td><span className={`badge ${STATUS_COLORS[s.status] || 'badge-gray'}`}>{s.status}</span></td>
+                  <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{s.review_id ?? s.id}</td>
+                  <td>{s.review_id ? 'Computer review' : s.scan_type}</td>
+                  <td><span className={`badge ${STATUS_COLORS[s.status] || 'badge-gray'}`}>
+                    {s.status === 'partial' ? 'Completed with limits' : s.status}
+                  </span></td>
                   <td>{s.current_stage ?? '—'}</td>
                   <td>{s.attempt}</td>
                   <td>{fmtTime(s.started_at)}</td>

@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import ScanJob, ScanHistory, User
+from ..models import AgentJob, ScanJob, ScanHistory, User
 from ..schemas import ScanJobCreate, ScanJobResponse, ScanJobQuery, ScanHistoryResponse
 from ..services import get_current_user
 from ..services.scanner import (
@@ -24,9 +25,11 @@ def list_jobs(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> list[ScanJob]:
     q = db.query(ScanJob)
+    owned_review_ids = db.query(AgentJob.id).filter(AgentJob.user_id == user.id)
+    q = q.filter(or_(ScanJob.review_id.is_(None), ScanJob.review_id.in_(owned_review_ids)))
     if repository_id:
         q = q.filter(ScanJob.repository_id == repository_id)
     if status:
@@ -68,6 +71,12 @@ def cancel_job(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ScanJob:
+    job = db.query(ScanJob).filter(ScanJob.id == job_id).first()
+    if job and job.review_id:
+        raise HTTPException(
+            status_code=409,
+            detail="Computer reviews must be cancelled from the Computers page",
+        )
     try:
         job = cancel_scan(db, job_id, requested_by=user.email)
     except ValueError as e:
@@ -81,6 +90,12 @@ def retry_job(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ScanJob:
+    job = db.query(ScanJob).filter(ScanJob.id == job_id).first()
+    if job and job.review_id:
+        raise HTTPException(
+            status_code=409,
+            detail="Computer reviews cannot be retried as repository scans",
+        )
     try:
         job = retry_scan(db, job_id, requested_by=user.email)
     except ValueError as e:
@@ -92,9 +107,15 @@ def retry_job(
 def get_job(
     job_id: str,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> ScanJob:
-    job = db.query(ScanJob).filter(ScanJob.id == job_id).first()
+    job = db.query(ScanJob).outerjoin(
+        AgentJob,
+        ScanJob.review_id == AgentJob.id,
+    ).filter(
+        ScanJob.id == job_id,
+        or_(ScanJob.review_id.is_(None), AgentJob.user_id == user.id),
+    ).first()
     if not job:
         raise HTTPException(status_code=404, detail="Scan job not found")
     return job
@@ -104,9 +125,15 @@ def get_job(
 def get_job_history(
     job_id: str,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> list[ScanHistory]:
-    job = db.query(ScanJob).filter(ScanJob.id == job_id).first()
+    job = db.query(ScanJob).outerjoin(
+        AgentJob,
+        ScanJob.review_id == AgentJob.id,
+    ).filter(
+        ScanJob.id == job_id,
+        or_(ScanJob.review_id.is_(None), AgentJob.user_id == user.id),
+    ).first()
     if not job:
         raise HTTPException(status_code=404, detail="Scan job not found")
     return (

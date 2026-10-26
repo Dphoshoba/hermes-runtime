@@ -117,6 +117,7 @@ describe('P1-F02: ReportsPage empty state', () => {
         id: 'r1',
         mission_id: 'm1',
         repository_id: 'repo-1',
+        review_id: null,
         title: 'Real report',
         status: 'COMPLETED',
         summary: 'A real report',

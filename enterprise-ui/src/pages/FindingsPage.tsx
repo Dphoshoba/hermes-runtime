@@ -49,6 +49,7 @@ export default function FindingsPage() {
                 <th>Category</th>
                 <th>Title</th>
                 <th>Module</th>
+                <th>Review ID</th>
                 <th>Status</th>
                 <th>Created</th>
               </tr>
@@ -60,6 +61,7 @@ export default function FindingsPage() {
                   <td>{f.category}</td>
                   <td>{f.title}</td>
                   <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.module ?? '—'}</td>
+                  <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{f.review_id ?? '—'}</td>
                   <td><span className={`badge badge-${f.status === 'open' ? 'yellow' : 'green'}`}>{f.status}</span></td>
                   <td>{f.created_at.slice(0, 10)}</td>
                 </tr>

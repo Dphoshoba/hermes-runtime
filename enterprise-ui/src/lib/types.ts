@@ -50,6 +50,8 @@ export interface Repository {
 export interface Finding {
   id: string;
   repository_id: string | null;
+  review_id: string | null;
+  scan_job_id: string | null;
   finding_type: string;
   severity: string;
   category: string;
@@ -78,6 +80,7 @@ export interface Report {
   id: string;
   mission_id: string | null;
   repository_id: string | null;
+  review_id: string | null;
   title: string;
   status: string;
   summary: string | null;
@@ -99,7 +102,8 @@ export interface User {
 
 export interface ScanJob {
   id: string;
-  repository_id: string;
+  repository_id: string | null;
+  review_id: string | null;
   status: string;
   scan_type: string;
   branch: string | null;
@@ -207,8 +211,21 @@ export interface AgentJob {
   started_at: string | null;
   completed_at: string | null;
   failed_at: string | null;
+  cancelled_at: string | null;
   failure_reason: string | null;
   truncated: boolean;
+  coverage: ReviewCoverage | null;
+}
+
+export interface ReviewCoverage {
+  files_discovered: number;
+  files_examined: number;
+  files_skipped: number;
+  skip_reasons: Record<string, number>;
+  limits_reached: string[];
+  limits: Record<string, unknown>;
+  started_at: string;
+  finished_at: string;
 }
 
 export interface DeviceRegisterResponse {

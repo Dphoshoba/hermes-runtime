@@ -905,7 +905,12 @@ class TestProjectAuthorizationAuthority:
             root = Path(tmp) / "project"
             root.mkdir()
             link = root / "broken"
-            link.symlink_to(Path(tmp) / "nonexistent")
+            try:
+                link.symlink_to(Path(tmp) / "nonexistent")
+            except OSError as exc:
+                if getattr(exc, "winerror", None) == 1314:
+                    pytest.skip("Creating symlinks requires Windows Developer Mode or elevation")
+                raise
             results = has_symlink_escape(root)
             assert any(r.status == SymlinkStatus.BROKEN_OR_UNRESOLVABLE for r in results)
 

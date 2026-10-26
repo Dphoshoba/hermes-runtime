@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -22,8 +23,6 @@ from sqlalchemy.pool import StaticPool
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _ENTERPRISE_DIR = _REPO_ROOT / "enterprise"
-
-import sys
 
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -50,7 +49,7 @@ def _run_alembic(db_url: str, *args: str) -> subprocess.CompletedProcess:
     env["EVOSIA_DATABASE_URL"] = db_url
     env["PYTHONPATH"] = str(_REPO_ROOT) + os.pathsep + env.get("PYTHONPATH", "")
     return subprocess.run(
-        ["python", "-m", "alembic", "-c", "alembic.ini"] + list(args),
+        [sys.executable, "-m", "alembic", "-c", "alembic.ini"] + list(args),
         cwd=str(_ENTERPRISE_DIR),
         env=env,
         capture_output=True,

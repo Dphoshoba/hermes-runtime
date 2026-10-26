@@ -73,12 +73,18 @@ export const deviceClient = {
       { token: getToken()! },
     ),
 
-  requestScan: (projectId: string) =>
+  requestScan: (projectId: string, idempotencyKey = crypto.randomUUID()) =>
     apiFetch<AgentJob>(`/device-projects/${encodeURIComponent(projectId)}/scans`, {
       method: 'POST',
       token: getToken()!,
-      body: JSON.stringify({ operation_type: 'PROJECT_SCAN' }),
+      body: JSON.stringify({ operation_type: 'PROJECT_SCAN', idempotency_key: idempotencyKey }),
     }),
+
+  cancelJob: (projectId: string, jobId: string) =>
+    apiFetch<AgentJob>(
+      `/device-projects/${encodeURIComponent(projectId)}/jobs/${encodeURIComponent(jobId)}/cancel`,
+      { method: 'POST', token: getToken()! },
+    ),
 
   listJobs: (projectId: string) =>
     apiFetch<AgentJob[]>(

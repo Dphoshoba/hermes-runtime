@@ -12,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from enterprise.app import app
-from enterprise.database import Base, get_db
+from enterprise.database import Base, SessionLocal
 from enterprise.models import (
     User,
     Device,
@@ -30,9 +30,12 @@ def db_session():
     """Create a fresh test database for each test."""
     from enterprise.database import engine
     Base.metadata.create_all(bind=engine)
-    session = next(get_db())
-    yield session
-    Base.metadata.drop_all(bind=engine)
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+        Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture()

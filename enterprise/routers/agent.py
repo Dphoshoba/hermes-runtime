@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..schemas import (
     DeviceHeartbeatRequest, DeviceHeartbeatResponse,
     AgentJobResponse, AgentJobStartedRequest, AgentJobResultsRequest,
-    AgentJobFailedRequest, JOB_STATUS_PENDING,
+    AgentJobFailedRequest, JOB_STATUS_PENDING, ScanEvidence,
 )
 from ..services.device_auth import verify_device_token
 from ..services.device_service import get_device, record_heartbeat
@@ -135,7 +136,7 @@ def mark_job_started_endpoint(
 ) -> AgentJobResponse:
     """Agent reports job started.
 
-    Transitions job from PENDING to STARTED.
+    Transitions job from QUEUED to RUNNING.
     """
     device_id = device_payload["sub"]
     job = get_job(db, job_id, device_id)
@@ -154,8 +155,9 @@ def submit_job_results(
 
     Validates:
     - job belongs to this device
-    - job is in STARTED state
+    - job is in RUNNING state
     - evidence has correct provenance
+    - evidence includes consistent coverage counts and timestamps
     """
     device_id = device_payload["sub"]
     job = get_job(db, job_id, device_id)
@@ -182,8 +184,21 @@ def submit_job_results(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Evidence job_id does not match",
         )
+    if evidence.get("device_project_id") != job.device_project_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Evidence project does not match the review",
+        )
 
-    job = complete_job(db, job, truncated=bool(evidence.get("truncated", False)))
+    try:
+        validated_evidence = ScanEvidence.model_validate(evidence).model_dump(mode="json")
+    except ValidationError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid review coverage evidence",
+        )
+
+    job = complete_job(db, job, validated_evidence, body.duration_seconds)
     return AgentJobResponse.model_validate(job)
 
 

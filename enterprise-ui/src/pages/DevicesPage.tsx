@@ -34,16 +34,19 @@ const STATUS_BADGE: Record<string, string> = {
 }
 
 const JOB_STATUS_LABEL: Record<string, string> = {
-  PENDING: 'Waiting for your computer',
-  STARTED: 'Reviewing project',
+  QUEUED: 'Waiting for your computer',
+  RUNNING: 'Reviewing project',
   COMPLETED: 'Review complete',
+  PARTIAL: 'Completed with limits',
   FAILED: 'Review could not be completed',
+  CANCELLED: 'Review cancelled',
   EXPIRED: 'Review request expired',
 }
 
 const JOB_STATUS_BADGE: Record<string, string> = {
-  PENDING: 'badge-gray', STARTED: 'badge-blue',
-  COMPLETED: 'badge-green', FAILED: 'badge-red', EXPIRED: 'badge-yellow',
+  QUEUED: 'badge-gray', RUNNING: 'badge-blue',
+  COMPLETED: 'badge-green', PARTIAL: 'badge-yellow',
+  FAILED: 'badge-red', CANCELLED: 'badge-yellow', EXPIRED: 'badge-yellow',
 }
 
 // ---------------------------------------------------------------------------
@@ -305,8 +308,11 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
   const [error, setError] = useState('')
   const [selectedProject, setSelectedProject] = useState<DeviceProject | null>(null)
   const [jobs, setJobs] = useState<AgentJob[]>([])
+  const [jobsLoadedProjectId, setJobsLoadedProjectId] = useState('')
   const [jobsLoading, setJobsLoading] = useState(false)
+  const [jobsError, setJobsError] = useState('')
   const [requestingScan, setRequestingScan] = useState(false)
+  const [cancellingJobId, setCancellingJobId] = useState('')
   const [scanBanner, setScanBanner] = useState('')
   const [scanError, setScanError] = useState('')
   const [authTokenData, setAuthTokenData] = useState<ProjectAuthTokenResponse | null>(null)
@@ -314,6 +320,7 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
   const [authError, setAuthError] = useState('')
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const requestingScanRef = useRef(false)
+  const jobsLoadRequestRef = useRef(0)
   const revokeRef = useRef(false)
   const authRef = useRef(false)
 
@@ -325,29 +332,61 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
   }, [device.device_id])
 
   const loadJobs = useCallback(async (projectId: string) => {
+    const requestId = ++jobsLoadRequestRef.current
     setJobsLoading(true)
+    setJobsError('')
     try {
       const j = await deviceClient.listJobs(projectId)
-      setJobs(j)
-    } catch { /* ignore */ } finally { setJobsLoading(false) }
+      if (requestId === jobsLoadRequestRef.current) {
+        setJobs(j)
+        setJobsLoadedProjectId(projectId)
+      }
+    } catch (e: any) {
+      if (requestId === jobsLoadRequestRef.current) {
+        setJobsError(e.message || 'Unable to load review history')
+      }
+    } finally {
+      if (requestId === jobsLoadRequestRef.current) setJobsLoading(false)
+    }
   }, [])
 
-  useEffect(() => {
-    if (selectedProject) loadJobs(selectedProject.id)
-  }, [selectedProject, loadJobs])
+  const handleSelectProject = (project: DeviceProject) => {
+    if (selectedProject?.id === project.id) {
+      jobsLoadRequestRef.current += 1
+      setSelectedProject(null)
+      setJobs([])
+      setJobsLoadedProjectId('')
+      setJobsLoading(false)
+      setJobsError('')
+      return
+    }
+    setSelectedProject(project)
+    setJobs([])
+    setJobsLoadedProjectId('')
+    void loadJobs(project.id)
+  }
 
   // Poll for active jobs (PENDING/STARTED) every 10s, stop when terminal
   useEffect(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
     if (!selectedProject) return
-    const hasActive = jobs.some(j => j.status === 'PENDING' || j.status === 'STARTED')
+    const hasActive = jobs.some(j => j.status === 'QUEUED' || j.status === 'RUNNING')
     if (!hasActive) return
     pollRef.current = setInterval(() => { loadJobs(selectedProject.id) }, 10_000)
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [selectedProject, jobs, loadJobs])
 
   const handleRequestScan = async (project: DeviceProject) => {
-    if (requestingScanRef.current) return
+    if (
+      requestingScanRef.current
+      || selectedProject?.id !== project.id
+      || jobsLoadedProjectId !== project.id
+      || jobsLoading
+      || jobsError
+      || hasActiveJob(project.id)
+      || project.status !== 'active'
+      || st === 'revoked'
+    ) return
     requestingScanRef.current = true
     // Auto-select the project so Review history section renders
     setSelectedProject(project)
@@ -355,13 +394,27 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
     setScanBanner('Requesting review...')
     setScanError('')
     try {
-      await deviceClient.requestScan(project.id)
+      const job = await deviceClient.requestScan(project.id)
+      setJobs(previous => [job, ...previous.filter(existing => existing.id !== job.id)])
       await loadJobs(project.id)
       setScanBanner('Review queued — your computer will process it shortly.')
     } catch (e: any) {
       setScanBanner('')
       setScanError(e.message || 'Failed to request review')
     } finally { setRequestingScan(false); requestingScanRef.current = false }
+  }
+
+  const handleCancelReview = async (projectId: string, jobId: string) => {
+    if (!confirm('Cancel this computer review?')) return
+    setCancellingJobId(jobId)
+    setScanError('')
+    try {
+      await deviceClient.cancelJob(projectId, jobId)
+      await loadJobs(projectId)
+      setScanBanner('Review cancelled.')
+    } catch (e: any) {
+      setScanError(e.message || 'Failed to cancel review')
+    } finally { setCancellingJobId('') }
   }
 
   const handleRevoke = async () => {
@@ -389,7 +442,7 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
   }
 
   const hasActiveJob = (projectId: string) =>
-    jobs.some(j => j.device_project_id === projectId && (j.status === 'PENDING' || j.status === 'STARTED'))
+    jobs.some(j => j.device_project_id === projectId && (j.status === 'QUEUED' || j.status === 'RUNNING'))
 
   const st = deviceStatus(device)
 
@@ -447,22 +500,31 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
             {projects.map(p => {
               const activeJob = hasActiveJob(p.id)
               return (
-                <button
+                <div
                   key={p.id}
-                  type="button"
                   className="card"
                   role="listitem"
                   style={{
-                    cursor: 'pointer', padding: 16, textAlign: 'left', width: '100%',
+                    padding: 16, textAlign: 'left', width: '100%',
                     border: selectedProject?.id === p.id ? '1px solid var(--accent)' : undefined,
                     background: 'var(--card-bg, var(--bg))',
                   }}
-                  onClick={() => setSelectedProject(p.id === selectedProject?.id ? null : p)}
-                  aria-pressed={selectedProject?.id === p.id}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <strong>{p.display_name}</strong>
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        style={{
+                          background: 'transparent', border: 0, padding: 0,
+                          color: 'inherit', fontSize: 14, textAlign: 'left',
+                        }}
+                        onClick={() => handleSelectProject(p)}
+                        aria-pressed={selectedProject?.id === p.id}
+                        aria-label={`Show review history for ${p.display_name}`}
+                      >
+                        <strong>{p.display_name}</strong>
+                      </button>
                       <span className="muted" style={{ marginLeft: 8 }}>
                         {p.authority === 'REVIEW_ONLY' ? 'Review only' : p.authority}
                       </span>
@@ -478,20 +540,28 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
                         <button
                           className="btn btn-primary"
                           style={{ fontSize: 13 }}
-                          disabled={requestingScan || st === 'revoked' || activeJob}
-                          onClick={e => { e.stopPropagation(); handleRequestScan(p) }}
+                          disabled={
+                            requestingScan
+                            || selectedProject?.id !== p.id
+                            || jobsLoadedProjectId !== p.id
+                            || jobsLoading
+                            || Boolean(jobsError)
+                            || st === 'revoked'
+                            || activeJob
+                          }
+                          onClick={() => handleRequestScan(p)}
                           aria-label={`Review ${p.display_name}`}
                         >
-                          {requestingScan ? 'Requesting...' : activeJob ? 'Review in progress' : 'Review project'}
+                          {requestingScan ? 'Requesting...' : jobsLoading && selectedProject?.id === p.id ? 'Loading review history...' : jobsError && selectedProject?.id === p.id ? 'Review history unavailable' : activeJob ? 'Review in progress' : selectedProject?.id !== p.id ? 'Select project first' : 'Review project'}
                         </button>
                       )}
                     </div>
                   </div>
                   <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
                     EVOSIA may inspect this project when you request a review.
-                    It cannot edit, execute, merge or deploy it.
+                    It cannot modify files, execute code, commit, push, merge or deploy it.
                   </p>
-                </button>
+                </div>
               )
             })}
           </div>
@@ -519,6 +589,13 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
             {selectedProject.display_name}
           </p>
 
+          {jobsError && (
+            <div role="alert" className="error-msg" style={{ marginBottom: 12 }}>
+            {jobsError}{' '}
+            <button className="btn btn-sm" onClick={() => loadJobs(selectedProject.id)}>Retry</button>
+            </div>
+          )}
+
           {jobsLoading && jobs.length === 0 ? <p className="muted">Loading reviews...</p> : jobs.length === 0 ? (
             <p className="muted">No reviews have been requested for this project yet.</p>
           ) : (
@@ -528,16 +605,16 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <span className={`badge ${JOB_STATUS_BADGE[j.status] || 'badge-gray'}`}>
-                        {JOB_STATUS_LABEL[j.status] || j.status}
+                        {JOB_STATUS_LABEL[j.truncated && j.status === 'COMPLETED' ? 'PARTIAL' : j.status] || j.status}
                       </span>
                       <span className="muted" style={{ marginLeft: 8, fontSize: 12 }}>
                         {j.created_at ? new Date(j.created_at).toLocaleString() : ''}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {j.completed_at && (
+                      {(j.completed_at || j.cancelled_at) && (
                         <span className="muted" style={{ fontSize: 12 }}>
-                          completed {new Date(j.completed_at).toLocaleString()}
+                          finished {new Date(j.completed_at || j.cancelled_at!).toLocaleString()}
                         </span>
                       )}
                       {j.status === 'COMPLETED' && (
@@ -550,20 +627,49 @@ function DeviceDetail({ device, onBack }: { device: Device; onBack: () => void }
                   {j.status === 'FAILED' && j.failure_reason && (
                     <p className="error-msg" style={{ marginTop: 4, fontSize: 12 }}>{j.failure_reason}</p>
                   )}
-                  {j.status === 'COMPLETED' && j.truncated && (
+                  {(j.status === 'PARTIAL' || j.truncated) && (
                     <div style={{
                       marginTop: 8, padding: '8px 12px', borderRadius: 6,
                       background: 'var(--yellow-bg, #fef3cd)', border: '1px solid var(--yellow-border, #ffc107)',
                       fontSize: 12,
                     }} role="status">
-                      <strong>Review completed with limits.</strong>{' '}
-                      EVOSIA reached its review limits, so some files may not have been examined.
+                      <strong>Completed with limits.</strong>{' '}
+                      {j.coverage ? (
+                        <>
+                          Examined {j.coverage.files_examined} of {j.coverage.files_discovered} discovered files;
+                          {' '}{j.coverage.files_skipped} skipped.
+                          {j.coverage.limits_reached.length > 0 && (
+                            <> Limits reached: {j.coverage.limits_reached.join(', ')}.</>
+                          )}
+                          {Object.keys(j.coverage.skip_reasons).length > 0 && (
+                            <> Skip reasons: {Object.entries(j.coverage.skip_reasons).map(([reason, count]) => `${reason} (${count})`).join(', ')}.</>
+                          )}
+                        </>
+                      ) : 'Some files may not have been examined.'}
                     </div>
                   )}
-                  {j.status === 'COMPLETED' && (
+                  {j.coverage && j.status !== 'PARTIAL' && (
                     <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
-                      EVOSIA reviewed the project without editing, executing, merging or deploying anything.
+                      Coverage: {j.coverage.files_examined} of {j.coverage.files_discovered} files examined; {j.coverage.files_skipped} skipped.
+                      {Object.keys(j.coverage.skip_reasons).length > 0 && (
+                        <> Skip reasons: {Object.entries(j.coverage.skip_reasons).map(([reason, count]) => `${reason} (${count})`).join(', ')}.</>
+                      )}
                     </p>
+                  )}
+                  {(j.status === 'COMPLETED' || j.status === 'PARTIAL') && (
+                    <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
+                      EVOSIA inspected the project without modifying files, executing code, committing, pushing, merging or deploying anything.
+                    </p>
+                  )}
+                  {(j.status === 'QUEUED' || j.status === 'RUNNING') && (
+                    <button
+                      className="btn btn-sm"
+                      style={{ marginTop: 8, background: 'var(--red)', color: 'white' }}
+                      disabled={cancellingJobId === j.id}
+                      onClick={() => handleCancelReview(selectedProject.id, j.id)}
+                    >
+                      {cancellingJobId === j.id ? 'Cancelling...' : 'Cancel review'}
+                    </button>
                   )}
                 </div>
               ))}

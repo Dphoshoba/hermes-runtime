@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, EmailStr, Field, field_serializer
+from pydantic import BaseModel, EmailStr, Field, field_serializer, model_validator
 
 
 def _ensure_utc_z(value: datetime | None) -> str | None:
@@ -138,6 +138,8 @@ class JournalQuery(BaseModel):
 class FindingResponse(BaseModel):
     id: str
     repository_id: str | None
+    review_id: str | None = None
+    scan_job_id: str | None = None
     finding_type: str
     severity: str
     category: str
@@ -214,6 +216,7 @@ class ReportResponse(BaseModel):
     id: str
     mission_id: str | None
     repository_id: str | None
+    review_id: str | None = None
     title: str
     status: str
     summary: str | None
@@ -273,7 +276,8 @@ class ScanJobCreate(BaseModel):
 
 class ScanJobResponse(BaseModel):
     id: str
-    repository_id: str
+    repository_id: str | None
+    review_id: str | None = None
     status: str
     scan_type: str
     branch: str | None
@@ -913,15 +917,20 @@ class PairingApprovalResponse(BaseModel):
 ALLOWED_OPERATION_TYPES = frozenset({"PROJECT_SCAN"})
 
 # Allowed job statuses
-JOB_STATUS_PENDING = "PENDING"
-JOB_STATUS_STARTED = "STARTED"
+JOB_STATUS_QUEUED = "QUEUED"
+JOB_STATUS_RUNNING = "RUNNING"
 JOB_STATUS_COMPLETED = "COMPLETED"
+JOB_STATUS_PARTIAL = "PARTIAL"
 JOB_STATUS_FAILED = "FAILED"
-JOB_STATUS_EXPIRED = "EXPIRED"
+JOB_STATUS_CANCELLED = "CANCELLED"
+
+# Keep the historic constant names available to existing service callers.
+JOB_STATUS_PENDING = JOB_STATUS_QUEUED
+JOB_STATUS_STARTED = JOB_STATUS_RUNNING
 
 VALID_JOB_STATUSES = frozenset({
-    JOB_STATUS_PENDING, JOB_STATUS_STARTED,
-    JOB_STATUS_COMPLETED, JOB_STATUS_FAILED, JOB_STATUS_EXPIRED,
+    JOB_STATUS_QUEUED, JOB_STATUS_RUNNING, JOB_STATUS_COMPLETED,
+    JOB_STATUS_PARTIAL, JOB_STATUS_FAILED, JOB_STATUS_CANCELLED,
 })
 
 
@@ -935,6 +944,7 @@ class AgentScanJobCreate(BaseModel):
         default="PROJECT_SCAN",
         pattern=r"^PROJECT_SCAN$",
     )
+    idempotency_key: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class AgentJobResponse(BaseModel):
@@ -949,13 +959,15 @@ class AgentJobResponse(BaseModel):
     started_at: datetime | None = None
     completed_at: datetime | None = None
     failed_at: datetime | None = None
+    cancelled_at: datetime | None = None
     failure_reason: str | None = None
     truncated: bool = False
+    coverage: dict[str, Any] | None = None
 
     class Config:
         from_attributes = True
 
-    @field_serializer("created_at", "started_at", "completed_at", "failed_at")
+    @field_serializer("created_at", "started_at", "completed_at", "failed_at", "cancelled_at")
     def _serialize_dt(self, value: datetime | None) -> str | None:
         return _ensure_utc_z(value)
 
@@ -987,17 +999,38 @@ class ScanEvidence(BaseModel):
     device_project_id: str
     project_display_name: str
     agent_version: str
-    started_at: str
-    completed_at: str
-    file_count: int
+    started_at: datetime
+    completed_at: datetime
+    file_count: int = Field(ge=0)
+    files_discovered: int = Field(ge=0)
+    files_examined: int = Field(ge=0)
+    files_skipped: int = Field(ge=0)
+    skip_reasons: dict[str, int]
+    limits_reached: list[str]
     languages: list[str]
     project_structure_summary: dict[str, Any]
     git_metadata: dict[str, Any] | None = None
     findings: list[dict[str, Any]]
     truncated: bool
     limits: dict[str, Any]
-    provenance: str = "LIVE_EVOSIA_EVIDENCE"
-    evidence_source: str = "device_local_scan"
+    sensitive_files_found: list[str] = Field(default_factory=list)
+    total_bytes_read: int = Field(default=0, ge=0)
+    provenance: Literal["LIVE_EVOSIA_EVIDENCE"] = "LIVE_EVOSIA_EVIDENCE"
+    evidence_source: Literal["device_local_scan"] = "device_local_scan"
+
+    @model_validator(mode="after")
+    def validate_coverage(self) -> ScanEvidence:
+        if self.file_count != self.files_discovered:
+            raise ValueError("file_count must match files_discovered")
+        if self.files_examined + self.files_skipped != self.files_discovered:
+            raise ValueError("file coverage counts do not add up")
+        if sum(self.skip_reasons.values()) != self.files_skipped:
+            raise ValueError("skip reason counts do not match files_skipped")
+        if any(count < 0 for count in self.skip_reasons.values()):
+            raise ValueError("skip reason counts cannot be negative")
+        if self.completed_at < self.started_at:
+            raise ValueError("completed_at must not precede started_at")
+        return self
 
 
 # ---------------------------------------------------------------------------

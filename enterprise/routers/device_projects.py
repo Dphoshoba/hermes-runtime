@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import User, Device
+from ..models import User, Device, DeviceProject
 from ..schemas import (
     DeviceProjectCreate, DeviceProjectResponse,
     AgentScanJobCreate, AgentJobResponse,
@@ -18,7 +18,7 @@ from ..services.device_project_service import (
     list_device_projects,
     revoke_device_project,
 )
-from ..services.agent_job_service import create_scan_job, list_jobs_for_project
+from ..services.agent_job_service import create_scan_job, list_jobs_for_project, cancel_job
 
 router = APIRouter(tags=["device-projects"])
 
@@ -78,6 +78,7 @@ def revoke_project(
 def create_project_scan(
     project_id: str,
     body: AgentScanJobCreate,
+    response: Response,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> AgentJobResponse:
@@ -94,23 +95,19 @@ def create_project_scan(
     - Project authority permits REVIEW_ONLY scanning
     - Operation type is exactly PROJECT_SCAN
     """
-    from ..models import DeviceProject
-    project = db.query(DeviceProject).filter(
-        DeviceProject.id == project_id
-    ).first()
+    project = db.query(DeviceProject).filter(DeviceProject.id == project_id).first()
     if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Device project not found",
-        )
-
-    job = create_scan_job(
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device project not found")
+    job, created = create_scan_job(
         db=db,
         user_id=user.id,
         device_id=project.device_id,
         device_project_id=project_id,
         operation_type=body.operation_type,
+        idempotency_key=body.idempotency_key,
     )
+    if not created:
+        response.status_code = status.HTTP_200_OK
     return AgentJobResponse.model_validate(job)
 
 
@@ -123,7 +120,6 @@ def list_project_jobs(
     db: Session = Depends(get_db),
 ) -> list[AgentJobResponse]:
     """User-authorized: list agent scan jobs for a device project."""
-    from ..models import DeviceProject
     project = db.query(DeviceProject).filter(
         DeviceProject.id == project_id
     ).first()
@@ -137,3 +133,25 @@ def list_project_jobs(
         raise HTTPException(status_code=403, detail="Access denied")
     jobs = list_jobs_for_project(db, project_id, limit=limit, offset=offset)
     return [AgentJobResponse.model_validate(j) for j in jobs]
+
+
+@router.post("/{project_id}/jobs/{job_id}/cancel", response_model=AgentJobResponse)
+def cancel_project_job(
+    project_id: str,
+    job_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AgentJobResponse:
+    """Allow the owning user to cancel a queued or running computer review."""
+    project = db.query(DeviceProject).filter(DeviceProject.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device project not found")
+    device = db.query(Device).filter(Device.device_id == project.device_id).first()
+    if not device or device.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    from ..services.agent_job_service import get_job
+    job = get_job(db, job_id, project.device_id)
+    if job.device_project_id != project_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review not found")
+    return AgentJobResponse.model_validate(cancel_job(db, job))

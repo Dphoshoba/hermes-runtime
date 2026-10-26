@@ -7,6 +7,7 @@ import os
 import tempfile
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -23,7 +24,7 @@ os.environ["EVOSIA_DATABASE_URL"] = LA4_DB_URL
 from enterprise.app import app
 from enterprise.database import Base, get_engine, SessionLocal, _ENGINES
 from enterprise.models import (
-    AgentJob, Device, DeviceProject, User, BootstrapToken,
+    AgentJob, Device, DeviceProject, User, BootstrapToken, Finding, Report, ScanJob,
 )
 from enterprise.services.agent_job_service import (
     create_scan_job, get_next_job, get_job,
@@ -75,9 +76,16 @@ def la4_client():
 
 
 @pytest.fixture
-def la4_auth(la4_client):
+def la4_credentials():
     email = f"la4-{uuid.uuid4().hex[:8]}@test.com"
     password = "testpass1234"
+    return {"email": email, "password": password}
+
+
+@pytest.fixture
+def la4_auth(la4_client, la4_credentials):
+    email = la4_credentials["email"]
+    password = la4_credentials["password"]
     la4_client.post("/api/auth/register", json={
         "email": email, "password": password, "name": "LA4 Tester"
     })
@@ -145,6 +153,33 @@ def la4_project(la4_client, la4_auth, la4_device):
     }
 
 
+def _valid_review_evidence(job_id: str, project: dict, **overrides) -> dict:
+    evidence = {
+        "job_id": job_id,
+        "device_id": project["device_id"],
+        "device_project_id": project["project_id"],
+        "project_display_name": "TestProject",
+        "agent_version": "evosia-agent/0.3.0",
+        "started_at": "2026-08-27T00:00:00Z",
+        "completed_at": "2026-08-27T00:01:00Z",
+        "file_count": 1,
+        "files_discovered": 1,
+        "files_examined": 1,
+        "files_skipped": 0,
+        "skip_reasons": {},
+        "limits_reached": [],
+        "languages": ["Python"],
+        "project_structure_summary": {},
+        "findings": [],
+        "truncated": False,
+        "limits": {},
+        "provenance": "LIVE_EVOSIA_EVIDENCE",
+        "evidence_source": "device_local_scan",
+    }
+    evidence.update(overrides)
+    return evidence
+
+
 # ===========================================================================
 # 1. Human-Authorized Scan Job Creation
 # ===========================================================================
@@ -160,7 +195,7 @@ class TestHumanAuthorizedScanCreation:
         assert r.status_code == 201
         data = r.json()
         assert data["operation_type"] == "PROJECT_SCAN"
-        assert data["status"] == "PENDING"
+        assert data["status"] == "QUEUED"
         assert data["device_id"] == la4_project["device_id"]
         assert data["device_project_id"] == la4_project["project_id"]
 
@@ -219,12 +254,12 @@ class TestOnlyProjectScanAllowed:
 
 
 # ===========================================================================
-# 4b. Active-Job Guard — Rejects Duplicate PENDING/STARTED Jobs
+# 4b. Active-Job Guard — Idempotently Returns Existing QUEUED/RUNNING Jobs
 # ===========================================================================
 
 class TestActiveJobGuard:
-    def test_duplicate_pending_job_rejected(self, la4_client, la4_auth, la4_project):
-        """Creating a second PENDING/STARTED job for same project returns 409."""
+    def test_duplicate_queued_job_returns_existing(self, la4_client, la4_auth, la4_project):
+        """Repeated requests return the same active review instead of creating another."""
         project_id = la4_project["project_id"]
         # First job — should succeed
         r1 = la4_client.post(
@@ -234,17 +269,17 @@ class TestActiveJobGuard:
         )
         assert r1.status_code == 201
 
-        # Second job while first is PENDING — must be 409
+        # Repeated request while the first is queued returns its durable id.
         r2 = la4_client.post(
             f"/api/device-projects/{project_id}/scans",
             json={"operation_type": "PROJECT_SCAN"},
             headers=la4_auth,
         )
-        assert r2.status_code == 409
-        assert "already in progress" in r2.json()["detail"]
+        assert r2.status_code == 200
+        assert r2.json()["id"] == r1.json()["id"]
 
-    def test_duplicate_started_job_rejected(self, la4_client, la4_auth, la4_project):
-        """Creating a job when another is STARTED returns 409."""
+    def test_duplicate_running_job_returns_existing(self, la4_client, la4_auth, la4_project):
+        """Creating a job when another is RUNNING returns the active job."""
         project_id = la4_project["project_id"]
         # Create + start first job
         r1 = la4_client.post(
@@ -259,13 +294,54 @@ class TestActiveJobGuard:
             headers={"Authorization": f"Bearer {la4_project['device_credential']}"},
         )
 
-        # Second job while first is STARTED — must be 409
+        # Second request while the first is running returns the same job.
         r2 = la4_client.post(
             f"/api/device-projects/{project_id}/scans",
             json={"operation_type": "PROJECT_SCAN"},
             headers=la4_auth,
         )
-        assert r2.status_code == 409
+        assert r2.status_code == 200
+        assert r2.json()["id"] == job_id
+
+    def test_concurrent_requests_create_one_active_review(self, la4_client, la4_auth, la4_project):
+        project_id = la4_project["project_id"]
+        endpoint = f"/api/device-projects/{project_id}/scans"
+
+        def request_review(_: int):
+            return la4_client.post(
+                endpoint,
+                json={"operation_type": "PROJECT_SCAN"},
+                headers=la4_auth,
+            )
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            responses = list(pool.map(request_review, range(4)))
+
+        assert all(response.status_code in (200, 201) for response in responses)
+        assert len({response.json()["id"] for response in responses}) == 1
+        with SessionLocal() as db:
+            assert db.query(AgentJob).filter(
+                AgentJob.device_project_id == project_id,
+                AgentJob.status.in_(("QUEUED", "RUNNING")),
+            ).count() == 1
+
+    def test_idempotency_key_replays_same_request(self, la4_client, la4_auth, la4_project):
+        project_id = la4_project["project_id"]
+        payload = {"operation_type": "PROJECT_SCAN", "idempotency_key": "stable-review-request"}
+        first = la4_client.post(
+            f"/api/device-projects/{project_id}/scans", json=payload, headers=la4_auth,
+        )
+        repeated = la4_client.post(
+            f"/api/device-projects/{project_id}/scans", json=payload, headers=la4_auth,
+        )
+
+        assert first.status_code == 201
+        assert repeated.status_code == 200
+        assert repeated.json()["id"] == first.json()["id"]
+        with SessionLocal() as db:
+            assert db.query(AgentJob).filter(
+                AgentJob.device_project_id == project_id,
+            ).count() == 1
 
     def test_new_job_allowed_after_completion(self, la4_client, la4_auth, la4_project):
         """New job succeeds once previous job reaches terminal state."""
@@ -284,18 +360,7 @@ class TestActiveJobGuard:
             headers={"Authorization": f"Bearer {la4_project['device_credential']}"},
         )
         assert r_started.status_code == 200, f"started failed: {r_started.status_code} {r_started.text}"
-        evidence = {
-            "file_count": 1,
-            "languages": ["Python"],
-            "project_structure_summary": {},
-            "findings": [],
-            "truncated": False,
-            "limits": {},
-            "provenance": "LIVE_EVOSIA_EVIDENCE",
-            "evidence_source": "device_local_scan",
-            "device_id": la4_project["device_id"],
-            "job_id": job_id,
-        }
+        evidence = _valid_review_evidence(job_id, la4_project)
         r_results = la4_client.post(
             f"/api/agent/jobs/{job_id}/results",
             json={"evidence": evidence, "duration_seconds": 1.0},
@@ -386,7 +451,8 @@ class TestActiveJobGuard:
             json={"operation_type": "PROJECT_SCAN"},
             headers=la4_auth,
         )
-        assert r_dup.status_code == 409
+        assert r_dup.status_code == 200
+        assert r_dup.json()["id"] == r1.json()["id"]
 
         # ProjectB can still request independently
         r2 = la4_client.post(
@@ -419,7 +485,7 @@ class TestDevicePollsJob:
         assert r.status_code == 200
         data = r.json()
         assert data is not None
-        assert data["status"] == "PENDING"
+        assert data["status"] == "QUEUED"
         assert data["device_id"] == la4_project["device_id"]
 
     def test_no_jobs_returns_none(self, la4_client, la4_project):
@@ -536,34 +602,301 @@ class TestJobLifecycleHappyPath:
 
         # Get job
         r = la4_client.get(f"/api/agent/jobs/{job_id}", headers=headers)
-        assert r.json()["status"] == "PENDING"
+        assert r.json()["status"] == "QUEUED"
 
         # Mark started
         r = la4_client.post(f"/api/agent/jobs/{job_id}/started",
             json={"agent_version": "evosia-agent/0.1.0"}, headers=headers)
-        assert r.json()["status"] == "STARTED"
+        assert r.json()["status"] == "RUNNING"
 
         # Submit results
-        evidence = {
-            "job_id": job_id,
-            "device_id": la4_project["device_id"],
-            "device_project_id": la4_project["project_id"],
-            "project_display_name": "TestProject",
-            "agent_version": "evosia-agent/0.1.0",
-            "started_at": "2026-08-27T00:00:00Z",
-            "completed_at": "2026-08-27T00:01:00Z",
-            "file_count": 10,
-            "languages": ["Python"],
-            "project_structure_summary": {},
-            "findings": [],
-            "truncated": False,
-            "limits": {},
-            "provenance": "LIVE_EVOSIA_EVIDENCE",
-            "evidence_source": "device_local_scan",
-        }
+        evidence = _valid_review_evidence(
+            job_id, la4_project, file_count=10, files_discovered=10,
+            files_examined=10, languages=["Python"],
+        )
         r = la4_client.post(f"/api/agent/jobs/{job_id}/results",
             json={"evidence": evidence, "duration_seconds": 60.0}, headers=headers)
         assert r.json()["status"] == "COMPLETED"
+        assert r.json()["coverage"]["files_examined"] == 10
+
+        scans = la4_client.get("/api/scans", headers=la4_auth).json()
+        reports = la4_client.get("/api/reports", headers=la4_auth).json()
+        assert len([scan for scan in scans if scan["review_id"] == job_id]) == 1
+        assert len([report for report in reports if report["review_id"] == job_id]) == 1
+        assert not [finding for finding in la4_client.get(
+            "/api/findings", headers=la4_auth,
+        ).json() if finding["review_id"] == job_id]
+
+    def test_review_history_survives_new_login(self, la4_client, la4_auth, la4_credentials, la4_project):
+        created = la4_client.post(
+            f"/api/device-projects/{la4_project['project_id']}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        login = la4_client.post("/api/auth/login", json=la4_credentials)
+        assert login.status_code == 200, login.text
+        refreshed_auth = {"Authorization": "Bearer " + login.json()["access_token"]}
+
+        history = la4_client.get(
+            f"/api/device-projects/{la4_project['project_id']}/jobs",
+            headers=refreshed_auth,
+        )
+        assert history.status_code == 200
+        assert [job["id"] for job in history.json()] == [created.json()["id"]]
+
+
+class TestReviewEvidencePersistence:
+    def test_partial_review_persists_coverage_scan_report_and_findings(
+        self, la4_client, la4_auth, la4_project,
+    ):
+        created = la4_client.post(
+            f"/api/device-projects/{la4_project['project_id']}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        job_id = created.json()["id"]
+        device_headers = {
+            "Authorization": "Bearer " + la4_project["device_credential"],
+        }
+        started = la4_client.post(
+            f"/api/agent/jobs/{job_id}/started",
+            json={"agent_version": "evosia-agent/0.3.0"},
+            headers=device_headers,
+        )
+        assert started.status_code == 200, started.text
+        evidence = _valid_review_evidence(
+            job_id,
+            la4_project,
+            file_count=3,
+            files_discovered=3,
+            files_examined=1,
+            files_skipped=2,
+            skip_reasons={"max_file_count": 2},
+            limits_reached=["max_file_count"],
+            truncated=True,
+            findings=[{
+                "type": "SENSITIVE_FILE",
+                "path": ".env",
+                "classification": "SENSITIVE_FILE",
+                "content_read": False,
+            }],
+        )
+
+        response = la4_client.post(
+            f"/api/agent/jobs/{job_id}/results",
+            json={"evidence": evidence, "duration_seconds": 5.0},
+            headers=device_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "PARTIAL"
+        assert response.json()["coverage"] == {
+            "files_discovered": 3,
+            "files_examined": 1,
+            "files_skipped": 2,
+            "skip_reasons": {"max_file_count": 2},
+            "limits_reached": ["max_file_count"],
+            "limits": {},
+            "started_at": "2026-08-27T00:00:00Z",
+            "finished_at": "2026-08-27T00:01:00Z",
+        }
+
+        scan_records = [
+            record for record in la4_client.get("/api/scans", headers=la4_auth).json()
+            if record["review_id"] == job_id
+        ]
+        reports = [
+            record for record in la4_client.get("/api/reports", headers=la4_auth).json()
+            if record["review_id"] == job_id
+        ]
+        findings = [
+            record for record in la4_client.get("/api/findings", headers=la4_auth).json()
+            if record["review_id"] == job_id
+        ]
+        assert len(scan_records) == len(reports) == 1
+        assert scan_records[0]["id"] == job_id
+        assert scan_records[0]["status"] == "partial"
+        assert reports[0]["status"] == "PARTIAL"
+        assert reports[0]["report_data"]["coverage"]["files_skipped"] == 2
+        assert len(findings) == 1
+        assert findings[0]["scan_job_id"] == job_id
+
+    def test_result_retry_is_idempotent_and_creates_one_report(
+        self, la4_client, la4_auth, la4_project,
+    ):
+        created = la4_client.post(
+            f"/api/device-projects/{la4_project['project_id']}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        job_id = created.json()["id"]
+        device_headers = {
+            "Authorization": "Bearer " + la4_project["device_credential"],
+        }
+        la4_client.post(
+            f"/api/agent/jobs/{job_id}/started",
+            json={"agent_version": "evosia-agent/0.3.0"},
+            headers=device_headers,
+        )
+        evidence = _valid_review_evidence(job_id, la4_project)
+        body = {"evidence": evidence, "duration_seconds": 1.0}
+
+        first = la4_client.post(
+            f"/api/agent/jobs/{job_id}/results", json=body, headers=device_headers,
+        )
+        retry = la4_client.post(
+            f"/api/agent/jobs/{job_id}/results", json=body, headers=device_headers,
+        )
+
+        assert first.status_code == retry.status_code == 200
+        assert retry.json()["status"] == "COMPLETED"
+        assert len([
+            row for row in la4_client.get("/api/reports", headers=la4_auth).json()
+            if row["review_id"] == job_id
+        ]) == 1
+
+    def test_invalid_coverage_does_not_complete_review(
+        self, la4_client, la4_auth, la4_project,
+    ):
+        created = la4_client.post(
+            f"/api/device-projects/{la4_project['project_id']}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        job_id = created.json()["id"]
+        device_headers = {
+            "Authorization": "Bearer " + la4_project["device_credential"],
+        }
+        la4_client.post(
+            f"/api/agent/jobs/{job_id}/started",
+            json={"agent_version": "evosia-agent/0.3.0"},
+            headers=device_headers,
+        )
+        evidence = _valid_review_evidence(
+            job_id, la4_project, files_discovered=3, files_examined=1,
+        )
+
+        response = la4_client.post(
+            f"/api/agent/jobs/{job_id}/results",
+            json={"evidence": evidence, "duration_seconds": 1.0},
+            headers=device_headers,
+        )
+        assert response.status_code == 422
+        stored = la4_client.get(f"/api/agent/jobs/{job_id}", headers=device_headers).json()
+        assert stored["status"] == "RUNNING"
+        assert stored["coverage"] is None
+        assert la4_client.get("/api/reports", headers=la4_auth).json() == []
+
+    def test_failed_transaction_does_not_report_success(
+        self, la4_client, la4_auth, la4_project,
+    ):
+        created = la4_client.post(
+            f"/api/device-projects/{la4_project['project_id']}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        job_id = created.json()["id"]
+        device_headers = {
+            "Authorization": "Bearer " + la4_project["device_credential"],
+        }
+        la4_client.post(
+            f"/api/agent/jobs/{job_id}/started",
+            json={"agent_version": "evosia-agent/0.3.0"},
+            headers=device_headers,
+        )
+        evidence = _valid_review_evidence(job_id, la4_project)
+
+        with patch("sqlalchemy.orm.Session.commit", side_effect=RuntimeError("database unavailable")):
+            response = la4_client.post(
+                f"/api/agent/jobs/{job_id}/results",
+                json={"evidence": evidence, "duration_seconds": 1.0},
+                headers=device_headers,
+            )
+
+        assert response.status_code == 500
+        with SessionLocal() as db:
+            stored = db.get(AgentJob, job_id)
+            assert stored.status == "RUNNING"
+            assert db.query(ScanJob).filter(ScanJob.review_id == job_id).count() == 0
+            assert db.query(Report).filter(Report.review_id == job_id).count() == 0
+            assert db.query(Finding).filter(Finding.review_id == job_id).count() == 0
+
+    def test_user_can_cancel_review(self, la4_client, la4_auth, la4_project):
+        created = la4_client.post(
+            f"/api/device-projects/{la4_project['project_id']}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        cancelled = la4_client.post(
+            f"/api/device-projects/{la4_project['project_id']}/jobs/{created.json()['id']}/cancel",
+            headers=la4_auth,
+        )
+        assert cancelled.status_code == 200
+        assert cancelled.json()["status"] == "CANCELLED"
+        assert cancelled.json()["cancelled_at"] is not None
+
+    def test_computer_review_evidence_is_private_to_owner(
+        self, la4_client, la4_auth, la4_project,
+    ):
+        created = la4_client.post(
+            f"/api/device-projects/{la4_project['project_id']}/scans",
+            json={"operation_type": "PROJECT_SCAN"},
+            headers=la4_auth,
+        )
+        job_id = created.json()["id"]
+        device_headers = {
+            "Authorization": "Bearer " + la4_project["device_credential"],
+        }
+        started = la4_client.post(
+            f"/api/agent/jobs/{job_id}/started",
+            json={"agent_version": "evosia-agent/0.3.0"},
+            headers=device_headers,
+        )
+        assert started.status_code == 200
+        evidence = _valid_review_evidence(
+            job_id,
+            la4_project,
+            findings=[{
+                "type": "SENSITIVE_FILE",
+                "path": ".env",
+                "classification": "SENSITIVE_FILE",
+                "content_read": False,
+            }],
+        )
+        completed = la4_client.post(
+            f"/api/agent/jobs/{job_id}/results",
+            json={"evidence": evidence, "duration_seconds": 1.0},
+            headers=device_headers,
+        )
+        assert completed.status_code == 200
+
+        second_credentials = {
+            "email": f"la4-other-{uuid.uuid4().hex[:8]}@test.com",
+            "password": "testpass1234",
+        }
+        registered = la4_client.post("/api/auth/register", json={
+            **second_credentials,
+            "name": "Other LA4 Tester",
+        })
+        assert registered.status_code == 201
+        login = la4_client.post("/api/auth/login", json=second_credentials)
+        assert login.status_code == 200
+        other_auth = {"Authorization": "Bearer " + login.json()["access_token"]}
+
+        for path in ("/api/scans", "/api/findings", "/api/reports"):
+            response = la4_client.get(path, headers=other_auth)
+            assert response.status_code == 200
+            assert all(row.get("review_id") != job_id for row in response.json())
+
+        scan_list = la4_client.get("/api/scans", headers=la4_auth).json()
+        finding_list = la4_client.get("/api/findings", headers=la4_auth).json()
+        report_list = la4_client.get("/api/reports", headers=la4_auth).json()
+        scan = next(row for row in scan_list if row["review_id"] == job_id)
+        finding = next(row for row in finding_list if row["review_id"] == job_id)
+        report = next(row for row in report_list if row["review_id"] == job_id)
+
+        assert la4_client.get(f"/api/scans/{scan['id']}", headers=other_auth).status_code == 404
+        assert la4_client.get(f"/api/findings/{finding['id']}", headers=other_auth).status_code == 404
+        assert la4_client.get(f"/api/reports/{report['id']}", headers=other_auth).status_code == 404
 
 
 # ===========================================================================
@@ -626,30 +959,18 @@ class TestDuplicateCompletionRejected:
         la4_client.post(f"/api/agent/jobs/{job_id}/started",
             json={"agent_version": "evosia-agent/0.1.0"}, headers=headers)
 
-        evidence = {
-            "job_id": job_id,
-            "device_id": la4_project["device_id"],
-            "device_project_id": la4_project["project_id"],
-            "project_display_name": "TestProject",
-            "agent_version": "evosia-agent/0.1.0",
-            "started_at": "2026-08-27T00:00:00Z",
-            "completed_at": "2026-08-27T00:01:00Z",
-            "file_count": 10,
-            "languages": [],
-            "project_structure_summary": {},
-            "findings": [],
-            "truncated": False,
-            "limits": {},
-            "provenance": "LIVE_EVOSIA_EVIDENCE",
-            "evidence_source": "device_local_scan",
-        }
+        evidence = _valid_review_evidence(
+            job_id, la4_project, file_count=10, files_discovered=10,
+            files_examined=10, languages=[],
+        )
         la4_client.post(f"/api/agent/jobs/{job_id}/results",
             json={"evidence": evidence, "duration_seconds": 60.0}, headers=headers)
 
         # Try to complete again
         r = la4_client.post(f"/api/agent/jobs/{job_id}/results",
             json={"evidence": evidence, "duration_seconds": 60.0}, headers=headers)
-        assert r.status_code == 409
+        assert r.status_code == 200
+        assert r.json()["id"] == job_id
 
 
 # ===========================================================================
@@ -657,6 +978,14 @@ class TestDuplicateCompletionRejected:
 # ===========================================================================
 
 class TestScannerContainment:
+    def test_incomplete_directory_enumeration_fails_review(self, tmp_path: Path):
+        root = tmp_path / "project"
+        root.mkdir()
+
+        with patch("evosia_agent.scanner.os.walk", side_effect=PermissionError("denied")):
+            with pytest.raises(OSError, match="could not be fully enumerated"):
+                scan_project(root)
+
     def test_normal_source_read(self):
         """Normal source file can be read."""
         with tempfile.TemporaryDirectory() as tmp:
@@ -678,6 +1007,9 @@ class TestScannerContainment:
         # .env file should be flagged but not read
         assert any(f["type"] == "SENSITIVE_FILE" for f in result.findings)
         assert str(env_file.relative_to(root)) in result.sensitive_files_found
+        assert result.files_skipped == 1
+        assert result.skip_reasons["sensitive_file"] == 1
+        assert result.files_discovered == result.files_examined + result.files_skipped
 
     def test_private_key_excluded(self, tmp_path: Path):
         """Private key contents are never read."""
@@ -785,7 +1117,11 @@ class TestResourceBounds:
 
         result = scan_project(root)
         assert result.truncated
-        assert result.file_count <= MAX_FILE_COUNT
+        assert result.file_count == MAX_FILE_COUNT + 100
+        assert result.files_examined <= MAX_FILE_COUNT
+        assert result.files_skipped == 100
+        assert result.skip_reasons["max_file_count"] == 100
+        assert "max_file_count" in result.limits_reached
 
     def test_scan_reports_truncation(self, tmp_path: Path):
         """Scan result indicates if truncation occurred."""
@@ -879,6 +1215,11 @@ class TestEvidenceSchema:
             started_at="2026-08-27T00:00:00Z",
             completed_at="2026-08-27T00:01:00Z",
             file_count=10,
+            files_discovered=10,
+            files_examined=10,
+            files_skipped=0,
+            skip_reasons={},
+            limits_reached=[],
             languages=["Python"],
             project_structure_summary={},
             findings=[],

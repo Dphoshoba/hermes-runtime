@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Finding, User
+from ..models import AgentJob, Finding, User
 from ..schemas import FindingResponse
 from ..services import get_current_user
 
@@ -22,9 +23,11 @@ def list_findings(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> list[Finding]:
     q = db.query(Finding)
+    owned_review_ids = db.query(AgentJob.id).filter(AgentJob.user_id == user.id)
+    q = q.filter(or_(Finding.review_id.is_(None), Finding.review_id.in_(owned_review_ids)))
     if repository_id:
         q = q.filter(Finding.repository_id == repository_id)
     if severity:
@@ -40,13 +43,17 @@ def list_findings(
 def get_finding(
     finding_id: str,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> dict:
-    from fastapi import HTTPException
     from ..models import FindingAdjudication
 
     finding = db.query(Finding).filter(Finding.id == finding_id).first()
     if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    if finding.review_id and not db.query(AgentJob.id).filter(
+        AgentJob.id == finding.review_id,
+        AgentJob.user_id == user.id,
+    ).first():
         raise HTTPException(status_code=404, detail="Finding not found")
 
     # Evidence & Risk Gate authority enrichment (Post Cycle 8).
@@ -64,6 +71,8 @@ def get_finding(
     enriched = {
         "id": finding.id,
         "repository_id": finding.repository_id,
+        "review_id": finding.review_id,
+        "scan_job_id": finding.scan_job_id,
         "finding_type": finding.finding_type,
         "severity": finding.severity,
         "category": finding.category,

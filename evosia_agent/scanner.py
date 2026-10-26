@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
@@ -106,6 +107,11 @@ class ScanLimits:
 class ScanResult:
     """Result of a bounded read-only project scan."""
     file_count: int = 0
+    files_discovered: int = 0
+    files_examined: int = 0
+    files_skipped: int = 0
+    skip_reasons: dict[str, int] = field(default_factory=dict)
+    limits_reached: list[str] = field(default_factory=list)
     languages: list[str] = field(default_factory=list)
     project_structure_summary: dict = field(default_factory=dict)
     findings: list[dict] = field(default_factory=list)
@@ -188,12 +194,24 @@ def scan_project(
             "timeout_seconds": limits.timeout_seconds,
         }
     )
+    scan_started = time.monotonic()
+
+    def record_skip(reason: str) -> None:
+        result.files_skipped += 1
+        result.skip_reasons[reason] = result.skip_reasons.get(reason, 0) + 1
+
+    def record_limit(name: str) -> None:
+        result.truncated = True
+        if name not in result.limits_reached:
+            result.limits_reached.append(name)
 
     # Canonicalize the root
     try:
         root_resolved = canonicalize_path(project_root)
     except ValueError:
-        return result
+        raise OSError("The authorized project root could not be resolved")
+    if not root_resolved.is_dir():
+        raise OSError("The authorized project root is not an accessible directory")
 
     # Detect languages and collect structure
     languages: set[str] = set()
@@ -205,115 +223,135 @@ def scan_project(
     # Track visited paths to prevent symlink cycles
     visited: set[tuple[Path, Path]] = set()
 
+    def raise_walk_error(error: OSError) -> None:
+        raise error
+
     try:
-        for item in project_root.rglob("*"):
-            # Check resource limits
-            if file_count >= limits.max_file_count:
-                result.truncated = True
-                break
-            if total_bytes >= limits.max_total_bytes:
-                result.truncated = True
-                break
+        for current_root, dirnames, filenames in os.walk(
+            project_root,
+            topdown=True,
+            followlinks=False,
+            onerror=raise_walk_error,
+        ):
+            for name in (*dirnames, *filenames):
+                item = Path(current_root) / name
+                # Handle symlinks
+                if item.is_symlink():
+                    symlink_result = check_symlink(item, root_resolved)
+                    if symlink_result.status == SymlinkStatus.ESCAPES_ROOT:
+                        result.findings.append({
+                            "type": "SYMLINK_ESCAPE",
+                            "path": str(item.relative_to(project_root)),
+                            "classification": "ESCAPING_SYMLINK",
+                        })
+                        continue
+                    elif symlink_result.status == SymlinkStatus.BROKEN_OR_UNRESOLVABLE:
+                        result.findings.append({
+                            "type": "BROKEN_SYMLINK",
+                            "path": str(item.relative_to(project_root)),
+                            "classification": "BROKEN_SYMLINK",
+                        })
+                        continue
 
-            # Prevent symlink cycles
-            try:
-                item_resolved = item.resolve()
-            except (OSError, ValueError):
-                continue
-            cycle_id = (item_resolved, item)
-            if cycle_id in visited:
-                continue
-            visited.add(cycle_id)
-
-            # Handle symlinks
-            if item.is_symlink():
-                symlink_result = check_symlink(item, root_resolved)
-                if symlink_result.status == SymlinkStatus.ESCAPES_ROOT:
-                    result.findings.append({
-                        "type": "SYMLINK_ESCAPE",
-                        "path": str(item.relative_to(project_root)),
-                        "classification": "ESCAPING_SYMLINK",
-                    })
+                try:
+                    item_resolved = item.resolve()
+                except (OSError, ValueError) as exc:
+                    raise OSError("A project entry could not be resolved") from exc
+                cycle_id = (item_resolved, item)
+                if cycle_id in visited:
                     continue
-                elif symlink_result.status == SymlinkStatus.BROKEN_OR_UNRESOLVABLE:
-                    result.findings.append({
-                        "type": "BROKEN_SYMLINK",
-                        "path": str(item.relative_to(project_root)),
-                        "classification": "BROKEN_SYMLINK",
-                    })
+                visited.add(cycle_id)
+
+                if item.is_dir():
+                    directory_count += 1
+                    dir_name = item.name
+                    structure[dir_name] = structure.get(dir_name, 0) + 1
                     continue
 
-            if item.is_dir():
-                directory_count += 1
-                dir_name = item.name
-                structure[dir_name] = structure.get(dir_name, 0) + 1
-                continue
+                if not item.is_file():
+                    continue
 
-            if not item.is_file():
-                continue
+                file_count += 1
+                result.files_discovered += 1
+                rel_path = item.relative_to(project_root)
 
-            file_count += 1
-            rel_path = item.relative_to(project_root)
+                if file_count > limits.max_file_count:
+                    record_limit("max_file_count")
+                    record_skip("max_file_count")
+                    continue
 
-            # Check sensitive files
-            if is_sensitive_path(item):
-                result.sensitive_files_found.append(str(rel_path))
-                result.findings.append({
-                    "type": "SENSITIVE_FILE",
-                    "path": str(rel_path),
-                    "classification": "SENSITIVE_FILE",
-                    "content_read": False,
-                })
-                continue
+                if time.monotonic() - scan_started >= limits.timeout_seconds:
+                    record_limit("timeout_seconds")
+                    record_skip("timeout_seconds")
+                    continue
 
-            # Check file extension
-            ext = item.suffix.lower()
-            if ext in BINARY_EXTENSIONS:
-                result.findings.append({
-                    "type": "BINARY_FILE",
-                    "path": str(rel_path),
-                    "classification": "BINARY_FILE",
-                })
-                continue
+                # Check sensitive files
+                if is_sensitive_path(item):
+                    result.sensitive_files_found.append(str(rel_path))
+                    result.findings.append({
+                        "type": "SENSITIVE_FILE",
+                        "path": str(rel_path),
+                        "classification": "SENSITIVE_FILE",
+                        "content_read": False,
+                    })
+                    record_skip("sensitive_file")
+                    continue
 
-            if ext not in PERMITTED_EXTENSIONS:
-                continue
+                # Check file extension
+                ext = item.suffix.lower()
+                if ext in BINARY_EXTENSIONS:
+                    result.findings.append({
+                        "type": "BINARY_FILE",
+                        "path": str(rel_path),
+                        "classification": "BINARY_FILE",
+                    })
+                    record_skip("binary_file")
+                    continue
 
-            # Detect language
-            lang = EXTENSION_LANGUAGE_MAP.get(ext)
-            if lang:
-                languages.add(lang)
+                if ext not in PERMITTED_EXTENSIONS:
+                    record_skip("unsupported_file_type")
+                    continue
 
-            # Check file size
-            try:
-                file_size = item.stat().st_size
-            except OSError:
-                continue
+                # Detect language
+                lang = EXTENSION_LANGUAGE_MAP.get(ext)
+                if lang:
+                    languages.add(lang)
 
-            if file_size > limits.max_file_size:
-                result.findings.append({
-                    "type": "OVERSIZED_FILE",
-                    "path": str(rel_path),
-                    "classification": "OVERSIZED_FILE",
-                    "size_bytes": file_size,
-                })
-                continue
+                # Check file size
+                try:
+                    file_size = item.stat().st_size
+                except OSError:
+                    record_skip("unreadable_metadata")
+                    continue
 
-            # Check aggregate bytes
-            if total_bytes + file_size > limits.max_total_bytes:
-                result.truncated = True
-                break
+                if file_size > limits.max_file_size:
+                    record_limit("max_file_size")
+                    result.findings.append({
+                        "type": "OVERSIZED_FILE",
+                        "path": str(rel_path),
+                        "classification": "OVERSIZED_FILE",
+                        "size_bytes": file_size,
+                    })
+                    record_skip("max_file_size")
+                    continue
 
-            # Read file content (safe text read only)
-            try:
-                content = item.read_text(encoding="utf-8", errors="replace")
-                total_bytes += len(content.encode("utf-8"))
-            except (OSError, UnicodeDecodeError):
-                continue
+                # Check aggregate bytes
+                if total_bytes + file_size > limits.max_total_bytes:
+                    record_limit("max_total_bytes")
+                    record_skip("max_total_bytes")
+                    continue
 
-    except (OSError, ValueError):
-        # Permission errors or other issues — return what we found
-        pass
+                # Read file content (safe text read only)
+                try:
+                    content = item.read_text(encoding="utf-8", errors="replace")
+                    total_bytes += len(content.encode("utf-8"))
+                    result.files_examined += 1
+                except (OSError, UnicodeDecodeError):
+                    record_skip("unreadable_file")
+                    continue
+
+    except (OSError, ValueError) as exc:
+        raise OSError("The authorized project could not be fully enumerated") from exc
 
     # Get git metadata (narrow, safe)
     result.git_metadata = _get_git_metadata(project_root)

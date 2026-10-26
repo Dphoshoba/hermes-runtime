@@ -92,6 +92,7 @@ class ProjectRegistry:
 
     def get_by_path(self, canonical_path: str) -> LocalProject | None:
         """Get project by canonical local root path."""
+        canonical_path = str(Path(canonical_path).resolve())
         for proj in self._projects.values():
             if proj.canonical_local_root == canonical_path:
                 return proj
@@ -107,7 +108,7 @@ class ProjectRegistry:
         """Add a new project to the registry."""
         from datetime import datetime, timezone
 
-        canonical_str = str(canonical_local_root)
+        canonical_str = str(canonical_local_root.resolve())
         fingerprint = compute_local_root_fingerprint(canonical_local_root)
 
         proj = LocalProject(

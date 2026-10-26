@@ -102,6 +102,8 @@ class Finding(Base):
 
     id = Column(String(36), primary_key=True, default=_uuid)
     repository_id = Column(String(36), ForeignKey("repositories.id"), index=True)
+    review_id = Column(String(36), ForeignKey("agent_jobs.id"), index=True)
+    scan_job_id = Column(String(36), ForeignKey("scan_jobs.id"), index=True)
     finding_type = Column(String(100), nullable=False, index=True)
     severity = Column(String(50), nullable=False, index=True)
     category = Column(String(100), nullable=False)
@@ -162,10 +164,14 @@ class Mission(Base):
 
 class Report(Base):
     __tablename__ = "reports"
+    __table_args__ = (
+        UniqueConstraint("review_id", name="uq_reports_review_id"),
+    )
 
     id = Column(String(36), primary_key=True, default=_uuid)
     mission_id = Column(String(36), ForeignKey("missions.id"), index=True)
     repository_id = Column(String(36), ForeignKey("repositories.id"), index=True)
+    review_id = Column(String(36), ForeignKey("agent_jobs.id"))
     title = Column(String(512), nullable=False)
     status = Column(String(50), nullable=False)
     summary = Column(Text)
@@ -186,9 +192,13 @@ class Report(Base):
 
 class ScanJob(Base):
     __tablename__ = "scan_jobs"
+    __table_args__ = (
+        UniqueConstraint("review_id", name="uq_scan_jobs_review_id"),
+    )
 
     id = Column(String(36), primary_key=True, default=_uuid)
-    repository_id = Column(String(36), ForeignKey("repositories.id"), nullable=False, index=True)
+    repository_id = Column(String(36), ForeignKey("repositories.id"), nullable=True, index=True)
+    review_id = Column(String(36), ForeignKey("agent_jobs.id"))
     status = Column(String(50), default="pending", index=True)
     scan_type = Column(String(50), default="full")
     branch = Column(String(255))
@@ -651,6 +661,12 @@ class AgentJob(Base):
     Device may NEVER create these — only fetch and perform predefined work.
     """
     __tablename__ = "agent_jobs"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "device_project_id", "idempotency_key",
+            name="uq_agent_jobs_idempotency_key",
+        ),
+    )
 
     id = Column(String(36), primary_key=True, default=_uuid)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
@@ -661,16 +677,20 @@ class AgentJob(Base):
     operation_type = Column(String(50), nullable=False, default="PROJECT_SCAN")
 
     # Lifecycle status
-    status = Column(String(30), nullable=False, default="PENDING", index=True)
-    # PENDING → STARTED → COMPLETED | FAILED | EXPIRED
+    status = Column(String(30), nullable=False, default="QUEUED", server_default="QUEUED", index=True)
+    # QUEUED → RUNNING → COMPLETED | PARTIAL | FAILED | CANCELLED
 
     # Timestamps
+    idempotency_key = Column(String(128), nullable=True)
     created_at = Column(DateTime, default=_utcnow)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
     failed_at = Column(DateTime, nullable=True)
+    cancelled_at = Column(DateTime, nullable=True)
     failure_reason = Column(Text, nullable=True)
     truncated = Column(Boolean, default=False, nullable=False)
+    evidence = Column(JSON, nullable=True)
+    coverage = Column(JSON, nullable=True)
 
     # Relationships
     user = relationship("User")

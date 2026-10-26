@@ -56,8 +56,8 @@ from the repository alone.
 ### Current State
 
 The application uses `Base.metadata.create_all()` at startup to ensure
-tables exist. Alembic migrations (001-004) exist but are not automatically
-run at startup.
+tables exist. Alembic migrations are not automatically run at startup;
+schema changes must be applied as an explicit deployment step.
 
 ### Migration Chain
 
@@ -67,9 +67,14 @@ run at startup.
 | 002_scan_jobs | scan_jobs, scan_history + repository columns |
 | 003_scan_hardening | scan_jobs hardening columns |
 | 004_evidence_risk_gate | finding_adjudications + findings gate columns |
+| 005_local_agent_devices | devices, bootstrap_tokens |
+| 006_local_agent_projects | device_projects, project_authorization_tokens |
+| 007_local_agent_scan_jobs | agent_jobs |
+| 008_agent_job_truncation | agent_jobs.truncated |
+| 009_computer_review_evidence | review identity, lifecycle, coverage, and linked evidence |
 
-**Important:** The ORM defines 19 tables, but migrations 001-004 only
-create 9. The remaining 10 tables are created by `create_all()` at startup.
+The ORM also defines tables outside this migration chain; those continue to
+be created by `create_all()` at startup.
 
 ### Fresh Database Procedure
 
@@ -79,27 +84,30 @@ create 9. The remaining 10 tables are created by `create_all()` at startup.
 
 ### Existing Database Adoption (Production)
 
-For databases created by `create_all()` before Alembic was integrated:
+For databases created by `create_all()` before Alembic was integrated, do not
+blindly stamp the current head. First inspect the schema and recorded Alembic
+revision. Stamping does not apply missing schema changes.
 
-1. **Verify schema** — `create_all()` produces the complete ORM schema,
-   which is a superset of what migrations 001-004 create
-2. **Stamp head** — `alembic stamp head` marks all migrations as applied
-3. **No data loss** — stamping does not modify data or schema
+For a database verified to match the complete ORM schema at the current
+release, stamping the current head is appropriate. For a database already at
+`008_agent_job_truncation`, apply the Computer Review migration with
+`alembic upgrade head`. If a legacy database is recorded at an earlier
+revision but contains tables created by `create_all()`, an operator must
+verify each intervening migration's effects before adopting it at revision
+008; otherwise migrations that create existing tables may fail.
 
 ```bash
-# One-time operation on existing production database
+# Only after verifying the database already has the complete current schema
 alembic -c enterprise/alembic.ini stamp head
 ```
 
-**Safety:** Verified that ORM schema is a superset of migration schema.
-All columns added by migrations 002-004 already exist in ORM models.
-
 ### Explicit Migration Step (Recommended)
 
-Migrations should be an explicit deployment step, not automatic startup:
+For databases already tracked at revision 008, run the additive review
+evidence migration explicitly before starting the new application version:
 
 ```bash
-# During deployment
+# During deployment, after backup and revision/schema verification
 alembic -c enterprise/alembic.ini upgrade head
 ```
 
