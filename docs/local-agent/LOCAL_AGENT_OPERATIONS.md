@@ -312,6 +312,9 @@ The scanner enforces strict resource limits:
 - **Timeout**: 120 seconds maximum
 - **Path containment**: Cannot escape project root
 - **Symlink protection**: Symlinks escaping root are denied
+- **Generated content**: `.git`, virtual environments, dependency caches, and common build output are excluded before eligible-file limits are counted
+- **Coverage**: Excluded, skipped, examined, and byte counts are persisted separately with exclusion/skip reasons and reached limits
+- **Findings**: Binary, unsupported, oversized, ignored, or limit-skipped files are coverage metadata, not findings
 
 ### Git Metadata
 
@@ -320,7 +323,7 @@ The scanner reads only these git metadata fields (hardcoded allowlist):
 - `git rev-parse HEAD` (commit hash)
 - `git status --porcelain` (changed files)
 
-No other git commands are executed.
+It also uses read-only `git check-ignore --no-index` to honor repository ignore rules. Ignored directories are still checked for sensitive-file and symlink boundary conditions; ordinary ignored files are excluded from eligible scan counts.
 
 ### Evidence Format
 

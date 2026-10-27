@@ -1014,7 +1014,10 @@ class ScanEvidence(BaseModel):
     files_discovered: int = Field(ge=0)
     files_examined: int = Field(ge=0)
     files_skipped: int = Field(ge=0)
+    files_excluded_by_policy: int = Field(default=0, ge=0)
     skip_reasons: dict[str, int]
+    exclusion_reasons: dict[str, int] = Field(default_factory=dict)
+    excluded_directories: dict[str, int] = Field(default_factory=dict)
     limits_reached: list[str]
     languages: list[str]
     project_structure_summary: dict[str, Any]
@@ -1024,6 +1027,7 @@ class ScanEvidence(BaseModel):
     limits: dict[str, Any]
     sensitive_files_found: list[str] = Field(default_factory=list)
     total_bytes_read: int = Field(default=0, ge=0)
+    bytes_examined: int | None = Field(default=None, ge=0)
     provenance: Literal["LIVE_EVOSIA_EVIDENCE"] = "LIVE_EVOSIA_EVIDENCE"
     evidence_source: Literal["device_local_scan"] = "device_local_scan"
 
@@ -1037,6 +1041,16 @@ class ScanEvidence(BaseModel):
             raise ValueError("skip reason counts do not match files_skipped")
         if any(count < 0 for count in self.skip_reasons.values()):
             raise ValueError("skip reason counts cannot be negative")
+        if any(count < 0 for count in self.exclusion_reasons.values()):
+            raise ValueError("exclusion reason counts cannot be negative")
+        if sum(self.exclusion_reasons.values()) != self.files_excluded_by_policy:
+            raise ValueError("exclusion reason counts do not match files_excluded_by_policy")
+        if any(count < 0 for count in self.excluded_directories.values()):
+            raise ValueError("excluded directory counts cannot be negative")
+        if self.bytes_examined is None:
+            self.bytes_examined = self.total_bytes_read
+        elif self.bytes_examined != self.total_bytes_read:
+            raise ValueError("bytes_examined must match total_bytes_read")
         if self.completed_at < self.started_at:
             raise ValueError("completed_at must not precede started_at")
         return self

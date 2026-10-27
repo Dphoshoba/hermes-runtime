@@ -30,6 +30,24 @@ MAX_FILE_SIZE_BYTES = 1_048_576  # 1 MB per file
 MAX_TOTAL_BYTES_READ = 10_485_760  # 10 MB aggregate
 MAX_FILE_COUNT = 5_000
 SCAN_TIMEOUT_SECONDS = 120
+EXCLUDED_DIRECTORY_NAMES = frozenset({
+    ".git",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".tox",
+    ".nox",
+    "dist",
+    "build",
+    "coverage",
+    ".coverage",
+    "htmlcov",
+})
 
 # Permitted text/source file extensions
 PERMITTED_EXTENSIONS = frozenset({
@@ -110,7 +128,10 @@ class ScanResult:
     files_discovered: int = 0
     files_examined: int = 0
     files_skipped: int = 0
+    files_excluded_by_policy: int = 0
     skip_reasons: dict[str, int] = field(default_factory=dict)
+    exclusion_reasons: dict[str, int] = field(default_factory=dict)
+    excluded_directories: dict[str, int] = field(default_factory=dict)
     limits_reached: list[str] = field(default_factory=list)
     languages: list[str] = field(default_factory=list)
     project_structure_summary: dict = field(default_factory=dict)
@@ -119,6 +140,7 @@ class ScanResult:
     limits: dict = field(default_factory=dict)
     sensitive_files_found: list[str] = field(default_factory=list)
     total_bytes_read: int = 0
+    bytes_examined: int = 0
     git_metadata: dict | None = None
 
 
@@ -131,6 +153,57 @@ _GIT_ALLOWLIST = frozenset({
     "rev-parse HEAD",
     "status --porcelain",
 })
+
+
+def is_policy_excluded_directory(path: str | Path) -> bool:
+    """Return whether any normalized path component is excluded by policy."""
+    parts = PurePosixPath(str(path).replace("\\", "/")).parts
+    return any(part.lower() in EXCLUDED_DIRECTORY_NAMES for part in parts)
+
+
+def _count_files_below(directory: Path) -> int:
+    """Count file entries under a pruned directory without following symlinks."""
+    count = 0
+
+    def raise_walk_error(error: OSError) -> None:
+        raise error
+
+    for _, _, filenames in os.walk(
+        directory,
+        topdown=True,
+        followlinks=False,
+        onerror=raise_walk_error,
+    ):
+        count += len(filenames)
+    return count
+
+
+def _git_ignored_paths(project_root: Path, relative_paths: list[str]) -> set[str]:
+    """Ask Git to apply repository ignore rules to a batch of paths."""
+    if not relative_paths or not (project_root / ".git").exists():
+        return set()
+
+    try:
+        completed = subprocess.run(
+            ["git", "check-ignore", "--no-index", "-z", "--stdin"],
+            cwd=str(project_root),
+            input=b"".join(os.fsencode(path) + b"\0" for path in relative_paths),
+            capture_output=True,
+            timeout=5,
+            check=False,
+            shell=False,
+            env={**os.environ, "GIT_OPTIONAL_LOCKS": "0"},
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return set()
+
+    if completed.returncode not in (0, 1):
+        raise OSError("Repository ignore rules could not be evaluated")
+    return {
+        os.fsdecode(path)
+        for path in completed.stdout.split(b"\0")
+        if path
+    }
 
 
 def _get_git_metadata(project_root: Path) -> dict | None:
@@ -204,6 +277,12 @@ def scan_project(
         result.files_skipped += 1
         result.skip_reasons[reason] = result.skip_reasons.get(reason, 0) + 1
 
+    def record_exclusion(reason: str, file_count: int) -> None:
+        result.files_excluded_by_policy += file_count
+        result.exclusion_reasons[reason] = (
+            result.exclusion_reasons.get(reason, 0) + file_count
+        )
+
     def record_limit(name: str) -> None:
         result.truncated = True
         if name not in result.limits_reached:
@@ -230,17 +309,36 @@ def scan_project(
     def raise_walk_error(error: OSError) -> None:
         raise error
 
+    def add_finding(
+        finding_type: str,
+        path: Path,
+        title: str,
+        category: str,
+        description: str,
+        **metadata: object,
+    ) -> None:
+        module = path.relative_to(root_resolved).as_posix()
+        result.findings.append({
+            "type": finding_type,
+            "path": module,
+            "module": module,
+            "title": title,
+            "category": category,
+            "description": description,
+            **metadata,
+        })
+
     try:
         for current_root, dirnames, filenames in os.walk(
-            project_root,
+            root_resolved,
             topdown=True,
             followlinks=False,
             onerror=raise_walk_error,
         ):
-            file_names = set(filenames)
+            current_path = Path(current_root)
             for name in (*dirnames, *filenames):
-                item = Path(current_root) / name
-                is_file_entry = name in file_names
+                item = current_path / name
+                is_file_entry = name in filenames
                 # Handle symlinks
                 if item.is_symlink():
                     symlink_result = check_symlink(item, root_resolved)
@@ -249,22 +347,41 @@ def scan_project(
                             file_count += 1
                             result.files_discovered += 1
                             record_skip("symlink_escape")
-                        result.findings.append({
-                            "type": "SYMLINK_ESCAPE",
-                            "path": str(item.relative_to(project_root)),
-                            "classification": "ESCAPING_SYMLINK",
-                        })
+                        add_finding(
+                            "SYMLINK_ESCAPE",
+                            item,
+                            f"Symlink escapes project: {item.name}",
+                            "Project boundary",
+                            "This symlink resolves outside the authorized project "
+                            "root and must not be followed.",
+                            classification="ESCAPING_SYMLINK",
+                        )
+                        if is_file_entry:
+                            filenames.remove(name)
+                        else:
+                            dirnames.remove(name)
                         continue
                     elif symlink_result.status == SymlinkStatus.BROKEN_OR_UNRESOLVABLE:
                         if is_file_entry:
                             file_count += 1
                             result.files_discovered += 1
                             record_skip("broken_symlink")
-                        result.findings.append({
-                            "type": "BROKEN_SYMLINK",
-                            "path": str(item.relative_to(project_root)),
-                            "classification": "BROKEN_SYMLINK",
-                        })
+                        add_finding(
+                            "BROKEN_SYMLINK",
+                            item,
+                            f"Broken project symlink: {item.name}",
+                            "Project integrity",
+                            "This symlink target cannot be resolved and should be "
+                            "repaired or removed.",
+                            classification="BROKEN_SYMLINK",
+                        )
+                        if is_file_entry:
+                            filenames.remove(name)
+                        else:
+                            dirnames.remove(name)
+                        continue
+                    elif not is_file_entry:
+                        dirnames.remove(name)
                         continue
 
                 try:
@@ -276,18 +393,66 @@ def scan_project(
                     continue
                 visited.add(cycle_id)
 
-                if item.is_dir():
-                    directory_count += 1
-                    dir_name = item.name
-                    structure[dir_name] = structure.get(dir_name, 0) + 1
-                    continue
+            excluded_dirs = [
+                name for name in dirnames
+                if is_policy_excluded_directory(name)
+            ]
+            for name in excluded_dirs:
+                excluded_count = _count_files_below(current_path / name)
+                record_exclusion(f"excluded_directory:{name.lower()}", excluded_count)
+                result.excluded_directories[name.lower()] = (
+                    result.excluded_directories.get(name.lower(), 0) + 1
+                )
+                dirnames.remove(name)
 
+            policy_excluded_files = [
+                name for name in filenames
+                if is_policy_excluded_directory(name)
+            ]
+            for name in policy_excluded_files:
+                record_exclusion(f"excluded_file:{name.lower()}", 1)
+                filenames.remove(name)
+
+            candidate_names = [*dirnames, *filenames]
+            candidate_paths = {
+                name: (current_path / name).relative_to(root_resolved).as_posix()
+                for name in candidate_names
+            }
+            ignored_paths = _git_ignored_paths(
+                root_resolved,
+                list(candidate_paths.values()),
+            )
+            ignored_directories = set()
+            for name in dirnames:
+                if candidate_paths[name] not in ignored_paths:
+                    continue
+                ignored_directories.add(name)
+                result.excluded_directories["gitignore"] = (
+                    result.excluded_directories.get("gitignore", 0) + 1
+                )
+            for name in list(filenames):
+                item = current_path / name
+                if (
+                    candidate_paths[name] in ignored_paths
+                    and not is_sensitive_path(item)
+                ):
+                    record_exclusion("gitignore", 1)
+                    filenames.remove(name)
+
+            for name in dirnames:
+                if name in ignored_directories:
+                    continue
+                directory_count += 1
+                structure[name] = structure.get(name, 0) + 1
+
+            for name in filenames:
+                item = current_path / name
                 if not item.is_file():
                     continue
 
                 file_count += 1
                 result.files_discovered += 1
-                rel_path = item.relative_to(project_root)
+                rel_path = item.relative_to(root_resolved)
 
                 if file_count > limits.max_file_count:
                     record_limit("max_file_count")
@@ -301,24 +466,25 @@ def scan_project(
 
                 # Check sensitive files
                 if is_sensitive_path(item):
-                    result.sensitive_files_found.append(str(rel_path))
-                    result.findings.append({
-                        "type": "SENSITIVE_FILE",
-                        "path": str(rel_path),
-                        "classification": "SENSITIVE_FILE",
-                        "content_read": False,
-                    })
+                    module = rel_path.as_posix()
+                    result.sensitive_files_found.append(module)
+                    add_finding(
+                        "SENSITIVE_FILE",
+                        item,
+                        f"Sensitive file present: {item.name}",
+                        "Sensitive data exposure",
+                        "This file name indicates potentially sensitive material. "
+                        "Its contents were not read; verify it is not committed or "
+                        "otherwise exposed.",
+                        classification="SENSITIVE_FILE",
+                        content_read=False,
+                    )
                     record_skip("sensitive_file")
                     continue
 
                 # Check file extension
                 ext = item.suffix.lower()
                 if ext in BINARY_EXTENSIONS:
-                    result.findings.append({
-                        "type": "BINARY_FILE",
-                        "path": str(rel_path),
-                        "classification": "BINARY_FILE",
-                    })
                     record_skip("binary_file")
                     continue
 
@@ -340,12 +506,6 @@ def scan_project(
 
                 if file_size > limits.max_file_size:
                     record_limit("max_file_size")
-                    result.findings.append({
-                        "type": "OVERSIZED_FILE",
-                        "path": str(rel_path),
-                        "classification": "OVERSIZED_FILE",
-                        "size_bytes": file_size,
-                    })
                     record_skip("max_file_size")
                     continue
 
@@ -357,8 +517,8 @@ def scan_project(
 
                 # Read file content (safe text read only)
                 try:
-                    content = item.read_text(encoding="utf-8", errors="replace")
-                    total_bytes += len(content.encode("utf-8"))
+                    item.read_text(encoding="utf-8", errors="replace")
+                    total_bytes += file_size
                     result.files_examined += 1
                 except (OSError, UnicodeDecodeError):
                     record_skip("unreadable_file")
@@ -374,6 +534,7 @@ def scan_project(
     result.file_count = file_count
     result.languages = sorted(languages)
     result.total_bytes_read = total_bytes
+    result.bytes_examined = total_bytes
     result.project_structure_summary = {
         "directory_count": directory_count,
         "file_count": file_count,

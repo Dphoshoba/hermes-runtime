@@ -268,9 +268,14 @@ def complete_job(
         "files_discovered": evidence["files_discovered"],
         "files_examined": evidence["files_examined"],
         "files_skipped": evidence["files_skipped"],
+        "files_excluded_by_policy": evidence.get("files_excluded_by_policy", 0),
         "skip_reasons": evidence["skip_reasons"],
+        "exclusion_reasons": evidence.get("exclusion_reasons", {}),
+        "excluded_directories": evidence.get("excluded_directories", {}),
         "limits_reached": evidence["limits_reached"],
         "limits": evidence["limits"],
+        "bytes_examined": evidence.get("bytes_examined", evidence.get("total_bytes_read", 0)),
+        "total_bytes_read": evidence.get("total_bytes_read", 0),
         "started_at": evidence["started_at"],
         "finished_at": evidence["completed_at"],
     }
@@ -308,8 +313,8 @@ def complete_job(
     for item in findings_data:
         kind = str(item.get("type") or item.get("finding_type") or "PROJECT_REVIEW")[:100]
         path = str(item.get("path") or "")[:512]
-        title = kind.replace("_", " ").title()
-        if path:
+        title = str(item.get("title") or kind.replace("_", " ").title())
+        if not item.get("title") and path:
             title = f"{title}: {path}"
         severity = str(item.get("severity") or "low").lower()
         if severity not in {"critical", "high", "medium", "low"}:

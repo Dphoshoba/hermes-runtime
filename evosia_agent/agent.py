@@ -543,7 +543,10 @@ def execute_job(job: dict, config: AgentConfig, credential: DeviceCredential) ->
         "files_discovered": result.files_discovered,
         "files_examined": result.files_examined,
         "files_skipped": result.files_skipped,
+        "files_excluded_by_policy": result.files_excluded_by_policy,
         "skip_reasons": result.skip_reasons,
+        "exclusion_reasons": result.exclusion_reasons,
+        "excluded_directories": result.excluded_directories,
         "limits_reached": result.limits_reached,
         "languages": result.languages,
         "project_structure_summary": result.project_structure_summary,
@@ -553,6 +556,7 @@ def execute_job(job: dict, config: AgentConfig, credential: DeviceCredential) ->
         "limits": result.limits,
         "sensitive_files_found": result.sensitive_files_found,
         "total_bytes_read": result.total_bytes_read,
+        "bytes_examined": result.bytes_examined,
         "provenance": "LIVE_EVOSIA_EVIDENCE",
         "evidence_source": "device_local_scan",
     }

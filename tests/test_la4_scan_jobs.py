@@ -40,7 +40,7 @@ from enterprise.schemas import (
 from evosia_agent.scanner import (
     scan_project, ScanLimits, ScanResult,
     MAX_FILE_SIZE_BYTES, MAX_TOTAL_BYTES_READ, MAX_FILE_COUNT,
-    _get_git_metadata,
+    _get_git_metadata, is_policy_excluded_directory,
 )
 from evosia_agent.path_validation import SymlinkStatus
 
@@ -748,12 +748,20 @@ class TestReviewEvidencePersistence:
             files_discovered=3,
             files_examined=1,
             files_skipped=2,
+            files_excluded_by_policy=7,
             skip_reasons={"max_file_count": 2},
+            exclusion_reasons={"excluded_directory:.venv": 7},
+            excluded_directories={".venv": 1},
+            bytes_examined=44,
+            total_bytes_read=44,
             limits_reached=["max_file_count"],
             truncated=True,
             findings=[{
                 "type": "SENSITIVE_FILE",
                 "path": ".env",
+                "title": "Sensitive file present: .env",
+                "category": "Sensitive data exposure",
+                "description": "Verify this file is not committed or exposed.",
                 "classification": "SENSITIVE_FILE",
                 "content_read": False,
             }],
@@ -770,9 +778,14 @@ class TestReviewEvidencePersistence:
             "files_discovered": 3,
             "files_examined": 1,
             "files_skipped": 2,
+            "files_excluded_by_policy": 7,
             "skip_reasons": {"max_file_count": 2},
+            "exclusion_reasons": {"excluded_directory:.venv": 7},
+            "excluded_directories": {".venv": 1},
             "limits_reached": ["max_file_count"],
             "limits": {},
+            "bytes_examined": 44,
+            "total_bytes_read": 44,
             "started_at": "2026-08-27T00:00:00Z",
             "finished_at": "2026-08-27T00:01:00Z",
         }
@@ -794,8 +807,12 @@ class TestReviewEvidencePersistence:
         assert scan_records[0]["status"] == "partial"
         assert reports[0]["status"] == "PARTIAL"
         assert reports[0]["report_data"]["coverage"]["files_skipped"] == 2
+        assert reports[0]["report_data"]["coverage"]["files_excluded_by_policy"] == 7
         assert len(findings) == 1
         assert findings[0]["scan_job_id"] == job_id
+        assert findings[0]["title"] == "Sensitive file present: .env"
+        assert findings[0]["category"] == "Sensitive data exposure"
+        assert findings[0]["module"] == ".env"
 
     def test_result_retry_is_idempotent_and_creates_one_report(
         self, la4_client, la4_auth, la4_project,
@@ -1330,9 +1347,89 @@ class TestScannerContainment:
         (root / "main.py").write_text("print('hello')")
 
         result = scan_project(root)
-        assert any(f["type"] == "BINARY_FILE" for f in result.findings)
-        # Only Python file should be counted as read
-        assert result.file_count >= 1
+        assert not result.findings
+        assert result.files_discovered == 2
+        assert result.files_examined == 1
+        assert result.files_skipped == 1
+        assert result.skip_reasons == {"binary_file": 1}
+        assert result.files_discovered == result.files_examined + result.files_skipped
+
+    def test_policy_exclusion_paths_normalize_windows_and_posix_separators(self):
+        for directory in (
+            ".venv", "venv", "env", ".git", "node_modules", "__pycache__",
+            ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox", ".nox",
+            "dist", "build", "coverage", ".coverage", "htmlcov",
+        ):
+            assert is_policy_excluded_directory(f"src/{directory}/module.py")
+            assert is_policy_excluded_directory(f"src\\{directory}\\module.py")
+        assert not is_policy_excluded_directory("src/not_venv/module.py")
+
+    def test_generated_trees_do_not_consume_scan_limits(self, tmp_path: Path):
+        root = tmp_path / "project"
+        root.mkdir()
+        for directory in (".venv", "__pycache__", "node_modules", "dist"):
+            generated = root / directory
+            generated.mkdir()
+            for index in range(500):
+                (generated / f"generated_{index}.pyc").write_bytes(b"\x00" * 64)
+        source = root / "main.py"
+        source.write_text("print('reviewed')", encoding="utf-8")
+
+        result = scan_project(
+            root,
+            ScanLimits(max_file_count=1, max_total_bytes=32),
+        )
+
+        assert result.files_discovered == 1
+        assert result.files_examined == 1
+        assert result.files_skipped == 0
+        assert result.files_excluded_by_policy == 2_000
+        assert result.exclusion_reasons == {
+            "excluded_directory:.venv": 500,
+            "excluded_directory:__pycache__": 500,
+            "excluded_directory:node_modules": 500,
+            "excluded_directory:dist": 500,
+        }
+        assert result.excluded_directories == {
+            ".venv": 1,
+            "__pycache__": 1,
+            "node_modules": 1,
+            "dist": 1,
+        }
+        assert "Python" in result.languages
+        assert not any(f["type"] == "BINARY_FILE" for f in result.findings)
+        assert not result.limits_reached
+
+    def test_gitignored_content_is_excluded_but_sensitive_files_are_still_found(
+        self, tmp_path: Path,
+    ):
+        root = tmp_path / "project"
+        root.mkdir()
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        (root / ".gitignore").write_text("generated/\n.env\n", encoding="utf-8")
+        generated = root / "generated"
+        generated.mkdir()
+        (generated / "build.py").write_text("print('ignored')", encoding="utf-8")
+        (root / ".env").write_text("SECRET=value", encoding="utf-8")
+        source = root / "main.py"
+        source.write_text("print('reviewed')", encoding="utf-8")
+
+        result = scan_project(root)
+
+        assert result.files_discovered == 3
+        assert result.files_examined == 1
+        assert result.files_skipped == 2
+        assert result.files_excluded_by_policy > 1
+        assert result.exclusion_reasons["gitignore"] == 1
+        assert result.exclusion_reasons["excluded_directory:.git"] > 0
+        assert result.excluded_directories == {".git": 1, "gitignore": 1}
+        assert result.skip_reasons == {
+            "unsupported_file_type": 1,
+            "sensitive_file": 1,
+        }
+        assert any(f["type"] == "SENSITIVE_FILE" and f["path"] == ".env"
+                   for f in result.findings)
+        assert result.files_discovered == result.files_examined + result.files_skipped
 
 
 # ===========================================================================
@@ -1350,7 +1447,12 @@ class TestResourceBounds:
         (root / "small.py").write_text("print('ok')")
 
         result = scan_project(root)
-        assert any(f["type"] == "OVERSIZED_FILE" for f in result.findings)
+        assert not result.findings
+        assert result.files_discovered == 2
+        assert result.files_examined == 1
+        assert result.files_skipped == 1
+        assert result.skip_reasons == {"max_file_size": 1}
+        assert "max_file_size" in result.limits_reached
 
     def test_aggregate_scan_size_bounded(self, tmp_path: Path):
         """Aggregate bytes read is bounded."""
